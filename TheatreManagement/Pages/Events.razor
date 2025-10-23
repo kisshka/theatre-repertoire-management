@@ -1,0 +1,102 @@
+﻿@page "/events"
+@page "/"
+
+<PageTitle>Мероприятия</PageTitle>
+<Calendar Value="currentDate" DateCellRender="DateCellRender" />
+
+@code
+{
+    private DateTime currentDate = DateTime.Now;
+
+    class ListData
+    {
+        public BadgeStatus type;
+        public string content;
+    }
+
+    private List<ListData> GetListData(DateTime value)
+    {
+        List<ListData> listData = null;
+        switch (value.Day)
+        {
+            case 8:
+                listData = new List<ListData>
+                {
+                new ListData { type = BadgeStatus.Warning, content = "This is warning event." },
+                new ListData { type = BadgeStatus.Success, content = "This is usual event." },
+                };
+                break;
+            case 15:
+                listData = new List<ListData> {
+                new ListData { type = BadgeStatus.Warning, content = "This is warning event" },
+                new ListData { type = BadgeStatus.Success, content = "This is very long usual event。。...." },
+                new ListData { type = BadgeStatus.Error, content = "This is error event 1." },
+                };
+                break;
+        }
+
+        return listData ?? new List<ListData>();
+    }
+
+    @* private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
+    {
+        return @<Template>
+            <Button onclick="PreviusMonth">Назад</Button>
+            <DatePicker TValue="DateTime ?" Picker="DatePickerType.Month" />
+            <Button onclick="NextMonth">Вперед</Button>
+        </Template>;
+    } *@
+
+@* Функции для перемещения *@
+    private void NextMonth()
+    {
+        currentDate = currentDate.AddMonths(1);
+        StateHasChanged();
+    }
+    private void PreviusMonth()
+    {
+        currentDate = currentDate.AddMonths(1);
+        StateHasChanged();
+    }
+
+    private RenderFragment DateCellRender(DateTime value)
+    {
+        var listData = GetListData(value);
+        return @<Template>
+            <ul class="events">
+                @foreach (var data in listData)
+                {
+                    <li key="@data.content">
+                        <Badge Status="@data.type" Text="@data.content" />
+                    </li>
+                }
+            </ul>
+        </Template>;
+    }
+
+}
+
+<style>
+    .events {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .events .ant-badge-status {
+        overflow: hidden;
+        white-space: nowrap;
+        width: 100%;
+        text-overflow: ellipsis;
+        font-size: 12px;
+    }
+
+    .notes-month {
+        text-align: center;
+        font-size: 28px;
+    }
+
+    .notes-month section {
+        font-size: 28px;
+    }
+</style>
