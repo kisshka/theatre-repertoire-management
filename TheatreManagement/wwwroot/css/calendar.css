@@ -1,0 +1,90 @@
+.ant-picker-calendar .ant-picker-panel .ant-picker-body,
+.ant-picker-cell {
+  padding: 2px;
+  background-color: #ada1a1;
+  border-radius: 7px;
+}
+
+.ant-picker-cell {
+  background-color: #d4d1d1;
+  border: solid 2px #ada1a1;
+}
+
+.ant-picker-cell-in-view {
+  background: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+}
+
+.ant-picker-calendar-date-value {
+  text-align: left;
+  font-size: 16px;
+  color: #615f5f;
+}
+
+.ant-picker-calendar-date-today {
+  background: rgb(255, 255, 255);
+}
+
+.ant-picker-calendar-full .ant-picker-panel .ant-picker-calendar-date {
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 1px 1px;
+  padding: 4px 8px;
+  border: 0;
+}
+th {
+  text-align: center;
+}
+
+.ant-picker-calendar-full .ant-picker-panel .ant-picker-cell-selected {
+  background: #ffffff;
+}
+
+.ant-picker-calendar-full .ant-picker-panel .ant-picker-calendar-date-today {
+  background: #ffffff;
+  border: #708d81 2px solid;
+  color: #000000;
+  border-radius: 4px;
+  margin: 0;
+}
+
+/* Выбранный день */
+.ant-picker-calendar-full
+  .ant-picker-panel
+  .ant-picker-cell-selected
+  .ant-picker-calendar-date {
+  background-color: #ffffff;
+}
+/* Цифра выбранного дня должна остаться черной*/
+.ant-picker-calendar-full
+  .ant-picker-panel
+  .ant-picker-cell-selected
+  .ant-picker-calendar-date
+  .ant-picker-calendar-date-value {
+  color: #000000;
+}
+
+/* Анимация ячеек календаря при наведении */
+.ant-picker-cell-in-view:hover .ant-picker-calendar-date-value {
+  color: #000000 !important; /* При наведении на ячейку цифра остается черной */
+}
+
+.ant-picker-cell-in-view:hover .ant-picker-cell-inner,
+.ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner,
+.ant-picker-cell-in-view:hover .ant-picker-cell-inner 
+{
+  position: relative;
+  transition: all 0.3s !important;
+  transform: scale(1.08);
+  border-radius: 7px;
+  z-index: 1000;
+}
+
+.ant-picker-cell-in-view:hover .ant-picker-cell-inner {
+  background-color: #ffffff !important;
+}
+
+.ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
+  background-color: #d4d1d1 !important;
+}
