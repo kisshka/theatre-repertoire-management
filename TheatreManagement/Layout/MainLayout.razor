@@ -1,16 +1,78 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<Header class="header">
+    @if (collapsed)
+    {
+        <Icon Type="@IconType.Outline.MenuUnfold" Class="trigger" OnClick="toggle" />
+    }
+    else
+    {
+        <Icon Type="@IconType.Outline.MenuFold" Class="trigger" OnClick="toggle" />
+    }
+</Header>
+<Layout>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <Sider class="sider-menu" @bind-Collapsed=@collapsed NoTrigger>
+        <Menu Theme="MenuTheme.Light" Mode="MenuMode.Vertical" DefaultSelectedKeys=@(new[] { "2" })>
 
-        <article class="content px-4">
+            <MenuItem Key="1">
+            <Icon Type="@IconType.Outline.User" />
+            <span>
+                <NavLink href="plays">
+                    Спектакли
+                </NavLink>
+            </span>
+            </MenuItem>
+
+            <MenuItem Key="2">
+            <Icon Type="@IconType.Outline.User" />
+            <span>
+                <NavLink href="events">
+                    Мероприятия
+                </NavLink>
+            </span>
+            </MenuItem>
+
+            <MenuItem Key="3">
+            <Icon Type="@IconType.Outline.User" />
+            <span>
+                <NavLink href="employees">
+                    Сотрудники
+                </NavLink>
+            </span>
+            </MenuItem>
+
+            <MenuItem Key="4">
+            <Icon Type="@IconType.Outline.User" />
+            <span>
+                <NavLink href="users">
+                    Пользователи
+                </NavLink>
+            </span>
+            </MenuItem>
+
+        </Menu>
+    </Sider>
+
+    <Layout Class="site-layout">
+
+        <Content Class="site-layout-background" Style="margin: 24px 16px;padding: 24px;min-height: 280px;">
             @Body
-        </article>
-    </main>
-</div>
+        </Content>
+    </Layout>
+</Layout>
+
+
+@code {
+    bool collapsed;
+
+    void toggle()
+    {
+        collapsed = !collapsed;
+    }
+
+    void OnCollapse(bool isCollapsed)
+    {
+        Console.WriteLine($"Collapsed: {isCollapsed}");
+    }
+
+}
