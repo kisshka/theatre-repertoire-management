@@ -2,7 +2,7 @@
 @page "/"
 
 <PageTitle>Мероприятия</PageTitle>
-<Calendar Value="currentDate" DateCellRender="DateCellRender" />
+<Calendar Value="currentDate" DateCellRender="DateCellRender" HeaderRender="CustomHead" />
 
 @code
 {
@@ -14,6 +14,7 @@
         public string content;
     }
 
+@* Заполенение календаря данными о событиях *@
     private List<ListData> GetListData(DateTime value)
     {
         List<ListData> listData = null;
@@ -34,20 +35,31 @@
                 };
                 break;
         }
-
         return listData ?? new List<ListData>();
     }
 
-    @* private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
+@* Шапка календаря *@
+    private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
     {
         return @<Template>
-            <Button onclick="PreviusMonth">Назад</Button>
-            <DatePicker TValue="DateTime ?" Picker="DatePickerType.Month" />
-            <Button onclick="NextMonth">Вперед</Button>
-        </Template>;
-    } *@
+            <Button onclick="PreviusMonth">
+                <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
+            </Button>
 
-@* Функции для перемещения *@
+            <DatePicker ValueChanged="OnValueChanged" AllowClear="false" Value="currentDate" ShowToday="true" TValue="DateTime"
+                Picker="DatePickerType.Month" />
+
+            <Button onclick="NextMonth">
+                <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
+            </Button>
+        </Template>;
+    }
+
+@* Обработчики кнопок шапки*@
+    private void OnValueChanged(DateTime newDate)
+    {
+        currentDate = newDate;
+    }
     private void NextMonth()
     {
         currentDate = currentDate.AddMonths(1);
@@ -55,7 +67,7 @@
     }
     private void PreviusMonth()
     {
-        currentDate = currentDate.AddMonths(1);
+        currentDate = currentDate.AddMonths(-1);
         StateHasChanged();
     }
 
@@ -73,30 +85,4 @@
             </ul>
         </Template>;
     }
-
 }
-
-<style>
-    .events {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-
-    .events .ant-badge-status {
-        overflow: hidden;
-        white-space: nowrap;
-        width: 100%;
-        text-overflow: ellipsis;
-        font-size: 12px;
-    }
-
-    .notes-month {
-        text-align: center;
-        font-size: 28px;
-    }
-
-    .notes-month section {
-        font-size: 28px;
-    }
-</style>

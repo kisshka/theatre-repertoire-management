@@ -80,14 +80,13 @@ th {
 
 .ant-picker-cell-in-view:hover .ant-picker-cell-inner,
 .ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner,
-.ant-picker-cell-in-view:hover .ant-picker-cell-inner 
-{
+.ant-picker-cell-in-view:hover .ant-picker-cell-inner {
   position: relative;
   transition: all 0.3s !important;
   transform: scale(1.08);
   border-radius: 7px;
   z-index: 1000;
-  box-shadow: 2px 2px 2px 2px rgba(31, 28, 28, 0.5)
+  box-shadow: 2px 2px 2px 2px rgba(31, 28, 28, 0.5);
 }
 
 .ant-picker-cell-in-view:hover .ant-picker-cell-inner {
@@ -96,4 +95,33 @@ th {
 
 .ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
   background-color: #d4d1d1 !important;
+}
+
+/* Расположение текста в*/
+.events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.events .ant-badge-status {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+
+.notes-month {
+  text-align: center;
+  font-size: 28px;
+}
+
+.notes-month section {
+  font-size: 28px;
+}
+
+/* иконки */
+.calendar-icons {
+  color: rgb(0, 0, 0);
 }
