@@ -42,6 +42,7 @@
     private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
     {
         return @<Template>
+        <div class="calendar-header">
             <Button onclick="PreviusMonth">
                 <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
             </Button>
@@ -52,6 +53,7 @@
             <Button onclick="NextMonth">
                 <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
             </Button>
+        </div>
         </Template>;
     }
 
