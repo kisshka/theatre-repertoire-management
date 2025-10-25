@@ -126,6 +126,14 @@ th {
     border-radius: 7px;
 }
 
+.calendar-header button:hover {
+    border: #ada1a1 3px solid;
+    padding: 2px;
+    height: 40px;
+    margin: 0px;
+    border-radius: 7px;
+}
+
 
 /* Расположение текста в ячейках*/
 .events {
@@ -159,4 +167,33 @@ th {
 .anticon-calendar {
   color: rgb(0, 0, 0);
   padding-right: 10px;
+}
+
+/* DatePicker */
+.ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    z-index: 1;
+    content: "";
+    border-width: 1px;
+    border-style: solid;
+    border-color: #708d81;
+    border-image: none;
+    border-radius: 2px;
+}
+
+.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner, .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner, .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
+    color: rgb(0, 0, 0);
+    background: rgb(255, 255, 255);
+}
+
+.ant-picker-cell-in-view:hover .ant-picker-cell-inner, .ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner, .ant-picker-cell-in-view:hover .ant-picker-cell-inner {
+    position: relative;
+    transform: scale(1);
+    z-index: 1000;
+    box-shadow: none;
+    color: #708d81;
 }
