@@ -2,7 +2,10 @@
 @page "/"
 
 <PageTitle>Мероприятия</PageTitle>
-<Calendar Value="currentDate" DateCellRender="DateCellRender" HeaderRender="CustomHead" />
+<Calendar   Value="currentDate"
+            OnChange="OnValueChanged"
+            DateCellRender="DateCellRender"
+            HeaderRender="CustomHead" />
 
 @code
 {
@@ -47,8 +50,12 @@
                 <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
             </Button>
 
-            <DatePicker ValueChanged="OnValueChanged" AllowClear="false" Value="currentDate" ShowToday="true" TValue="DateTime"
-                Picker="DatePickerType.Month" />
+            <DatePicker ValueChanged="OnValueChanged"
+                        AllowClear="false" 
+                        Value="currentDate"
+                        ShowToday="true"
+                        TValue="DateTime"
+                        Picker="DatePickerType.Month" />
 
             <Button onclick="NextMonth">
                 <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
@@ -61,6 +68,7 @@
     private void OnValueChanged(DateTime newDate)
     {
         currentDate = newDate;
+        StateHasChanged();
     }
     private void NextMonth()
     {
