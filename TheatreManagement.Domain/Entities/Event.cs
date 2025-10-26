@@ -10,8 +10,8 @@ namespace Domain.Entities
         public bool IsCanceled { get; set; }
 
         // ссылки
-        public int Institution { get; set; }        
-        public Institution? InstitutionId { get; set; }
+        public int InstitutionId { get; set; }        
+        public Institution? Institution { get; set; }
         public int PlayId { get; set; }
         public Play? Play { get; set; }
         public int TourId { get; set; }

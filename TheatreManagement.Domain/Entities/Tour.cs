@@ -7,7 +7,6 @@ namespace Domain.Entities
         public string? Area { get; set; }
 
         //ссылки
-        public int EventId { get; set; }
         public Event? Event { get; set; }
     }
 }

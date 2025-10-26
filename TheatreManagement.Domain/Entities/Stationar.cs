@@ -5,7 +5,7 @@ namespace Domain.Entities
         public int StationarId { get; set; }
         public string? Hall { get; set; }
         public string? Type { get; set; }
-        public int EventId { get; set; }
+
         public Event? Event { get; set; }
     }
 }

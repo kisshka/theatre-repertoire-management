@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-namespace Domain.Entities
+using Domain.Entities;
+
+namespace TheatreManagement.Domain.Data
 {
     public class DataContext : IdentityDbContext<User>
     {
@@ -16,6 +18,23 @@ namespace Domain.Entities
         public virtual DbSet<RoleInPlay> RoleInPlays { get; set; }
         public virtual DbSet<Stationar> Stationars { get; set; }
         public virtual DbSet<Tour> Tours { get; set; }
-        public virtual DbSet<User> Users { get; set; }
+        public override DbSet<User> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<Event>()
+              .HasOne(e => e.Stationar)
+              .WithOne(s => s.Event)
+              .HasForeignKey<Stationar>(s => s.StationarId)
+              .IsRequired(false);
+
+            builder.Entity<Event>()
+                .HasOne(e => e.Tour)
+                .WithOne(t => t.Event)
+                .HasForeignKey<Tour>(t => t.TourId)
+                .IsRequired(false); 
+        }
     }
 }
