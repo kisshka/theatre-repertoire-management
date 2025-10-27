@@ -23,7 +23,7 @@
 </Table>
 
 @code {
-    string[] columns = { "Name", "Duration", "Raiting", "Key" };
+    string[] columns = { "Name", "Duration", "Raiting"};
 
     Data[] data = new Data[100];
 
@@ -34,7 +34,7 @@
             data[i] = new Data()
             {
                 Key = i.ToString(),
-                Name = "Сказка о рыбаке и рыбке",
+                Name = $"Сказка о рыбаке и рыбке{i}",
                 Duration = 120,
                 Raiting = 12,
             };
