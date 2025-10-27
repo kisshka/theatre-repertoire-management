@@ -3,17 +3,56 @@
 <PageTitle>Список спектаклей</PageTitle>
 
 <h1>Список спектаклей</h1>
+<div class="table-page-header">
+    <Button Type="ButtonType.Primary">
+        <Icon Type="@IconType.Outline.Plus" />
+    </Button>
 
+   <Search Placeholder="Введите название спектакля"  EnterButton="true"/>
 
-@* <p role="status">Current count: @currentCount</p>
+    <Button Type="ButtonType.Default">
+        <Icon Type="@IconType.Fill.Filter" />
+    </Button>
+</div>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<Table TItem="Data" DataSource="@data" PageSize="10">
+    @foreach (var column in columns)
+    {
+        <Column TData="object" DataIndex="@column"></Column>
+    }
+</Table>
 
 @code {
-    private int currentCount = 0;
+    string[] columns = { "Name", "Duration", "Raiting", "Key" };
 
-    private void IncrementCount()
+    Data[] data = new Data[100];
+
+    protected override void OnInitialized()
     {
-        currentCount++;
+        for (int i = 0; i < 100; i++)
+        {
+            data[i] = new Data()
+            {
+                Key = i.ToString(),
+                Name = "Сказка о рыбаке и рыбке",
+                Duration = 120,
+                Raiting = 12,
+            };
+        }
     }
-} *@
+   List<Data> options = new List<Data>();
+    public class Data
+    {
+        [DisplayName("Key")]
+        public string? Key { get; set; }
+
+        [DisplayName("Название")]
+        public string? Name { get; set; }
+
+        [DisplayName("Продолжительность")]
+        public int Duration { get; set; }
+
+        [DisplayName("Рейтинг")]
+        public int Raiting { get; set; }
+    }
+}

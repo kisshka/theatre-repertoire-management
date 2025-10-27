@@ -1,0 +1,14 @@
+
+.table-page-header {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.ant-input-group-wrapper {
+    width: 40%;
+    text-align: start;
+    vertical-align: top;
+    align-content: center;
+}

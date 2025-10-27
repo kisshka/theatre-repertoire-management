@@ -2,30 +2,30 @@
 .ant-picker-calendar .ant-picker-panel .ant-picker-body,
 .ant-picker-cell {
   padding: 2px;
-  background-color: #ada1a1;
+  background-color: var(--gray);
   border-radius: 7px;
 }
 
 .ant-picker-cell {
-  background-color: #d4d1d1;
-  border: solid 2px #ada1a1;
+  background-color: var(--light-gray);
+  border: solid 2px  var(--gray);
 }
 
 /* Дни текущего месяца */
 .ant-picker-cell-in-view {
-  background: rgb(255, 255, 255);
-  border: solid 2px #ada1a1;
-  color: rgb(0, 0, 0);
+  background: var(--light);
+  border: solid 2px  var(--gray);
+  color: var(--dark);
 }
 
 .ant-picker-calendar-date-value {
   text-align: left;
   font-size: 16px;
-  color: #615f5f;
+  color: var(--dark-gray);
 }
 
 .ant-picker-calendar-date-today {
-  background: rgb(255, 255, 255);
+  background: var(--light);
 }
 
 /* Ячейка */
@@ -44,14 +44,14 @@ th {
 
 /* Выбранный день */
 .ant-picker-calendar-full .ant-picker-panel .ant-picker-cell-selected {
-  background: #ffffff;
+  background: var(--light);
 }
 
 /* Текущий день */
 .ant-picker-calendar-full .ant-picker-panel .ant-picker-calendar-date-today {
-  background: #ffffff;
-  border: #708d81 3px solid;
-  color: #000000;
+  background: var(--light);
+  border: 3px solid var(--primary-color);
+  color: var(--dark);
   border-radius: 4px;
   margin: 0;
 }
@@ -61,7 +61,7 @@ th {
   .ant-picker-panel
   .ant-picker-cell-selected
   .ant-picker-calendar-date {
-  background-color: #ffffff;
+  background-color: var(--light);
 }
 
 /* Цифра выбранного дня должна остаться черной*/
@@ -70,12 +70,12 @@ th {
   .ant-picker-cell-selected
   .ant-picker-calendar-date
   .ant-picker-calendar-date-value {
-  color: #000000;
+  color: var(--dark);
 }
 
 /* Анимация ячеек календаря при наведении */
 .ant-picker-cell-in-view:hover .ant-picker-calendar-date-value {
-  color: #000000 !important; /* При наведении на ячейку цифра остается черной */
+  color: var(--dark) !important; /* При наведении на ячейку цифра остается черной */
 }
 
 .ant-picker-cell-in-view:hover .ant-picker-cell-inner,
@@ -86,20 +86,20 @@ th {
   transform: scale(1.08);
   border-radius: 7px;
   z-index: 1000;
-  box-shadow: 2px 2px 2px 2px rgba(31, 28, 28, 0.5);
+  box-shadow: 2px 2px 2px 2px var(--dark-gray);
 }
 
 .ant-picker-cell-in-view:hover .ant-picker-cell-inner {
-  background-color: #ffffff !important;
+  background-color: var(--light) !important;
 }
 
 .ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
-  background-color: #d4d1d1 !important;
+  background-color: var(--light-gray) !important;
 }
 
 /* Шапка календаря */
 .calendar-header {
-    background-color: #ada1a1;
+    background-color:  var(--gray);
     justify-self: center;
     padding: 3px;
     margin: 2px;
@@ -119,7 +119,7 @@ th {
 }
 
 .calendar-header button {
-    border: #ada1a1 3px solid;
+    border: var(--gray) 3px solid;
     padding: 2px;
     height: 40px;
     margin: 0px;
@@ -127,7 +127,7 @@ th {
 }
 
 .calendar-header button:hover {
-    border: #ada1a1 3px solid;
+    border: var(--gray) 3px solid;
     padding: 2px;
     height: 40px;
     margin: 0px;
@@ -161,11 +161,11 @@ th {
 
 /* иконки */
 .calendar-icons {
-  color: rgb(0, 0, 0);
+    color: var(--dark) !important;
+    font-size: 25px !important;
 }
-
 .anticon-calendar {
-  color: rgb(0, 0, 0);
+  color: var(--dark);
   padding-right: 10px;
 }
 
@@ -180,20 +180,12 @@ th {
     content: "";
     border-width: 1px;
     border-style: solid;
-    border-color: #708d81;
+    border-color: var(--primary-color);
     border-image: none;
     border-radius: 2px;
 }
 
 .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner, .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner, .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
-    color: rgb(0, 0, 0);
-    background: rgb(255, 255, 255);
-}
-
-.ant-picker-cell-in-view:hover .ant-picker-cell-inner, .ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner, .ant-picker-cell-in-view:hover .ant-picker-cell-inner {
-    position: relative;
-    transform: scale(1);
-    z-index: 1000;
-    box-shadow: none;
-    color: #708d81;
+    color:  var(--dark);
+    background: var(--light);
 }
