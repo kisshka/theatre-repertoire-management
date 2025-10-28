@@ -2,14 +2,20 @@
 
 <PageTitle>Список спектаклей</PageTitle>
 
-<h1>Список спектаклей</h1>
+<PageHeader>
+        <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
+        <PageHeaderExtra>
+            <Button Type="ButtonType.Primary">Архив
+            <Icon Type="@IconType.Outline.Right" />
+            </Button>
+        </PageHeaderExtra>
+    </PageHeader>
+
 <div class="table-page-header">
     <Button Type="ButtonType.Primary">
         <Icon Type="@IconType.Outline.Plus" />
     </Button>
-
    <Search Placeholder="Введите название спектакля"  EnterButton="true"/>
-
     <Button Type="ButtonType.Default">
         <Icon Type="@IconType.Fill.Filter" />
     </Button>
@@ -22,7 +28,10 @@
     }
 </Table>
 
+
 @code {
+
+
     string[] columns = { "Name", "Duration", "Raiting"};
 
     Data[] data = new Data[100];

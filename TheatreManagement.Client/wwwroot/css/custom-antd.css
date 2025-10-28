@@ -22,13 +22,24 @@
   font-size: 18px;
   color: var(--light);
 }
+.ant-menu-item a:hover {
+    color: var(--secondary-color);
+}
+
+.ant-layout-sider .ant-menu-item:hover:not(.ant-menu-item-selected) .anticon svg  {
+    color: var(--secondary-color);
+}
 
 .ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
   background-color: var(--secondary-color);
   color: var(--light);
 }
 .ant-menu-item-selected a:hover {
-  color: var(--secondary-color);
+  color: var(--light);
+}
+
+.ant-menu-item-selected a:hover .anticon {
+  color: var(--light);
 }
 
 .anticon-menu-fold,
@@ -39,4 +50,9 @@
 
 .site-layout .site-layout-background {
   background: var(--light);
+}
+
+.ant-layout-sider .anticon svg {
+    color: var(--light);
+    font-size: 25px;
 }

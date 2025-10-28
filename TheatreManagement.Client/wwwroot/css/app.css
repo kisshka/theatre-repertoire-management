@@ -18,6 +18,27 @@ html, body {
 h1 {
     text-align: center;
 }
+
+/* Заголовки страниц */
+.ant-page-header-heading {
+width: 95%;
+display: flex;
+justify-content: space-between; 
+}
+
+.ant-page-header-heading-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 25px;
+    margin: 0;
+}
+
+.ant-page-header-heading-extra {
+    margin-left: auto;
+}
+
+
 .ant-btn-primary {
     color: var(--light);
     border-color:  var(--primary-color);

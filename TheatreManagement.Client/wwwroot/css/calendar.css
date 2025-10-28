@@ -8,13 +8,13 @@
 
 .ant-picker-cell {
   background-color: var(--light-gray);
-  border: solid 2px  var(--gray);
+  border: solid 2px var(--gray);
 }
 
 /* Дни текущего месяца */
 .ant-picker-cell-in-view {
   background: var(--light);
-  border: solid 2px  var(--gray);
+  border: solid 2px var(--gray);
   color: var(--dark);
 }
 
@@ -75,7 +75,9 @@ th {
 
 /* Анимация ячеек календаря при наведении */
 .ant-picker-cell-in-view:hover .ant-picker-calendar-date-value {
-  color: var(--dark) !important; /* При наведении на ячейку цифра остается черной */
+  color: var(
+    --dark
+  ) !important; /* При наведении на ячейку цифра остается черной */
 }
 
 .ant-picker-cell-in-view:hover .ant-picker-cell-inner,
@@ -97,43 +99,40 @@ th {
   background-color: var(--light-gray) !important;
 }
 
-/* Шапка календаря */
-.calendar-header {
-    background-color:  var(--gray);
-    justify-self: center;
-    padding: 3px;
-    margin: 2px;
-    border-radius: 7px;
+.ant-picker {
+  padding: 2px;
+  margin: 0px;
+  border-radius: 7px;
+  border: none;
+}
+.ant-picker-input input {
+  font-size: 20px;
+}
+.ant-picker-input input:hover {
+  cursor: pointer;
 }
 
-.ant-picker {
-    padding: 2px;
-    margin: 0px;
-    border-radius: 7px;
-}
-.ant-picker-input input{
-    font-size: 20px;
-}
-.ant-picker:hover, .ant-picker-focused {
-    border: none;
+.ant-picker:hover,
+.ant-picker-focused {
+  border: none;
+  cursor: pointer;
 }
 
 .calendar-header button {
-    border: var(--gray) 3px solid;
-    padding: 2px;
-    height: 40px;
-    margin: 0px;
-    border-radius: 7px;
+  border: var(--gray) 3px solid;
+  padding: 2px;
+  height: 40px;
+  margin: 0px;
+  border-radius: 7px;
 }
 
 .calendar-header button:hover {
-    border: var(--gray) 3px solid;
-    padding: 2px;
-    height: 40px;
-    margin: 0px;
-    border-radius: 7px;
+  border: var(--gray) 3px solid;
+  padding: 2px;
+  height: 40px;
+  margin: 0px;
+  border-radius: 7px;
 }
-
 
 /* Расположение текста в ячейках*/
 .events {
@@ -160,32 +159,66 @@ th {
 }
 
 /* иконки */
+.ant-picker-input .ant-picker-suffix .anticon,
 .calendar-icons {
-    color: var(--dark) !important;
-    font-size: 25px !important;
-}
-.anticon-calendar {
   color: var(--dark);
-  padding-right: 10px;
+  font-size: 20px;
 }
 
 /* DatePicker */
 .ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    bottom: 0px;
-    left: 0px;
-    z-index: 1;
-    content: "";
-    border-width: 1px;
-    border-style: solid;
-    border-color: var(--primary-color);
-    border-image: none;
-    border-radius: 2px;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  z-index: 1;
+  content: "";
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--primary-color);
+  border-image: none;
+  border-radius: 2px;
 }
 
-.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner, .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner, .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
-    color:  var(--dark);
-    background: var(--light);
+.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner,
+.ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
+.ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
+  color: var(--dark);
+  background: var(--light);
+}
+
+/* Шапка календаря вместе с кнопкой */
+.calendar-header-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.calendar-header {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 3px;
+    margin: 2px;
+    background-color: var(--light);
+    border-radius: 7px;
+}
+
+.calendar-header .ant-picker-input{
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 3px;
+    margin: 0;
+    border: 2px solid var(--gray);
+    border-radius: 7px;
+}
+
+.archive-btn {
+    margin-left: auto;
 }
