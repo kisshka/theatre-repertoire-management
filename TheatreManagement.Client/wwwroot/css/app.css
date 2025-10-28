@@ -2,23 +2,82 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-h1:focus {
-    outline: none;
+:root {
+  --primary-color: #708D81;
+  --secondary-color: #D4B655;
+  --dark-header: #001427;
+
+  --dark-gray:#615f5f; 
+  --gray: #ada1a1;
+  --light-gray: #d4d1d1;
+
+  --light: #ffffff;
+  --dark: #000000;
 }
 
-a, .btn-link {
-    color: #0071c1;
+h1 {
+    text-align: center;
 }
 
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+/* Заголовки страниц */
+.ant-page-header-heading {
+width: 95%;
+display: flex;
+justify-content: space-between; 
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.ant-page-header-heading-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 25px;
+    margin: 0;
 }
+
+.ant-page-header-heading-extra {
+    margin-left: auto;
+}
+
+
+.ant-btn-primary {
+    color: var(--light);
+    border-color:  var(--primary-color);
+    background:  var(--primary-color);
+    text-shadow: 0 -1px 0 var(--dark);
+    box-shadow: none;
+    border-radius: 5px;
+}
+.ant-btn-primary:hover, .ant-btn-primary:focus {
+    border-color:   var(--secondary-color);
+    background:   var(--secondary-color);
+    box-shadow: none;
+}
+
+.ant-btn-primary .anticon {
+    color: var(--light);
+    font-size: 15px !important;
+}
+
+.ant-btn-default{
+    color: var(--dark);
+    border-color:  var(--gray);
+    background:  var(--gray);
+    text-shadow: 0 -1px 0 var(--dark);
+    box-shadow: none;
+    border-radius: 5px;
+}
+.ant-btn-default:hover, .ant-btn-default:focus {
+    border-color:   var(--light-gray);
+    background:   var(--light-gray);
+    box-shadow: none;
+}
+.ant-btn-default .anticon {
+    color: var(--dark);
+    font-size: 15px !important;
+}
+
+
+/* ПОКА НЕ ТРОГАЙ */
 
 .content {
     padding-top: 1.1rem;

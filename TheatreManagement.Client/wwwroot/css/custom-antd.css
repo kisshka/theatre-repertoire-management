@@ -1,47 +1,58 @@
 .ant-menu {
-    background-color: #708D81;
-    width: 200px;
-    border: none;
+  background-color: var(--primary-color);
+  width: 200px;
+  border: none;
 }
 .sider-menu {
-    background-color: #708D81;
-    width: 100%;
+  background-color: var(--primary-color);
+  width: 100%;
 }
 
 .header {
-    background: #001427;
-    height: 50px;
+  background: var(--dark-header);
+  height: 50px;
 }
 
 .ant-layout-sider-children .ant-layout-header {
-    background: #708D81;
+  background: var(--primary-color);
 }
 
 .ant-menu-item a {
-    text-decoration: none;
-    font-size: 18px;
-    color: rgb(255, 255, 255);
+  text-decoration: none;
+  font-size: 18px;
+  color: var(--light);
+}
+.ant-menu-item a:hover {
+    color: var(--secondary-color);
 }
 
-.ant-menu:not(.ant-menu-horizontal) 
-.ant-menu-item-selected {
-        background-color: #D4B655;
-        color: #fff;
+.ant-layout-sider .ant-menu-item:hover:not(.ant-menu-item-selected) .anticon svg  {
+    color: var(--secondary-color);
+}
+
+.ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
+  background-color: var(--secondary-color);
+  color: var(--light);
 }
 .ant-menu-item-selected a:hover {
-        color: #D4B655;
+  color: var(--light);
 }
 
-.anticon {
-    color: rgb(255, 255, 255);
-    font-size: 25px !important;
+.ant-menu-item-selected a:hover .anticon {
+  color: var(--light);
 }
 
-.anticon-menu-fold
-.anticon-menu-unfold
- {
-        font-size: 40px;
+.anticon-menu-fold,
+.anticon-menu-unfold {
+  color: var(--light);
+  font-size: 25px !important;
 }
-    .site-layout .site-layout-background {
-        background: #fff;
-    }
+
+.site-layout .site-layout-background {
+  background: var(--light);
+}
+
+.ant-layout-sider .anticon svg {
+    color: var(--light);
+    font-size: 25px;
+}

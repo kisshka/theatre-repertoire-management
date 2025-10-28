@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
 <Header class="header">
     @if (collapsed)
     {
@@ -12,58 +14,91 @@
 <Layout>
 
     <Sider class="sider-menu" @bind-Collapsed=@collapsed NoTrigger>
-        <Menu Theme="MenuTheme.Light" Mode="MenuMode.Vertical" DefaultSelectedKeys=@(new[] { "2" })>
+        <Menu Theme="MenuTheme.Light" 
+              Mode="MenuMode.Vertical" 
+              SelectedKeys=@selectedKeys
+              OnMenuItemClicked="OnMenuItemClicked">
 
-            <MenuItem Key="1">
-            <Icon Type="@IconType.Outline.User" />
-            <span>
-                <NavLink href="plays">
-                    Спектакли
-                </NavLink>
-            </span>
+            <MenuItem Key="plays">
+                <Icon Type="@IconType.Outline.Read" />
+                <span>
+                    <NavLink href="plays">
+                        Спектакли
+                    </NavLink>
+                </span>
             </MenuItem>
 
-            <MenuItem Key="2">
-            <Icon Type="@IconType.Outline.User" />
-            <span>
-                <NavLink href="events">
-                    Мероприятия
-                </NavLink>
-            </span>
+            <MenuItem Key="events">
+                <Icon Type="@IconType.Outline.Calendar" />
+                <span>
+                    <NavLink href="events">
+                        Мероприятия
+                    </NavLink>
+                </span>
             </MenuItem>
 
-            <MenuItem Key="3">
-            <Icon Type="@IconType.Outline.User" />
-            <span>
-                <NavLink href="employees">
-                    Сотрудники
-                </NavLink>
-            </span>
+            <MenuItem Key="employees">
+                <Icon Type="@IconType.Outline.Contacts" />
+                <span>
+                    <NavLink href="employees">
+                        Сотрудники
+                    </NavLink>
+                </span>
             </MenuItem>
 
-            <MenuItem Key="4">
-            <Icon Type="@IconType.Outline.User" />
-            <span>
-                <NavLink href="users">
-                    Пользователи
-                </NavLink>
-            </span>
+            <MenuItem Key="users">
+                <Icon Type="@IconType.Outline.Team" />
+                <span>
+                    <NavLink href="users">
+                        Пользователи
+                    </NavLink>
+                </span>
             </MenuItem>
 
         </Menu>
     </Sider>
 
     <Layout Class="site-layout">
-
         <Content Class="site-layout-background" Style="margin: 24px 16px;padding: 24px;min-height: 280px;">
             @Body
         </Content>
     </Layout>
 </Layout>
 
-
 @code {
     bool collapsed;
+    string[] selectedKeys = new string[0];
+
+    protected override void OnInitialized()
+    {
+        UpdateSelectedKeys();
+    }
+    protected override void OnParametersSet()
+    {
+        UpdateSelectedKeys();
+    }
+
+    private void UpdateSelectedKeys()
+    {
+        var currentUri = NavigationManager.Uri;
+        var key = GetKeyFromUri(currentUri);
+        selectedKeys = new[] { key };
+    }
+
+    private string GetKeyFromUri(string uri)
+    {
+        if (uri.Contains("/plays")) return "plays";
+        if (uri.Contains("/events")) return "events";
+        if (uri.Contains("/employees")) return "employees";
+        if (uri.Contains("/users")) return "users";
+        
+        return "events";
+    }
+
+    private void OnMenuItemClicked(MenuItem menuItem)
+    {
+        selectedKeys = new[] { menuItem.Key };
+    }
 
     void toggle()
     {
@@ -74,5 +109,4 @@
     {
         Console.WriteLine($"Collapsed: {isCollapsed}");
     }
-
 }

@@ -1,0 +1,83 @@
+
+.table-page-header {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    margin: 5px;
+}
+
+.ant-input-group-wrapper {
+    width: 40%;
+    text-align: start;
+    vertical-align: top;
+    align-content: center;
+}
+
+.ant-table-thead > tr > th {
+    position: relative;
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 700;
+    text-align: center;
+    background: var(--light-gray);
+    border-radius: 0px;
+    margin: 2px;
+    height: 40px;
+    padding: 4px;
+    padding-right: 40px;
+    line-height: 1.2;
+}
+.ant-table {
+    width: 80%;
+    justify-content: center;
+    margin: 0 auto;
+    border: 6px solid var(--light-gray);
+    border-radius: 7px;
+    font-size: 16px;
+}
+.ant-table-row  {
+    background: var(--light);
+    border: 4px solid var(--light-gray) !important;
+    border-radius: 7px;
+    text-align: center;
+}
+.ant-table-row > td {
+    background: var(--light);
+    border-bottom: 4px solid var(--light-gray) !important;
+    text-align: center;
+}
+.ant-table-pagination {
+    justify-content: center; 
+}
+
+.ant-pagination-item,
+.ant-pagination-prev .ant-pagination-item-link,
+.ant-pagination-next .ant-pagination-item-link,
+.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+    background-color: var(--gray);
+    border-color: var(--light-gray);
+    border-radius: 5px;
+}
+
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector {
+    border-color: var(--light-gray);
+    border-right-width: 1px;
+     background-color: var(--light-gray);
+}
+.ant-pagination-item-active a
+{
+   background-color: var(--primary-color);
+    color: var(--dark);
+    border-color: var(--primary-color);
+    border-radius: 5px;
+}
+.ant-pagination-item-active:hover,
+.ant-pagination-item:hover {
+    background-color: var(--light-gray);
+    border-color: var(--light-gray);
+}
+.ant-pagination-prev .ant-pagination-item-link:hover,
+.ant-pagination-next .ant-pagination-item-link:hover {
+    background-color: var(--light-gray);
+    border-color: var(--light-gray);
+}

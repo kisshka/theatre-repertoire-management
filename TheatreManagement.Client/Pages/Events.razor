@@ -2,11 +2,13 @@
 @page "/"
 
 <PageTitle>Мероприятия</PageTitle>
+
+
 <Calendar   Value="currentDate"
             OnChange="OnValueChanged"
             DateCellRender="DateCellRender"
             HeaderRender="CustomHead" />
-
+            
 @code
 {
     private DateTime currentDate = DateTime.Now;
@@ -26,15 +28,15 @@
             case 8:
                 listData = new List<ListData>
                 {
-                new ListData { type = BadgeStatus.Warning, content = "This is warning event." },
-                new ListData { type = BadgeStatus.Success, content = "This is usual event." },
+                new ListData { type = BadgeStatus.Warning, content = "Отмененное событие" },
+                new ListData { type = BadgeStatus.Success, content = "Стационарное событие" },
                 };
                 break;
             case 15:
                 listData = new List<ListData> {
-                new ListData { type = BadgeStatus.Warning, content = "This is warning event" },
-                new ListData { type = BadgeStatus.Success, content = "This is very long usual event。。...." },
-                new ListData { type = BadgeStatus.Error, content = "This is error event 1." },
+                new ListData { type = BadgeStatus.Warning, content = "Гастрольное событие" },
+                new ListData { type = BadgeStatus.Success, content = "Стационарное событие с очень длииииииииинным описанием" },
+                new ListData { type = BadgeStatus.Error, content = "Отмененное событие" },
                 };
                 break;
         }
@@ -44,24 +46,31 @@
 @* Шапка календаря *@
     private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
     {
-        return @<Template>
-        <div class="calendar-header">
-            <Button onclick="PreviusMonth">
-                <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
-            </Button>
+return @<Template>
+<div class="calendar-header-container">
+    <div class="calendar-header">
+        <Button onclick="PreviusMonth">
+            <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
+        </Button>
 
-            <DatePicker ValueChanged="OnValueChanged"
-                        AllowClear="false" 
-                        Value="currentDate"
-                        ShowToday="true"
-                        TValue="DateTime"
-                        Picker="DatePickerType.Month" />
+        <DatePicker ValueChanged="OnValueChanged"
+                    AllowClear="false" 
+                    Value="currentDate"
+                    ShowToday="true"
+                    TValue="DateTime"
+                    Picker="DatePickerType.Month" />
 
-            <Button onclick="NextMonth">
-                <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
-            </Button>
-        </div>
-        </Template>;
+        <Button onclick="NextMonth">
+            <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
+        </Button>
+    </div>
+
+    <Button Type="ButtonType.Primary" Class="archive-btn">
+        Архив
+        <Icon Type="@IconType.Outline.Right" />
+    </Button>
+</div>
+    </Template>;
     }
 
 @* Обработчики кнопок шапки*@
