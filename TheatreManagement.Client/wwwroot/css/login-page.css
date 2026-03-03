@@ -1,0 +1,37 @@
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.login-page .login-header {
+  margin: 20px;
+}
+
+.login-page .ant-spin-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: auto;
+  margin-bottom: 100px;
+  background-color: var(--light);
+  padding: 15px 30px;
+}
+
+.login-page .ant-form-item-required {
+  white-space: nowrap;
+}
+
+.login-page .ant-form-item-label {
+  overflow:visible;
+}
+
+.login-page .ant-form-item-control-input-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 250px;
+}

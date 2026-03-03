@@ -56,3 +56,5 @@ nunit-*.xml
 # Мое
 .vs
 .github
+/TheatreManagement.Server/Data/Theatre.db-shm
+/TheatreManagement.Server/Data/Theatre.db-wal
