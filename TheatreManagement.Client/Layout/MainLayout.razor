@@ -1,4 +1,5 @@
-﻿@inherits LayoutComponentBase
+﻿@using TheatreManagement.Client.Pages
+@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 
 <Header class="header">
@@ -12,6 +13,10 @@
     }
 </Header>
 <Layout>
+
+    <AuthorizeView>
+        <Authorized>
+
 
     <Sider class="sider-menu" @bind-Collapsed=@collapsed NoTrigger>
         <Menu Theme="MenuTheme.Light" 
@@ -27,7 +32,6 @@
                     </NavLink>
                 </span>
             </MenuItem>
-
             <MenuItem Key="events">
                 <Icon Type="@IconType.Outline.Calendar" />
                 <span>
@@ -36,7 +40,6 @@
                     </NavLink>
                 </span>
             </MenuItem>
-
             <MenuItem Key="employees">
                 <Icon Type="@IconType.Outline.Contacts" />
                 <span>
@@ -45,7 +48,6 @@
                     </NavLink>
                 </span>
             </MenuItem>
-
             <MenuItem Key="users">
                 <Icon Type="@IconType.Outline.Team" />
                 <span>
@@ -54,7 +56,6 @@
                     </NavLink>
                 </span>
             </MenuItem>
-
         </Menu>
     </Sider>
 
@@ -63,6 +64,13 @@
             @Body
         </Content>
     </Layout>
+
+        </Authorized>
+        <NotAuthorized>
+          <Login />
+        </NotAuthorized>
+    </AuthorizeView>
+
 </Layout>
 
 @code {

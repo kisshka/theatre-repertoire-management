@@ -1,0 +1,92 @@
+﻿@using System.ComponentModel.DataAnnotations;
+@using System.Text.Json;
+@using System.ComponentModel
+@using TheatreManagement.Client.Services
+
+@page "/login"
+
+<PageTitle>Вход</PageTitle>
+
+<div class="login-page">
+
+
+    <Form Model="@model"
+    Layout="FormLayout.Vertical"
+    OnFinish="OnFinish"
+    OnFinishFailed="OnFinishFailed">
+
+        <PageHeader Class="login-header">
+            <PageHeaderTitle>Вход в систему</PageHeaderTitle>
+        </PageHeader>
+
+        <div>
+            @if(error.Length > 0)
+            {
+                <strong>@error</strong>
+            }
+
+        </div>
+
+        <FormItem Label="Введите e-mail">
+            <Input @bind-Value="@context.Username" />
+        </FormItem>
+        <FormItem Label="Введите пароль">
+            <InputPassword @bind-Value="@context.Password" />
+        </FormItem>
+
+        <FormItem Label="">
+            <Checkbox @bind-Value="context.RememberMe">Запомнить меня</Checkbox>
+        </FormItem>
+        <FormItem>
+            <Button Type="ButtonType.Primary" HtmlType="submit" OnClick="LoginAsync">
+                Войти
+            </Button>
+        </FormItem>
+    </Form>
+</div>
+
+@inject AuthenticationStateProvider provider
+@inject NavigationManager navManager
+
+@code
+{
+
+    public class Model
+    {
+        [Required]
+        public string Username { get; set; }
+        [Required]
+        public string Password { get; set; }
+        public bool RememberMe { get; set; } = true;
+    }
+
+    public string error = "";
+
+    private Model model = new Model();
+
+    private async Task LoginAsync()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        var formResult = await authStateProvider.LoginAsync(model.Username, model.Password);
+       
+        if (formResult.Succeeded)
+        {
+            navManager.NavigateTo("/");
+        }
+        else
+        {
+            error = formResult.Errors[0];
+        }
+
+    }
+
+    private void OnFinish(EditContext editContext)
+    {
+        Console.WriteLine($"Success:{JsonSerializer.Serialize(model)}");
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Console.WriteLine($"Failed:{JsonSerializer.Serialize(model)}");
+    }
+}

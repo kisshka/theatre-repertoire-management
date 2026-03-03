@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Новый профиль",
+    "Projects": [
+      {
+        "Path": "TheatreManagement.Server\\TheatreManagement.Server.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "TheatreManagement.Client\\TheatreManagement.Client.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

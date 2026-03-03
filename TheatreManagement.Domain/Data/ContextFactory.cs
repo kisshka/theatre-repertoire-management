@@ -15,7 +15,7 @@ namespace TheatreManagement.Domain.Data
     {
         public DataContext CreateDbContext(string[] args)
         {
-            // Правильно определяем путь к корню решения или Server проекту
+            // путь к  Server проекту
             var basePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "TheatreManagement.Server");
 
             var builder = new ConfigurationBuilder()
@@ -24,7 +24,6 @@ namespace TheatreManagement.Domain.Data
 
             var config = builder.Build();
 
-            // Используем правильное имя connection string
             string connectionString = config.GetConnectionString("DefaultConnection");
 
 

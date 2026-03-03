@@ -43,7 +43,7 @@ justify-content: space-between;
     color: var(--light);
     border-color:  var(--primary-color);
     background:  var(--primary-color);
-    text-shadow: 0 -1px 0 var(--dark);
+    text-shadow: none;
     box-shadow: none;
     border-radius: 5px;
 }
