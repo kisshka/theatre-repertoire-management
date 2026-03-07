@@ -1,17 +1,27 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+﻿using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components.Authorization;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json.Nodes;
+
 
 namespace TheatreManagement.Client.Services
 {
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
         private readonly HttpClient httpClient;
-        public CustomAuthStateProvider(HttpClient httpClient)
+        private readonly ISyncLocalStorageService localStorage;
+        public CustomAuthStateProvider(HttpClient httpClient, ISyncLocalStorageService localStorage)
         {
             this.httpClient = httpClient;
+            this.localStorage = localStorage;
+
+            var accessToken = localStorage.GetItem<string>("accessToken");
+            if (accessToken != null)
+            {
+                this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
         }
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -42,7 +52,7 @@ namespace TheatreManagement.Client.Services
 
             catch (Exception ex)
             {
-
+                
             }
 
 
@@ -62,6 +72,9 @@ namespace TheatreManagement.Client.Services
                     var accessToken = jsonResponse?["accessToken"]?.ToString();
                     var refreshToken = jsonResponse?["refreshToken"]?.ToString();
 
+                    localStorage.SetItem("accessToken", accessToken);
+                    localStorage.SetItem("refreshToken", refreshToken);
+
                     httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                     NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
@@ -77,7 +90,16 @@ namespace TheatreManagement.Client.Services
 
             return new FormResult {Succeeded = false, Errors = ["Ошибка подключения"] };
         }
+
+            public void Logout()
+        {
+            localStorage.RemoveItem("accessToken");
+            localStorage.RemoveItem("refreshToken");
+            httpClient.DefaultRequestHeaders.Authorization = null;
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
     }
+
 
     public class FormResult
     {

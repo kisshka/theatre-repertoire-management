@@ -22,7 +22,9 @@
         <div>
             @if(error.Length > 0)
             {
-                <strong>@error</strong>
+                <Alert Type="AlertType.Error"
+                    Message="@error"
+                    Banner />
             }
 
         </div>

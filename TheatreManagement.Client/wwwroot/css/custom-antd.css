@@ -1,3 +1,35 @@
+/* Меню пользователя */
+.user-dropdown {
+    float: right;
+    display: block;
+    color: var(--light-gray);
+    z-index: 1000;
+    position: relative;
+    margin-left: auto;
+    line-height: 60px;
+}
+
+.user-dropdown a,
+.ant-dropdown-link .ant-dropdown-trigger a,
+.antblazor-overlay-trigger-wrapper a,
+.user-dropdown .ant-dropdown-link a{
+    text-decoration: none !important;
+    color: var(--light-gray) !important;
+    display: inline-block;
+    padding: 0 10px;
+    line-height: 20px; 
+    cursor: pointer;
+}
+.ant-dropdown-menu {
+  width: 100px;
+  margin: 0;
+}
+.ant-dropdown-menu a{
+    text-decoration: none;
+    color: var(--dark);
+}
+
+/* боковое меню и шапка */
 .ant-menu {
   background-color: var(--primary-color);
   width: 200px;
@@ -9,12 +41,15 @@
 }
 
 .header {
-  background: var(--dark-header);
-  height: 50px;
+    background-color: var(--dark-header);
+    height: 50px;
+    display: inline-block;
+    width: 100%;
+    padding: 0 50px;
 }
 
 .ant-layout-sider-children .ant-layout-header {
-  background: var(--primary-color);
+  background-color: var(--primary-color);
 }
 
 .ant-menu-item a {

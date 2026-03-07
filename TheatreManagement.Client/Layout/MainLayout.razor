@@ -1,22 +1,55 @@
 ﻿@using TheatreManagement.Client.Pages
+@using TheatreManagement.Client.Services
 @inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 
-<Header class="header">
-    @if (collapsed)
-    {
-        <Icon Type="@IconType.Outline.MenuUnfold" Class="trigger" OnClick="toggle" />
-    }
-    else
-    {
-        <Icon Type="@IconType.Outline.MenuFold" Class="trigger" OnClick="toggle" />
-    }
-</Header>
+<AuthorizeView>
+    <Authorized>
+        <Header class="header">
+                    @if (collapsed)
+                    {
+                        <Icon Type="@IconType.Outline.MenuUnfold" Class="trigger" OnClick="toggle" />
+                    }
+                    else
+                    {
+                        <Icon Type="@IconType.Outline.MenuFold" Class="trigger" OnClick="toggle" />
+                    }
+
+
+            @* Отображение пользователя и действий с ним*@
+        <span class="user-dropdown">
+            <Dropdown Trigger="@(new Trigger[] { Trigger.Click })"
+                                  Placement="Placement.BottomRight">
+                <Overlay>
+                    <Menu>
+                        <MenuItem>
+                            <a target="_blank" rel="noopener noreferrer" href="http://www.alipay.com/">
+                                Профиль
+                            </a>
+                        </MenuItem>
+                        <MenuItem>
+                            <a target="_blank" rel="noopener noreferrer" href="#" @onclick="Logout">
+                                Выйти
+                            </a>
+                        </MenuItem>
+                    </Menu>
+                </Overlay>
+                <ChildContent>
+                    <a class="ant-dropdown-link" @onclick:preventDefault>
+                        Фамилия Имя Отчество <Icon Type="@IconType.Outline.Down" />
+                    </a>
+                </ChildContent>
+            </Dropdown>
+            </span>
+        </Header>
+    </Authorized>
+</AuthorizeView>
+
+@* Основной контент *@
 <Layout>
 
     <AuthorizeView>
         <Authorized>
-
 
     <Sider class="sider-menu" @bind-Collapsed=@collapsed NoTrigger>
         <Menu Theme="MenuTheme.Light" 
@@ -73,7 +106,16 @@
 
 </Layout>
 
+@inject AuthenticationStateProvider provider
+@inject NavigationManager navManager
 @code {
+
+    private void Logout(MouseEventArgs e) {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        authStateProvider.Logout();
+        navManager.NavigateTo("/");
+    }
+
     bool collapsed;
     string[] selectedKeys = new string[0];
 
