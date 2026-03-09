@@ -4,23 +4,24 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json.Nodes;
+using TheatreManagement.Shared.DTOs;
 
 
 namespace TheatreManagement.Client.Services
 {
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
-        private readonly HttpClient httpClient;
-        private readonly ISyncLocalStorageService localStorage;
+        private readonly HttpClient _httpClient;
+        private readonly ISyncLocalStorageService _localStorage;
         public CustomAuthStateProvider(HttpClient httpClient, ISyncLocalStorageService localStorage)
         {
-            this.httpClient = httpClient;
-            this.localStorage = localStorage;
+            this._httpClient = httpClient;
+            this._localStorage = localStorage;
 
             var accessToken = localStorage.GetItem<string>("accessToken");
             if (accessToken != null)
             {
-                this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                this._httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             }
         }
 
@@ -30,7 +31,7 @@ namespace TheatreManagement.Client.Services
 
             try
             {
-                var response = await httpClient.GetAsync("manage/info");
+                var response = await _httpClient.GetAsync("manage/info");
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -50,11 +51,9 @@ namespace TheatreManagement.Client.Services
                 }
             }
 
-            catch (Exception ex)
+            catch (Exception)
             {
-                
             }
-
 
             return new AuthenticationState(user);
         }
@@ -63,7 +62,7 @@ namespace TheatreManagement.Client.Services
         {
             try
             {
-                var response = await httpClient.PostAsJsonAsync("login", new {email, password});
+                var response = await _httpClient.PostAsJsonAsync("login", new {email, password});
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -72,10 +71,10 @@ namespace TheatreManagement.Client.Services
                     var accessToken = jsonResponse?["accessToken"]?.ToString();
                     var refreshToken = jsonResponse?["refreshToken"]?.ToString();
 
-                    localStorage.SetItem("accessToken", accessToken);
-                    localStorage.SetItem("refreshToken", refreshToken);
+                    _localStorage.SetItem("accessToken", accessToken);
+                    _localStorage.SetItem("refreshToken", refreshToken);
 
-                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                     NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
 
@@ -91,14 +90,45 @@ namespace TheatreManagement.Client.Services
             return new FormResult {Succeeded = false, Errors = ["Ошибка подключения"] };
         }
 
-            public void Logout()
+        public void Logout()
         {
-            localStorage.RemoveItem("accessToken");
-            localStorage.RemoveItem("refreshToken");
-            httpClient.DefaultRequestHeaders.Authorization = null;
+            _localStorage.RemoveItem("accessToken");
+            _localStorage.RemoveItem("refreshToken");
+            _httpClient.DefaultRequestHeaders.Authorization = null;
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
+
+        public async Task<FormResult> RegisterAsync (RegisterModel registerModel)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Account/register", registerModel);
+                return new FormResult {Succeeded = true};
+            }
+            catch { }
+
+            return new FormResult {Succeeded = false, Errors = ["Ошибка подключения"] };
+        }
+
+        public async Task<UserModel> GetCurrentUserAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("api/Account/current");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<UserModel>();
+                }
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
+
 
 
     public class FormResult

@@ -1,4 +1,6 @@
 @page "/users"
+@using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Client.Services
 
 
 <PageTitle>Список пользователей</PageTitle>
@@ -32,10 +34,11 @@
     }
 </Table>
 
+@inject AuthenticationStateProvider provider
 @inject ModalService ModalService;
 @inject NavigationManager navManager
 @code {
-@* Разбираюсь с модальным окном *@
+@*Модальное окно*@
 
     RenderFragment FormTemplate()
     {
@@ -44,39 +47,45 @@
               OnFinish="OnFinish"
               OnFinishFailed="OnFinishFailed"
               @ref="@_form">
-            @* <FormItem Label="Введите фамилию">
-                <Input @bind-Value="@context.Username" />
-            </FormItem>
-            <FormItem Label="Введите имя">
-                <Input @bind-Value="@context.Password" />
-            </FormItem>
-            <FormItem Label="Введите отчество">
-                <InputPassword />
-            </FormItem> *@
-            <FormItem Label="Введите e-mail">
-                <Input @bind-Value="@context.Username" />
-            </FormItem>
-            <FormItem Label="Введите пароль">
+
+            <div>
+            @if(error.Length > 0)
+            {
+                <Alert Type="AlertType.Error"
+                    Message="@error"
+                    Banner />
+            }
+            </div>
+
+        <FormItem Label="Введите фамилию">
+            <Input @bind-Value="@context.Surname" />
+        </FormItem>
+        <FormItem Label="Введите имя">
+            <Input @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem Label="Введите отчество">
+            <Input @bind-Value="@context.FatherName" />
+        </FormItem>
+        <FormItem Label="Введите e-mail">
+            <Input @bind-Value="@context.Email" />
+        </FormItem>
+        <FormItem Label="Введите пароль">
                 <InputPassword @bind-Value="@context.Password"/>
-            </FormItem>
+        </FormItem>
+        <FormItem Label="Подтвердите пароль">
+                <InputPassword @bind-Value="@context.ConfirmPassword"/>
+        </FormItem>
         </Form>
     ;
     }
 
     bool _visible = false;
     bool _submitting = false;
-    private Form<Model> _form;
+    private Form<RegisterModel> _form;
 
-    private Model model = new Model();
+    private RegisterModel model = new();
 
-    public class Model
-    {
-        [Required]
-        public string Username { get; set; }
-        [Required]
-        public string Password { get; set; }
-        public bool RememberMe { get; set; } = true;
-    }
+    public string error = "";
 
     private async Task HandleOk(MouseEventArgs e)
     {
@@ -125,6 +134,7 @@
                 }
 
                 _form.Submit();
+                await RegisterAsync();
 
                 await modalRef.CloseAsync();
 
@@ -141,6 +151,19 @@
             },
         });
     }
+@* Регистрация *@
+private async Task RegisterAsync() {
+
+    var authStateProvider = (CustomAuthStateProvider)provider;
+
+    var response = await authStateProvider.RegisterAsync(model);
+    if (response.Succeeded) {
+        _form.Reset();
+    }
+    else {
+        error = "Что-то пошло не так";
+        }
+}
 
 @* Временные данные для заполнения таблиц *@
     string[] columns = { "FullName", "Role"};

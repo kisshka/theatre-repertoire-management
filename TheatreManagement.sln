@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheatreManagement.Domain", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheatreManagement.Client", "TheatreManagement.Client\TheatreManagement.Client.csproj", "{AED802B3-05C2-97BE-89CC-50BFD51ECABB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheatreManagement.Shared", "TheatreManagement.Shared\TheatreManagement.Shared.csproj", "{C807337A-D9EB-43E6-94FD-CCF887342A3B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{AED802B3-05C2-97BE-89CC-50BFD51ECABB}.Release|x64.Build.0 = Release|Any CPU
 		{AED802B3-05C2-97BE-89CC-50BFD51ECABB}.Release|x86.ActiveCfg = Release|Any CPU
 		{AED802B3-05C2-97BE-89CC-50BFD51ECABB}.Release|x86.Build.0 = Release|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Debug|x64.Build.0 = Debug|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Debug|x86.Build.0 = Debug|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Release|x64.ActiveCfg = Release|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Release|x64.Build.0 = Release|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Release|x86.ActiveCfg = Release|Any CPU
+		{C807337A-D9EB-43E6-94FD-CCF887342A3B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,40 +6,40 @@
 <AuthorizeView>
     <Authorized>
         <Header class="header">
-                    @if (collapsed)
-                    {
-                        <Icon Type="@IconType.Outline.MenuUnfold" Class="trigger" OnClick="toggle" />
-                    }
-                    else
-                    {
-                        <Icon Type="@IconType.Outline.MenuFold" Class="trigger" OnClick="toggle" />
-                    }
+            @if (collapsed)
+            {
+                <Icon Type="@IconType.Outline.MenuUnfold" Class="trigger" OnClick="toggle" />
+            }
+            else
+            {
+                <Icon Type="@IconType.Outline.MenuFold" Class="trigger" OnClick="toggle" />
+            }
 
 
             @* Отображение пользователя и действий с ним*@
-        <span class="user-dropdown">
-            <Dropdown Trigger="@(new Trigger[] { Trigger.Click })"
-                                  Placement="Placement.BottomRight">
-                <Overlay>
-                    <Menu>
-                        <MenuItem>
-                            <a target="_blank" rel="noopener noreferrer" href="http://www.alipay.com/">
-                                Профиль
-                            </a>
-                        </MenuItem>
-                        <MenuItem>
-                            <a target="_blank" rel="noopener noreferrer" href="#" @onclick="Logout">
-                                Выйти
-                            </a>
-                        </MenuItem>
-                    </Menu>
-                </Overlay>
-                <ChildContent>
-                    <a class="ant-dropdown-link" @onclick:preventDefault>
-                        Фамилия Имя Отчество <Icon Type="@IconType.Outline.Down" />
-                    </a>
-                </ChildContent>
-            </Dropdown>
+            <span class="user-dropdown">
+                <Dropdown Trigger="@(new Trigger[] { Trigger.Click })"
+                Placement="Placement.BottomRight">
+                    <Overlay>
+                        <Menu>
+                            <MenuItem>
+                                <a target="_blank" rel="noopener noreferrer" href="http://www.alipay.com/">
+                                    Профиль
+                                </a>
+                            </MenuItem>
+                            <MenuItem>
+                                <a target="_blank" rel="noopener noreferrer" href="#" @onclick="Logout">
+                                    Выйти
+                                </a>
+                            </MenuItem>
+                        </Menu>
+                    </Overlay>
+                    <ChildContent>
+                        <a class="ant-dropdown-link" @onclick:preventDefault>
+                            @_fio <Icon Type="@IconType.Outline.Down" />
+                        </a>
+                    </ChildContent>
+                </Dropdown>
             </span>
         </Header>
     </Authorized>
@@ -51,56 +51,56 @@
     <AuthorizeView>
         <Authorized>
 
-    <Sider class="sider-menu" @bind-Collapsed=@collapsed NoTrigger>
-        <Menu Theme="MenuTheme.Light" 
-              Mode="MenuMode.Vertical" 
-              SelectedKeys=@selectedKeys
-              OnMenuItemClicked="OnMenuItemClicked">
+            <Sider class="sider-menu" @bind-Collapsed=@collapsed NoTrigger>
+                <Menu Theme="MenuTheme.Light" 
+                Mode="MenuMode.Vertical" 
+                SelectedKeys=@selectedKeys
+                OnMenuItemClicked="OnMenuItemClicked">
 
-            <MenuItem Key="plays">
-                <Icon Type="@IconType.Outline.Read" />
-                <span>
-                    <NavLink href="plays">
-                        Спектакли
-                    </NavLink>
-                </span>
-            </MenuItem>
-            <MenuItem Key="events">
-                <Icon Type="@IconType.Outline.Calendar" />
-                <span>
-                    <NavLink href="events">
-                        Мероприятия
-                    </NavLink>
-                </span>
-            </MenuItem>
-            <MenuItem Key="employees">
-                <Icon Type="@IconType.Outline.Contacts" />
-                <span>
-                    <NavLink href="employees">
-                        Сотрудники
-                    </NavLink>
-                </span>
-            </MenuItem>
-            <MenuItem Key="users">
-                <Icon Type="@IconType.Outline.Team" />
-                <span>
-                    <NavLink href="users">
-                        Пользователи
-                    </NavLink>
-                </span>
-            </MenuItem>
-        </Menu>
-    </Sider>
+                    <MenuItem Key="plays">
+                        <Icon Type="@IconType.Outline.Read" />
+                        <span>
+                            <NavLink href="plays">
+                                Спектакли
+                            </NavLink>
+                        </span>
+                    </MenuItem>
+                    <MenuItem Key="events">
+                        <Icon Type="@IconType.Outline.Calendar" />
+                        <span>
+                            <NavLink href="events">
+                                Мероприятия
+                            </NavLink>
+                        </span>
+                    </MenuItem>
+                    <MenuItem Key="employees">
+                        <Icon Type="@IconType.Outline.Contacts" />
+                        <span>
+                            <NavLink href="employees">
+                                Сотрудники
+                            </NavLink>
+                        </span>
+                    </MenuItem>
+                    <MenuItem Key="users">
+                        <Icon Type="@IconType.Outline.Team" />
+                        <span>
+                            <NavLink href="users">
+                                Пользователи
+                            </NavLink>
+                        </span>
+                    </MenuItem>
+                </Menu>
+            </Sider>
 
-    <Layout Class="site-layout">
-        <Content Class="site-layout-background" Style="margin: 24px 16px;padding: 24px;min-height: 280px;">
-            @Body
-        </Content>
-    </Layout>
+            <Layout Class="site-layout">
+                <Content Class="site-layout-background" Style="margin: 24px 16px;padding: 24px;min-height: 280px;">
+                    @Body
+                </Content>
+            </Layout>
 
         </Authorized>
         <NotAuthorized>
-          <Login />
+            <Login />
         </NotAuthorized>
     </AuthorizeView>
 
@@ -109,6 +109,15 @@
 @inject AuthenticationStateProvider provider
 @inject NavigationManager navManager
 @code {
+    private UserModel? _user;
+    private string? _fio;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ((CustomAuthStateProvider)provider).AuthenticationStateChanged += OnAuthenticationStateChanged;
+        await LoadUserData();
+        UpdateSelectedKeys();
+    }
 
     private void Logout(MouseEventArgs e) {
         var authStateProvider = (CustomAuthStateProvider)provider;
@@ -116,13 +125,42 @@
         navManager.NavigateTo("/");
     }
 
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadUserData();
+            StateHasChanged();
+        });
+    }
+
+    private async Task LoadUserData()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        _user = await authStateProvider.GetCurrentUserAsync();
+
+        if (_user != null)
+        {
+            _fio = $"{_user.Surname} {_user.Name} {_user.FatherName}".Trim();
+        }
+        else
+        {
+            _fio = null;
+        }
+    }
+
+    public void Dispose()
+    {
+        // Важно отписаться, чтобы не было утечки памяти
+        ((CustomAuthStateProvider)provider).AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+
+    // Работа меню
     bool collapsed;
     string[] selectedKeys = new string[0];
 
-    protected override void OnInitialized()
-    {
-        UpdateSelectedKeys();
-    }
+
     protected override void OnParametersSet()
     {
         UpdateSelectedKeys();
