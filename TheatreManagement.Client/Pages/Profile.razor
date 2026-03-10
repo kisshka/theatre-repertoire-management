@@ -1,0 +1,65 @@
+﻿@page "/profile"
+
+<PageTitle>Профиль</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Мой профиль</PageHeaderTitle>
+</PageHeader>
+
+<div class="card-page">
+
+    <Card>
+        <Form Model="@_user"
+        Layout="FormLayout.Vertical"
+        OnFinish="OnFinish"
+        OnFinishFailed="OnFinishFailed"
+        Class="profile-form">
+
+            <FormItem Label="Фамилия" >
+                <Input @bind-Value="@context.Surname" />
+            </FormItem>
+            <FormItem Label="Имя">
+                <Input @bind-Value="@context.Name" />
+            </FormItem>
+            <FormItem Label="Отчество">
+                <Input @bind-Value="@context.FatherName" />
+            </FormItem>
+            <FormItem Label="E-mail">
+                <Input @bind-Value="@context.Email" />
+            </FormItem>
+            <p>
+                Роль в системе: Главный администратор
+            </p>
+
+            <Button Type="ButtonType.Primary">
+                Сохранить изменения
+            </Button>
+            <Button Type="ButtonType.Primary">
+                Сбросить пароль
+            </Button>
+        </Form>
+    </Card>
+
+</div>
+
+@inject AuthenticationStateProvider provider
+@code {
+    private UserViewModel _user = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        _user = await authStateProvider.GetCurrentUserAsync();
+    }
+
+    private void OnFinish(EditContext editContext)
+    {
+
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Console.WriteLine($"Failed:{JsonSerializer.Serialize(_user)}");
+    }
+}

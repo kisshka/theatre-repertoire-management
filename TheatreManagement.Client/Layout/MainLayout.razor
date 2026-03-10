@@ -23,12 +23,12 @@
                     <Overlay>
                         <Menu>
                             <MenuItem>
-                                <a target="_blank" rel="noopener noreferrer" href="http://www.alipay.com/">
+                                <a rel="noopener noreferrer" href="/profile">
                                     Профиль
                                 </a>
                             </MenuItem>
                             <MenuItem>
-                                <a target="_blank" rel="noopener noreferrer" href="#" @onclick="Logout">
+                                <a rel="noopener noreferrer" href="#" @onclick="Logout">
                                     Выйти
                                 </a>
                             </MenuItem>
@@ -109,22 +109,16 @@
 @inject AuthenticationStateProvider provider
 @inject NavigationManager navManager
 @code {
-    private UserModel? _user;
+    private UserViewModel? _user;
     private string? _fio;
 
+    //Загрука данных о пользователе для отображения фио
     protected override async Task OnInitializedAsync()
     {
         ((CustomAuthStateProvider)provider).AuthenticationStateChanged += OnAuthenticationStateChanged;
         await LoadUserData();
         UpdateSelectedKeys();
     }
-
-    private void Logout(MouseEventArgs e) {
-        var authStateProvider = (CustomAuthStateProvider)provider;
-        authStateProvider.Logout();
-        navManager.NavigateTo("/");
-    }
-
 
     private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
     {
@@ -152,8 +146,14 @@
 
     public void Dispose()
     {
-        // Важно отписаться, чтобы не было утечки памяти
         ((CustomAuthStateProvider)provider).AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+
+    private void Logout(MouseEventArgs e)
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        authStateProvider.Logout();
+        navManager.NavigateTo("/");
     }
 
     // Работа меню

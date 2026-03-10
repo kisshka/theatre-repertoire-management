@@ -6,13 +6,13 @@
 <PageTitle>Список пользователей</PageTitle>
 
 <PageHeader>
-        <PageHeaderTitle>Список пользователей</PageHeaderTitle>
-        <PageHeaderExtra>
-            <Button Type="ButtonType.Primary">Архив
+    <PageHeaderTitle>Список пользователей</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="ButtonType.Primary">Архив
             <Icon Type="@IconType.Outline.Right" />
-            </Button>
-        </PageHeaderExtra>
-    </PageHeader>
+        </Button>
+    </PageHeaderExtra>
+</PageHeader>
 
 @* Добавление пользователя *@
 <div class="table-page-header">
@@ -20,14 +20,14 @@
         <Icon Type="@IconType.Outline.Plus" />
     </Button>
 
-   <Search Placeholder="Введите ФИО пользователя"  EnterButton="true"/>
+    <Search Placeholder="Введите ФИО пользователя"  EnterButton="true"/>
 
     <Button Type="ButtonType.Default">
         <Icon Type="@IconType.Fill.Filter"/>
     </Button>
 </div>
 
-<Table TItem="Data" DataSource="@data" PageSize="10">
+<Table TItem="@UserViewModel" DataSource="@_userViewModels" PageSize="10">
     @foreach (var column in columns)
     {
         <Column TData="object" DataIndex="@column"></Column>
@@ -38,7 +38,7 @@
 @inject ModalService ModalService;
 @inject NavigationManager navManager
 @code {
-@*Модальное окно*@
+    @*Модальное окно*@
 
     RenderFragment FormTemplate()
     {
@@ -151,49 +151,30 @@
             },
         });
     }
-@* Регистрация *@
-private async Task RegisterAsync() {
+    @* Регистрация *@
+    private async Task RegisterAsync() {
 
-    var authStateProvider = (CustomAuthStateProvider)provider;
+        var authStateProvider = (CustomAuthStateProvider)provider;
 
-    var response = await authStateProvider.RegisterAsync(model);
-    if (response.Succeeded) {
-        _form.Reset();
-    }
-    else {
-        error = "Что-то пошло не так";
+        var response = await authStateProvider.RegisterAsync(model);
+        if (response.Succeeded) {
+            _form.Reset();
         }
-}
-
-@* Временные данные для заполнения таблиц *@
-    string[] columns = { "FullName", "Role"};
-
-    Data[] data = new Data[100];
-
-    protected override void OnInitialized()
-    {
-        for (int i = 0; i < 100; i++)
-        {
-            data[i] = new Data()
-            {
-                Key = i.ToString(),
-                FullName = $"Иванов Иван Иванович{i}",
-                Role = "Актер"
-            };
+        else {
+            error = "Что-то пошло не так";
         }
     }
-   List<Data> options = new List<Data>();
-    public class Data
+
+    private List<UserViewModel> _userViewModels;
+    // Данные для заполнения таблиц
+    string[] columns = { "Surname", "Name", "Fathername"};
+
+    protected override async Task OnInitializedAsync()
     {
-        [DisplayName("Key")]
-        public string? Key { get; set; }
-
-        [DisplayName("ФИО")]
-        public string? FullName { get; set; }
-
-        [DisplayName("Роль")]
-        public string? Role { get; set; }
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        _userViewModels = await authStateProvider.GetAllUsersAsync();
     }
+
 }
 
 

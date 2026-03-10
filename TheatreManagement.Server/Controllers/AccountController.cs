@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TheatreManagement.Domain.Data;
 using TheatreManagement.Shared.DTOs;
 
 namespace TheatreManagement.Server.Controllers
@@ -12,10 +14,12 @@ namespace TheatreManagement.Server.Controllers
     public class AccountController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
+        private readonly DataContext _context;
 
-        public AccountController(UserManager<User> userManager)
+        public AccountController(UserManager<User> userManager, DataContext context)
         {
             _userManager = userManager;
+            _context = context;
         }
 
         [HttpPost("register")]
@@ -48,13 +52,13 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpGet("current")]
-        public async Task<ActionResult<UserModel>> GetCurrentUser()
+        public async Task<ActionResult<UserViewModel>> GetCurrentUser()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return NotFound();
 
-            return new UserModel
+            return new UserViewModel
             {
                 Email = user.Email,
                 Surname = user.Surname,
@@ -63,5 +67,25 @@ namespace TheatreManagement.Server.Controllers
             };
 
         }
+
+        [HttpGet("all")]
+        public async Task<ActionResult<List<UserViewModel>>> GetAllUsers()
+        {
+            var users = await _context.Users.ToListAsync();
+            List<UserViewModel> userViewModels = new List<UserViewModel>();
+
+            foreach (var user in users)
+            {
+                userViewModels.Add( new UserViewModel
+                {
+                    Email = user.Email,
+                    Surname = user.Surname,
+                    Name = user.Name,
+                    FatherName = user.FatherName
+                } );
+            }
+            return userViewModels;
+        }
+
     }
 }
