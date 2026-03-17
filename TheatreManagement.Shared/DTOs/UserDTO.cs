@@ -6,27 +6,30 @@ namespace TheatreManagement.Shared.DTOs
 {
     public class UserViewModel
     {
-        [Required]
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
         public string Email { get; set; } = string.Empty;
-        [Required]
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
         [DisplayName("Фамилия")]
         public string Surname { get; set; } = string.Empty;
-        [Required]
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
         [DisplayName("Имя")]
         public string Name { get; set; } = string.Empty;
         [DisplayName("Отчество")]
         public string? FatherName { get; set; }
+
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [DisplayName("Роль")]
+        public string Role { get; set; } = string.Empty;
     }
 
     public class RegisterModel : UserViewModel
     {
-        [Required]
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
         public string Password { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
         [Compare(nameof(Password), ErrorMessage = "Пароли не совпадают")]
         public string ConfirmPassword { get; set; } = string.Empty;
-
     }
 
 

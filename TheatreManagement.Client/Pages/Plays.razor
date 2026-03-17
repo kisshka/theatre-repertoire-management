@@ -12,10 +12,12 @@
     </PageHeader>
 
 <div class="table-page-header">
-    <Button Type="ButtonType.Primary">
+    <Button Type="ButtonType.Primary" OnClick="ShowModalWithService">
         <Icon Type="@IconType.Outline.Plus" />
     </Button>
-   <Search Placeholder="Введите название спектакля"  EnterButton="true"/>
+
+
+   <Search Placeholder="Введите название представления"  EnterButton="true"/>
     <Button Type="ButtonType.Default">
         <Icon Type="@IconType.Fill.Filter" />
     </Button>
@@ -28,9 +30,96 @@
     }
 </Table>
 
-
+@inject ModalService ModalService;
+@inject PlayService playService;
 @code {
+    public string error = "";
+    bool _visible = false;
+    bool _submitting = false;
+    private Form<PlayDTO> _form;
+    private PlayDTO model = new();
 
+    private void ShowModalWithService()
+    {
+        ModalRef modalRef = default;
+        modalRef = ModalService.CreateModal(new()
+            {
+                Title = "Добавление представления",
+                Content = FormTemplate(),
+
+                OnOk = async e =>
+                {
+                    modalRef?.SetConfirmLoading(true);
+                    await Task.Delay(1000);
+                    if (!_form.Validate())
+                    {
+                        modalRef?.SetConfirmLoading(false);
+                        return;
+                    }
+
+                    _form.Submit();
+
+                    await playService.CreatePlayAsync(model);
+
+                    await modalRef.CloseAsync();
+
+                    _form.Reset();
+                },
+
+                OnCancel = async e =>
+                {
+                    if (!_form.IsModified || await ModalService.ConfirmAsync(new() { Content = "Вы уверены, что не хотите сохранить изменения?" }))
+                    {
+                        await modalRef.CloseAsync();
+                        _form.Reset();
+                    }
+                },
+            });
+    }
+
+    private void OnFinish(EditContext editContext)
+    {
+        _submitting = false;
+        _visible = false;
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Console.WriteLine($"Failed:{JsonSerializer.Serialize(model)}");
+    }
+
+    RenderFragment FormTemplate()
+    {
+        return
+    @<Form Model="@model"
+                   OnFinish="OnFinish"
+                   OnFinishFailed="OnFinishFailed"
+                   @ref="@_form">
+
+        <div>
+            @if(error.Length > 0)
+        {
+            <Alert Type="AlertType.Error"
+                   Message="@error"
+                   Banner />
+        }
+        </div>
+
+
+        <FormItem Label="Введите название">
+            <Input @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem Label="Введите продолжительность">
+            <Input @bind-Value="@context.Duration" />
+        </FormItem>
+        <FormItem Label="Введите возрастной рейтинг">
+            <Input @bind-Value="@context.AgeCategory" />
+        </FormItem>
+    </Form>
+    ;
+    }
+
+    //Заполение таблицы временными данными
 
     string[] columns = { "Name", "Duration", "Raiting"};
 

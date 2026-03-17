@@ -1,4 +1,4 @@
-
+﻿
 using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +8,7 @@ namespace TheatreManagement.Server
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -26,9 +26,27 @@ namespace TheatreManagement.Server
             //Authorization
             builder.Services.AddAuthorization();
             builder.Services.AddIdentityApiEndpoints<User>()
-                            .AddEntityFrameworkStores<DataContext>();
+                    .AddRoles<IdentityRole>()
+                    .AddEntityFrameworkStores<DataContext>();
+
 
             var app = builder.Build();
+
+        //Создание ролей
+            //using (var scope = app.Services.CreateScope())
+            //{
+            //    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+            //    string[] roles = { "MainAdmin", "TravelAdmin", "TourAdmin", "HallAdmin" };
+
+            //    foreach (var role in roles)
+            //    {
+            //        if (!await roleManager.RoleExistsAsync(role))
+            //        {
+            //            await roleManager.CreateAsync(new IdentityRole(role));
+            //        }
+            //    }
+            //}
 
             app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
             

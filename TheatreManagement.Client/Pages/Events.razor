@@ -49,7 +49,7 @@
 return @<Template>
 <div class="calendar-header-container">
     <div class="calendar-header">
-        <Button onclick="PreviusMonth">
+        <Button @onclick="PreviusMonth">
             <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
         </Button>
 
@@ -60,7 +60,7 @@ return @<Template>
                     TValue="DateTime"
                     Picker="DatePickerType.Month" />
 
-        <Button onclick="NextMonth">
+        <Button @onclick="NextMonth">
             <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
         </Button>
     </div>

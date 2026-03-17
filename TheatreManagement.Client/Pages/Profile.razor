@@ -27,9 +27,7 @@
             <FormItem Label="E-mail">
                 <Input @bind-Value="@context.Email" />
             </FormItem>
-            <p>
-                Роль в системе: Главный администратор
-            </p>
+            <p>Роль: @RoleHelper.GetDisplayName(context.Role)</p>
 
             <Button Type="ButtonType.Primary">
                 Сохранить изменения

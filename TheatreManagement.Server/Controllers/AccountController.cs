@@ -15,11 +15,13 @@ namespace TheatreManagement.Server.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly DataContext _context;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public AccountController(UserManager<User> userManager, DataContext context)
+        public AccountController(UserManager<User> userManager, DataContext context, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _context = context;
+            _roleManager = roleManager;
         }
 
         [HttpPost("register")]
@@ -38,9 +40,10 @@ namespace TheatreManagement.Server.Controllers
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
-
+            
             if (result.Succeeded)
             {
+                await _userManager.AddToRoleAsync(user, model.Role);
                 return Ok(new { Succeeded = true });
             }
 
@@ -58,12 +61,15 @@ namespace TheatreManagement.Server.Controllers
             if (user == null)
                 return NotFound();
 
+            var roles = await _userManager.GetRolesAsync(user);
+
             return new UserViewModel
             {
                 Email = user.Email,
                 Surname = user.Surname,
                 Name = user.Name,
-                FatherName = user.FatherName
+                FatherName = user.FatherName,
+                Role = roles[0]
             };
 
         }
@@ -76,12 +82,15 @@ namespace TheatreManagement.Server.Controllers
 
             foreach (var user in users)
             {
+                var roles = await _userManager.GetRolesAsync(user);
+
                 userViewModels.Add( new UserViewModel
                 {
                     Email = user.Email,
                     Surname = user.Surname,
                     Name = user.Name,
-                    FatherName = user.FatherName
+                    FatherName = user.FatherName,
+                    Role = roles[0]
                 } );
             }
             return userViewModels;

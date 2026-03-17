@@ -1,6 +1,7 @@
 @page "/users"
 @using TheatreManagement.Shared.DTOs
 @using TheatreManagement.Client.Services
+@using TheatreManagement.Client.Helpers
 
 
 <PageTitle>Список пользователей</PageTitle>
@@ -30,16 +31,32 @@
 <Table TItem="@UserViewModel" DataSource="@_userViewModels" PageSize="10">
     @foreach (var column in columns)
     {
-        <Column TData="object" DataIndex="@column"></Column>
+        if (column == "Role")
+        {
+            <Column TData="object" DataIndex="@column" Title="Роль">
+                <Template>
+                    @RoleHelper.GetDisplayName(context.Role)
+                </Template>
+            </Column>
+        }
+        else
+        {
+            <Column TData="object" DataIndex="@column"></Column>
+        }
     }
 </Table>
+
 
 @inject AuthenticationStateProvider provider
 @inject ModalService ModalService;
 @inject NavigationManager navManager
 @code {
-    @*Модальное окно*@
 
+    // Работа с ролями
+    private string _selectedRole;
+    private List<RoleItem> _roles = RoleHelper.GetAllRoles();
+
+    @*Модальное окно*@
     RenderFragment FormTemplate()
     {
         return 
@@ -75,9 +92,18 @@
         <FormItem Label="Подтвердите пароль">
                 <InputPassword @bind-Value="@context.ConfirmPassword"/>
         </FormItem>
+
+        <FormItem Label="Выберите роль">
+            <Select Mode="SelectMode.Default"
+                    DataSource="@_roles"
+                    @bind-Value="@context.Role"
+                    LabelName="Text"
+                    ValueName="Value">
+            </Select>
+        </FormItem>
         </Form>
-    ;
-    }
+    ;}
+
 
     bool _visible = false;
     bool _submitting = false;
@@ -86,23 +112,6 @@
     private RegisterModel model = new();
 
     public string error = "";
-
-    private async Task HandleOk(MouseEventArgs e)
-    {
-        if (!_form.Validate())
-        {
-            return;
-        }
-        _submitting = true;
-        await Task.Delay(1000);
-        _form.Submit();
-        _visible = false;
-    }
-
-    private void HandleCancel(MouseEventArgs e)
-    {
-        _visible = false;
-    }
 
     private void OnFinish(EditContext editContext)
     {
@@ -151,6 +160,7 @@
             },
         });
     }
+
     @* Регистрация *@
     private async Task RegisterAsync() {
 
@@ -158,7 +168,10 @@
 
         var response = await authStateProvider.RegisterAsync(model);
         if (response.Succeeded) {
+
+            _userViewModels = await authStateProvider.GetAllUsersAsync();
             _form.Reset();
+            error = "";
         }
         else {
             error = "Что-то пошло не так";
@@ -166,8 +179,9 @@
     }
 
     private List<UserViewModel> _userViewModels;
+
     // Данные для заполнения таблиц
-    string[] columns = { "Surname", "Name", "Fathername"};
+    string[] columns = { "Surname", "Name", "Fathername", "Role" };
 
     protected override async Task OnInitializedAsync()
     {
