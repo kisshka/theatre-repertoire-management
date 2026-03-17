@@ -1,4 +1,6 @@
-namespace Domain.Entities
+using Domain.Entities;
+
+namespace TheatreManagement.Domain.Entities
 {
     public class Employee
     {
@@ -9,7 +11,7 @@ namespace Domain.Entities
         public string? Post { get; set; }
         public string? Status { get; set; }
         public DateTime LastEditTime { get; set; }
-        public bool IsDeleted { get; set; }
+        public DateTime? DeletionTime { get; set; }
         // ссылки 
         public string? UserId { get; set; }
         public User? User { get; set; }

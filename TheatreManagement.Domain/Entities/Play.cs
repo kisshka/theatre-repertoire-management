@@ -1,4 +1,6 @@
-﻿namespace Domain.Entities
+﻿using Domain.Entities;
+
+namespace TheatreManagement.Domain.Entities
 {
     public class Play
     {
@@ -8,7 +10,7 @@
         public string? Status { get; set; }
         public int AgeCategory { get; set; }
         public DateTime LastEditTime { get; set; }
-        public bool IsDeleted { get; set; }
+        public DateTime? DeletionTime { get; set; }
 
     //ссылки
         public string? UserId { get; set; }
@@ -16,5 +18,6 @@
 
         public List<Event> Events { get; set; } = new();
         public List<RoleInPlay> RoleInPlays { get; set; }  = new();
+        public List<PlayEvent> PlayEvents { get; set; } = new();
     }
 }

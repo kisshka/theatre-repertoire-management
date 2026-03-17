@@ -1,4 +1,4 @@
-namespace Domain.Entities
+namespace TheatreManagement.Domain.Entities
 {
     public class Stationar
     {

@@ -1,6 +1,7 @@
+using Domain.Entities;
 using System.Reflection.Metadata;
 
-namespace Domain.Entities
+namespace TheatreManagement.Domain.Entities
 {
     public class RoleInPlay
     {

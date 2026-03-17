@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Domain.Entities;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Shared.DTOs;
+using TheatreManagement.Domain.Entities;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -85,7 +85,7 @@ namespace TheatreManagement.Server.Controllers
                 Status = playDto.Status,
                 AgeCategory = playDto.AgeCategory,
                 LastEditTime = DateTime.UtcNow,
-                IsDeleted = false
+                DeletionTime = null
             };
 
             _context.Plays.Add(play);

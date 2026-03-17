@@ -1,4 +1,6 @@
-namespace Domain.Entities
+using Domain.Entities;
+
+namespace TheatreManagement.Domain.Entities
 {
     public class EmployeeRole
     {

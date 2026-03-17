@@ -1,10 +1,12 @@
-namespace Domain.Entities
+using Domain.Entities;
+
+namespace TheatreManagement.Domain.Entities
 {
     public class Event
     {
         public int EventId { get; set; }
-        public DateTime Start { get; set; }
-        public DateTime End { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; } 
         public string? Type { get; set; }
         public DateTime LastEditTime { get; set; }
         public bool IsCanceled { get; set; }
@@ -22,5 +24,6 @@ namespace Domain.Entities
         public User? User { get; set; }
 
         public List<EmployeeRole> EmployeeRoles { get; set; } = new();
+        public List<PlayEvent> PlayEvents { get; set; } = new();
     }
 }

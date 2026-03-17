@@ -1,13 +1,14 @@
+using Domain.Entities;
 using System.Reflection.Metadata;
 
-namespace Domain.Entities
+namespace TheatreManagement.Domain.Entities
 {
     public class Cast
     {
         public int CastId { get; set; }
         public string? Name { get; set; }
-        public DateTime LastEditTime { get; set; }
-        public bool IsDeleted { get; set; }
+        public DateTime? LastEditTime { get; set; }
+        public DateTime? DeletionTime { get; set; }
 
         // ссылки
         public string? UserId { get; set; }
