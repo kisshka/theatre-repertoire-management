@@ -3,36 +3,86 @@
 <PageTitle>Список спектаклей</PageTitle>
 
 <PageHeader>
-        <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
-        <PageHeaderExtra>
-            <Button Type="ButtonType.Primary">Архив
+    <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="ButtonType.Primary">
+            Архив
             <Icon Type="@IconType.Outline.Right" />
-            </Button>
-        </PageHeaderExtra>
-    </PageHeader>
+        </Button>
+    </PageHeaderExtra>
+</PageHeader>
 
 <div class="table-page-header">
     <Button Type="ButtonType.Primary" OnClick="ShowModalWithService">
         <Icon Type="@IconType.Outline.Plus" />
     </Button>
 
-
-   <Search Placeholder="Введите название представления"  EnterButton="true"/>
+    <Search Placeholder="Введите название представления"
+            @bind-Value="@searchText"
+            EnterButton="true"
+            OnSearch="@OnSearchAsync"/>
     <Button Type="ButtonType.Default">
         <Icon Type="@IconType.Fill.Filter" />
     </Button>
 </div>
 
-<Table TItem="Data" DataSource="@data" PageSize="10">
-    @foreach (var column in columns)
-    {
-        <Column TData="object" DataIndex="@column"></Column>
-    }
+<Table TItem="PlayDTO"
+DataSource="@plays"
+PageSize="@pageSize"
+Total="@total"
+@bind-PageIndex="currentPage"
+OnChange="@OnTableChange">
+
+    <PropertyColumn Property="@(c => c.Name)" Title="Название" />
+    <PropertyColumn Property="@(c => c.Duration)" Title="Длительность" />
+    <PropertyColumn Property="@(c => c.AgeCategory)" Title="Возрастная категория" />
+
 </Table>
 
-@inject ModalService ModalService;
-@inject PlayService playService;
+@inject ModalService ModalService
+@inject PlayService playService
+
 @code {
+    private List<PlayDTO> plays = new();
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<PlayDTO> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        try
+        {
+            var result = await playService.GetPlaysPagedAsync(page, pageSize, searchText);
+            if (result != null)
+            {
+                plays = result.Items ?? new List<PlayDTO>();
+                total = result.TotalCount;
+                StateHasChanged();  // Явно вызываем обновление
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
     public string error = "";
     bool _visible = false;
     bool _submitting = false;
@@ -43,11 +93,10 @@
     {
         ModalRef modalRef = default;
         modalRef = ModalService.CreateModal(new()
-            {
-                Title = "Добавление представления",
-                Content = FormTemplate(),
-
-                OnOk = async e =>
+                {
+                    Title = "Добавление представления",
+                    Content = FormTemplate(),
+                    OnOk = async e =>
                 {
                     modalRef?.SetConfirmLoading(true);
                     await Task.Delay(1000);
@@ -58,23 +107,22 @@
                     }
 
                     _form.Submit();
-
                     await playService.CreatePlayAsync(model);
-
                     await modalRef.CloseAsync();
-
                     _form.Reset();
-                },
 
-                OnCancel = async e =>
+                    //Подтягиваем обновленные данные с бд
+                await LoadDataAsync(currentPage);
+                },
+                    OnCancel = async e =>
                 {
-                    if (!_form.IsModified || await ModalService.ConfirmAsync(new() { Content = "Вы уверены, что не хотите сохранить изменения?" }))
+                    if (!_form.IsModified || await ModalService.ConfirmAsync(new() { Content = "Если вы закроете окно, несохраненные данные будут потеряны" }))
                     {
                         await modalRef.CloseAsync();
                         _form.Reset();
                     }
                 },
-            });
+                });
     }
 
     private void OnFinish(EditContext editContext)
@@ -90,22 +138,18 @@
 
     RenderFragment FormTemplate()
     {
-        return
-    @<Form Model="@model"
-                   OnFinish="OnFinish"
-                   OnFinishFailed="OnFinishFailed"
-                   @ref="@_form">
-
+        return @<Form Model="@model"
+                          OnFinish="OnFinish"
+                          OnFinishFailed="OnFinishFailed"
+                          @ref="@_form">
         <div>
-            @if(error.Length > 0)
+            @if (error.Length > 0)
         {
             <Alert Type="AlertType.Error"
                    Message="@error"
                    Banner />
         }
         </div>
-
-
         <FormItem Label="Введите название">
             <Input @bind-Value="@context.Name" />
         </FormItem>
@@ -115,42 +159,6 @@
         <FormItem Label="Введите возрастной рейтинг">
             <Input @bind-Value="@context.AgeCategory" />
         </FormItem>
-    </Form>
-    ;
-    }
-
-    //Заполение таблицы временными данными
-
-    string[] columns = { "Name", "Duration", "Raiting"};
-
-    Data[] data = new Data[100];
-
-    protected override void OnInitialized()
-    {
-        for (int i = 0; i < 100; i++)
-        {
-            data[i] = new Data()
-            {
-                Key = i.ToString(),
-                Name = $"Сказка о рыбаке и рыбке{i}",
-                Duration = 120,
-                Raiting = 12,
-            };
-        }
-    }
-   List<Data> options = new List<Data>();
-    public class Data
-    {
-        [DisplayName("Key")]
-        public string? Key { get; set; }
-
-        [DisplayName("Название")]
-        public string? Name { get; set; }
-
-        [DisplayName("Продолжительность")]
-        public int Duration { get; set; }
-
-        [DisplayName("Рейтинг")]
-        public int Raiting { get; set; }
+    </Form>;
     }
 }

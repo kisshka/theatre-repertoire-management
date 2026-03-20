@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Domain.Entities;
+using TheatreManagement.Shared;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -22,12 +23,74 @@ namespace TheatreManagement.Server.Controllers
             _context = context;
         }
 
-        // GET: api/Plays
+        //// GET: api/Plays
+        //[HttpGet]
+        //public async Task<ActionResult<List<PlayDTO>>> GetPlays()
+        //{
+        //    var plays = await _context.Plays.ToListAsync();
+        //    List<PlayDTO> playDtos = [];
+
+        //    foreach (var play in plays)
+        //    {
+
+        //        playDtos.Add(new PlayDTO
+        //        {
+        //            PlayId = play.PlayId,
+        //            Name = play.Name,
+        //            Duration = play.Duration,
+        //            AgeCategory = play.AgeCategory,
+
+        //            IsActive = play.IsActive,
+        //            LastEditTime = play.LastEditTime,
+        //            DeletionTime = play.DeletionTime
+        //        });
+        //    }
+
+        //    return playDtos;
+        //}
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Play>>> GetPlays()
+        public async Task<ActionResult<PagedResult<PlayDTO>>> GetPlays(
+            [FromQuery] string searchText = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            return await _context.Plays.ToListAsync();
+            var query = _context.Plays
+                .Where(p => p.IsActive && p.DeletionTime == null);
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                var normalizeSearchText = searchText.Trim().ToLower();
+
+                query = query.Where(p =>
+                    DataContext.CustomLike(p.Name, normalizeSearchText));
+            
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderBy(p => p.PlayId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new PlayDTO
+                {
+                    PlayId = p.PlayId,
+                    Name = p.Name,
+                    Duration = p.Duration,
+                    AgeCategory = p.AgeCategory,
+                    IsActive = p.IsActive,
+                    LastEditTime = p.LastEditTime
+                })
+                .ToListAsync();
+
+            return Ok(new PagedResult<PlayDTO>
+            {
+                Items = items,
+                TotalCount = totalCount
+            });
         }
+
 
         // GET: api/Plays/5
         [HttpGet("{id}")]
@@ -82,7 +145,7 @@ namespace TheatreManagement.Server.Controllers
             {
                 Name = playDto.Name,
                 Duration = playDto.Duration,
-                Status = playDto.Status,
+                IsActive = true,
                 AgeCategory = playDto.AgeCategory,
                 LastEditTime = DateTime.UtcNow,
                 DeletionTime = null

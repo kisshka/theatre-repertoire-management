@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs;
 
 namespace TheatreManagement.Client.Services
@@ -16,24 +17,10 @@ namespace TheatreManagement.Client.Services
             return await _httpClient.PostAsJsonAsync("api/plays", play);
         }
 
-        public async Task<List<PlayDTO>> GetAllPlaysAsync()
+        public async Task<PagedResult<PlayDTO>> GetPlaysPagedAsync(int page = 1, int pageSize = 10, string? searchText = null)
         {
-            return await _httpClient.GetFromJsonAsync<List<PlayDTO>>("api/plays");
-        }
-
-        public async Task<PlayDTO> GetPlayByIdAsync(int id)
-        {
-            return await _httpClient.GetFromJsonAsync<PlayDTO>($"api/plays/{id}");
-        }
-
-        public async Task<HttpResponseMessage> UpdatePlayAsync(int id, PlayDTO play)
-        {
-            return await _httpClient.PutAsJsonAsync($"api/plays/{id}", play);
-        }
-
-        public async Task<HttpResponseMessage> DeletePlayAsync(int id)
-        {
-            return await _httpClient.DeleteAsync($"api/plays/{id}");
+            return await _httpClient.GetFromJsonAsync<PagedResult<PlayDTO>>(
+                $"api/plays?page={page}&pageSize={pageSize}&searchText={searchText}");
         }
 
 

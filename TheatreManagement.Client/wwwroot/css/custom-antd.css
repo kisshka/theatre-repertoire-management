@@ -1,3 +1,7 @@
+
+.ant-layout-content {
+    min-height: 89vh;
+}
 /* Меню пользователя */
 .user-dropdown {
     float: right;

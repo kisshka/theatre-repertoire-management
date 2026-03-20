@@ -21,6 +21,13 @@ namespace TheatreManagement.Domain.Data
         public virtual DbSet<Tour> Tours { get; set; }
         public override DbSet<User> Users { get; set; }
 
+        
+        [DbFunction("CustomLike")]
+        public static bool CustomLike(string text, string pattern)
+        {
+            throw new NotSupportedException("This method is for EF Core only");
+        }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

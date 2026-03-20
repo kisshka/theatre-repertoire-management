@@ -78,7 +78,7 @@ namespace TheatreManagement.Server.Controllers
         public async Task<ActionResult<List<UserViewModel>>> GetAllUsers()
         {
             var users = await _context.Users.ToListAsync();
-            List<UserViewModel> userViewModels = new List<UserViewModel>();
+            List<UserViewModel> userViewModels = [];
 
             foreach (var user in users)
             {

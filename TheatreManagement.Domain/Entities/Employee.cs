@@ -9,7 +9,7 @@ namespace TheatreManagement.Domain.Entities
         public string? Surname { get; set; }
         public string? FatherName { get; set; }
         public string? Post { get; set; }
-        public string? Status { get; set; }
+        public bool IsActive { get; set; }
         public DateTime LastEditTime { get; set; }
         public DateTime? DeletionTime { get; set; }
         // ссылки 

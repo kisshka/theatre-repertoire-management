@@ -1,6 +1,7 @@
 ﻿
 using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
 
@@ -15,15 +16,32 @@ namespace TheatreManagement.Server
             //Services
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+ 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            //Db
-            builder.Services.AddDbContext<TheatreManagement.Domain.Data.DataContext>(options =>
-                    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            //Authorization
+
+            // Подключение к БД
+            builder.Services.AddDbContext<TheatreManagement.Domain.Data.DataContext>(options =>
+            {
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+                var connection = new SqliteConnection(connectionString);
+                connection.Open();
+
+                // Кастомная функция Like
+                connection.CreateFunction("CustomLike",
+                    (string text, string pattern) =>
+                        text != null && pattern != null &&
+                        text.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                options.UseSqlite(connection);
+            });
+
+
+
+            //Авторизация
             builder.Services.AddAuthorization();
             builder.Services.AddIdentityApiEndpoints<User>()
                     .AddRoles<IdentityRole>()

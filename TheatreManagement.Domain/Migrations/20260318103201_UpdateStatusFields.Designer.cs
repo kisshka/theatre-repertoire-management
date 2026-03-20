@@ -11,8 +11,8 @@ using TheatreManagement.Domain.Data;
 namespace TheatreManagement.Domain.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20260317195300_AddPlayEvent")]
-    partial class AddPlayEvent
+    [Migration("20260318103201_UpdateStatusFields")]
+    partial class UpdateStatusFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -261,6 +261,9 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<string>("FatherName")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("LastEditTime")
                         .HasColumnType("TEXT");
 
@@ -268,9 +271,6 @@ namespace TheatreManagement.Domain.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Post")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("IsActive")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Surname")
@@ -410,13 +410,13 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<string>("Duration")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("LastEditTime")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("IsActive")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")
