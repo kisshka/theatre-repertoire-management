@@ -55,7 +55,7 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpGet("current")]
-        public async Task<ActionResult<UserViewModel>> GetCurrentUser()
+        public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -63,7 +63,7 @@ namespace TheatreManagement.Server.Controllers
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            return new UserViewModel
+            return new UserDto
             {
                 Email = user.Email,
                 Surname = user.Surname,
@@ -75,16 +75,16 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<ActionResult<List<UserViewModel>>> GetAllUsers()
+        public async Task<ActionResult<List<UserDto>>> GetAllUsers()
         {
             var users = await _context.Users.ToListAsync();
-            List<UserViewModel> userViewModels = [];
+            List<UserDto> userViewModels = [];
 
             foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
 
-                userViewModels.Add( new UserViewModel
+                userViewModels.Add( new UserDto
                 {
                     Email = user.Email,
                     Surname = user.Surname,

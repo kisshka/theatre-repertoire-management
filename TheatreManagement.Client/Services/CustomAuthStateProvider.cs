@@ -110,7 +110,7 @@ namespace TheatreManagement.Client.Services
             return new FormResult {Succeeded = false, Errors = ["Ошибка подключения"] };
         }
 
-        public async Task<UserViewModel> GetCurrentUserAsync()
+        public async Task<UserDto> GetCurrentUserAsync()
         {
             try
             {
@@ -118,7 +118,7 @@ namespace TheatreManagement.Client.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<UserViewModel>();
+                    return await response.Content.ReadFromJsonAsync<UserDto>();
                 }
                 return null;
             }
@@ -128,7 +128,7 @@ namespace TheatreManagement.Client.Services
             }
         }
 
-        public async Task<List<UserViewModel>> GetAllUsersAsync()
+        public async Task<List<UserDto>> GetAllUsersAsync()
         {
             try
             {
@@ -136,7 +136,7 @@ namespace TheatreManagement.Client.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync< List<UserViewModel>>();
+                    return await response.Content.ReadFromJsonAsync< List<UserDto>>();
                 }
                 return null;
             }

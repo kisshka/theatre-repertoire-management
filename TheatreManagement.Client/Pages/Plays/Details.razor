@@ -1,0 +1,89 @@
+﻿@page "/plays/{id:int}"
+
+<PageTitle>Информация о спектакле</PageTitle>
+
+<PageHeader>
+
+    <PageHeaderTitle>Информация о спектакле</PageHeaderTitle>
+    <PageHeaderExtra>
+
+        <Button Type="ButtonType.Primary"
+        OnClick="@GoBack">
+            Назад
+            <Icon Type="@IconType.Outline.Left" />
+        </Button>
+        <Button Type="ButtonType.Primary"
+        OnClick="@GoToCasts">
+            Составы
+            <Icon Type="@IconType.Outline.Right" />
+        </Button>
+
+    </PageHeaderExtra>
+</PageHeader>
+
+
+
+<Card Title=@_play.Name>
+    <CardGrid Style="width:33%;text-align:center" Hoverable="false">
+        Длительность: @_play.Duration
+    </CardGrid>
+    <CardGrid Style="width:33%;text-align:center" Hoverable="false">
+        Рейтинг: @_play.AgeCategory+
+    </CardGrid>
+    <CardGrid Style="width:33%;text-align:center" Hoverable="false">
+        Статус: @_play.IsActive
+    </CardGrid>
+
+    <CardGrid Style="width:50%;text-align:center" Hoverable="false">
+
+        <AntList Bordered DataSource="@_actorRoles">
+            <Header>Актерские роли</Header>
+            <ChildContent Context="item">
+                <ListItem>
+                    @item.Name
+                </ListItem>
+            </ChildContent>
+        </AntList>
+
+    </CardGrid>
+    <CardGrid Style="width:50%;text-align:center" Hoverable="false">
+        <AntList Bordered DataSource="@_technicRoles">
+            <Header>Технические роли</Header>
+            <ChildContent Context="item">
+                <ListItem>
+                    @item.Name
+                </ListItem>
+            </ChildContent>
+        </AntList>
+    </CardGrid>
+
+</Card>
+
+
+
+@inject PlayService playService
+@inject NavigationManager navManager
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private PlayDto _play = new();
+    private List<RoleDto> _actorRoles = new();
+    private List<RoleDto> _technicRoles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _play = await playService.GetPlayAsync(Id);
+
+        _actorRoles = _play.RoleDtos.Where(r => r.RoleType == "Актерская").ToList();
+        _technicRoles = _play.RoleDtos.Where(r => r.RoleType == "Техническая").ToList();
+    }
+
+    private void GoBack()
+    {
+        navManager.NavigateTo("/plays");
+    }
+    private void GoToCasts()
+    {
+        navManager.NavigateTo($"/plays/{_play.PlayId}/casts");
+    }
+}

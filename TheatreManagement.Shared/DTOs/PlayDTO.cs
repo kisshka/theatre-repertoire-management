@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TheatreManagement.Shared.DTOs
 {
-    public class PlayDTO
+    public class PlayDto
     {
         public int PlayId { get; set; }
 
@@ -23,5 +23,7 @@ namespace TheatreManagement.Shared.DTOs
 
         public DateTime LastEditTime { get; set; }
         public DateTime? DeletionTime { get; set; }
+
+        public List<RoleDto> RoleDtos { get; set; } = new();
     }
 }

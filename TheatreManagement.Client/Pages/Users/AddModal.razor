@@ -1,0 +1,148 @@
+﻿@using AntDesign
+@using Microsoft.AspNetCore.Components.Forms
+@using TheatreManagement.Shared.DTOs
+
+<Modal Visible="@Visible"
+       OkButtonProps="@(new ButtonProps { Disabled = Submitting })"
+       Title="Добавление пользователя"
+       OnOk="HandleOk"
+       OnCancel="HandleCancel"
+       ConfirmLoading="Submitting"
+       MaskClosable="@false">
+
+    <Form Model="@Model"
+          OnFinishFailed="@OnFinishFailed"
+          OnFinish="@OnFinish"
+          @ref="@FormRef">
+
+        <div>
+            @if (error.Length > 0)
+            {
+                <Alert Type="AlertType.Error"
+                       Message="@error"
+                       Banner />
+            }
+        </div>
+
+        <FormItem Label="Введите фамилию">
+            <Input @bind-Value="@context.Surname" />
+        </FormItem>
+        <FormItem Label="Введите имя">
+            <Input @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem Label="Введите отчество">
+            <Input @bind-Value="@context.FatherName" />
+        </FormItem>
+        <FormItem Label="Введите e-mail">
+            <Input @bind-Value="@context.Email" />
+        </FormItem>
+        <FormItem Label="Введите пароль">
+            <InputPassword @bind-Value="@context.Password" />
+        </FormItem>
+        <FormItem Label="Подтвердите пароль">
+            <InputPassword @bind-Value="@context.ConfirmPassword" />
+        </FormItem>
+
+        <FormItem Label="Выберите роль">
+            <Select Mode="SelectMode.Default"
+                    DataSource="@_roles"
+                    @bind-Value="@context.Role"
+                    LabelName="Text"
+                    ValueName="Value">
+            </Select>
+        </FormItem>
+    </Form>
+</Modal>
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+    [Parameter] public EventCallback OnSuccess { get; set; }
+
+    [Inject] private AuthenticationStateProvider provider { get; set; }
+
+    private Form<RegisterModel> FormRef { get; set; }
+    private RegisterModel Model { get; set; } = new();
+
+    private bool Submitting { get; set; } = false;
+
+    public string error = "";
+
+    // Работа с ролями
+    private string _selectedRole;
+    private List<RoleItem> _roles = RoleHelper.GetAllRoles();
+
+    private async Task OnFinish(EditContext editContext)
+    {
+        if (Submitting) return;
+
+        Submitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var authStateProvider = (CustomAuthStateProvider)provider;
+            await authStateProvider.RegisterAsync(Model);
+
+            Visible = false;
+            await VisibleChanged.InvokeAsync(false);
+            await OnSuccess.InvokeAsync();
+
+            ResetForm();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            StateHasChanged();
+        }
+        finally
+        {
+            Submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Console.WriteLine($"Failed");
+    }
+
+    private async Task HandleOk()
+    {
+        if (FormRef != null)
+        {
+            FormRef.Submit();
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        Visible = false;
+        await VisibleChanged.InvokeAsync(false);
+        ResetForm();
+    }
+
+    private async Task RegisterAsync()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        var response = await authStateProvider.RegisterAsync(Model);
+        if (response.Succeeded)
+        {
+            FormRef.Reset();
+            error = "";
+        }
+        else
+        {
+            error = "Что-то пошло не так";
+        }
+    }
+
+
+    private void ResetForm()
+    {
+        Model = new RegisterModel();
+        error = "";
+        FormRef?.Reset();
+        StateHasChanged();
+    }
+}

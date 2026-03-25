@@ -1,0 +1,26 @@
+﻿@page "/plays/{id:int}/casts"
+
+<PageTitle>Список спектаклей</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
+    <PageHeaderSubtitle></PageHeaderSubtitle>
+</PageHeader>
+
+    <Card>
+
+@*     <FormItem Label="Выберите роль">
+        <Select Mode="SelectMode.Default"
+                DataSource="@_roles"
+                @bind-Value="@context.Role"
+                LabelName="Text"
+                ValueName="Value">
+        </Select>
+    </FormItem> *@
+     
+    </Card>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+}

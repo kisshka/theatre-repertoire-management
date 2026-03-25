@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TheatreManagement.Shared.DTOs
 {
-    public class UserViewModel
+    public class UserDto
     {
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
         public string Email { get; set; } = string.Empty;
@@ -22,7 +22,7 @@ namespace TheatreManagement.Shared.DTOs
         public string Role { get; set; } = string.Empty;
     }
 
-    public class RegisterModel : UserViewModel
+    public class RegisterModel : UserDto
     {
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
         public string Password { get; set; } = string.Empty;

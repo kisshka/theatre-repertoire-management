@@ -23,34 +23,9 @@ namespace TheatreManagement.Server.Controllers
             _context = context;
         }
 
-        //// GET: api/Plays
-        //[HttpGet]
-        //public async Task<ActionResult<List<PlayDTO>>> GetPlays()
-        //{
-        //    var plays = await _context.Plays.ToListAsync();
-        //    List<PlayDTO> playDtos = [];
-
-        //    foreach (var play in plays)
-        //    {
-
-        //        playDtos.Add(new PlayDTO
-        //        {
-        //            PlayId = play.PlayId,
-        //            Name = play.Name,
-        //            Duration = play.Duration,
-        //            AgeCategory = play.AgeCategory,
-
-        //            IsActive = play.IsActive,
-        //            LastEditTime = play.LastEditTime,
-        //            DeletionTime = play.DeletionTime
-        //        });
-        //    }
-
-        //    return playDtos;
-        //}
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<PlayDTO>>> GetPlays(
+        public async Task<ActionResult<PagedResult<PlayDto>>> GetPlays(
             [FromQuery] string searchText = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
@@ -73,7 +48,7 @@ namespace TheatreManagement.Server.Controllers
                 .OrderBy(p => p.PlayId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(p => new PlayDTO
+                .Select(p => new PlayDto
                 {
                     PlayId = p.PlayId,
                     Name = p.Name,
@@ -84,7 +59,7 @@ namespace TheatreManagement.Server.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(new PagedResult<PlayDTO>
+            return Ok(new PagedResult<PlayDto>
             {
                 Items = items,
                 TotalCount = totalCount
@@ -92,23 +67,43 @@ namespace TheatreManagement.Server.Controllers
         }
 
 
-        // GET: api/Plays/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Play>> GetPlay(int id)
+        [HttpGet("{playId}")]
+        public async Task<ActionResult<PlayDto>> GetPlay(int id)
         {
-            var play = await _context.Plays.FindAsync(id);
+            var play = await _context.Plays.Include(p => p.RoleInPlays)
+                                           .FirstOrDefaultAsync(p => p.PlayId == id);
 
             if (play == null)
             {
                 return NotFound();
             }
 
-            return play;
+            var playDto = new PlayDto
+            {
+                PlayId = play.PlayId,
+                Name = play.Name,
+                Duration = play.Duration,
+                AgeCategory = play.AgeCategory,
+                IsActive = play.IsActive,
+                LastEditTime = play.LastEditTime,
+            };
+
+            var roles = play.RoleInPlays.Select(r =>
+            new RoleDto
+            {
+                RoleInPlayId = r.RoleInPlayId,
+                RoleType = r.Type,
+                Name = r.Name,
+                LastEditTime = r.LastEditTime,
+            }
+            ).ToList();
+
+            playDto.RoleDtos = roles;
+
+            return playDto;
         }
 
-        // PUT: api/Plays/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        [HttpPut("{playId}")]
         public async Task<IActionResult> PutPlay(int id, Play play)
         {
             if (id != play.PlayId)
@@ -139,8 +134,9 @@ namespace TheatreManagement.Server.Controllers
 
         // POST: api/Plays
         [HttpPost]
-        public async Task<IActionResult> PostPlay(PlayDTO playDto)
+        public async Task<IActionResult> PostPlay(PlayDto playDto)
         {
+
             var play = new Play
             {
                 Name = playDto.Name,
@@ -150,6 +146,17 @@ namespace TheatreManagement.Server.Controllers
                 LastEditTime = DateTime.UtcNow,
                 DeletionTime = null
             };
+
+            foreach (var role in playDto.RoleDtos)
+            {
+                _context.RoleInPlays.Add(new RoleInPlay
+                {
+                    Name = role.Name,
+                    Type = role.RoleType,
+                    LastEditTime = DateTime.UtcNow,
+                    Play = play
+                });
+            }
 
             _context.Plays.Add(play);
             await _context.SaveChangesAsync();

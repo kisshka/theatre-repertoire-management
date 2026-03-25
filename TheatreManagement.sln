@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheatreManagement.Server", "TheatreManagement.Server\TheatreManagement.Server.csproj", "{217D2062-7FB1-4A65-A5ED-9600F9796E25}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TheatreManagement.Server", "TheatreManagement.Server\TheatreManagement.Server.csproj", "{217D2062-7FB1-4A65-A5ED-9600F9796E25}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheatreManagement.Domain", "TheatreManagement.Domain\TheatreManagement.Domain.csproj", "{8175D820-4116-3358-CE9C-CFB4558EB420}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TheatreManagement.Domain", "TheatreManagement.Domain\TheatreManagement.Domain.csproj", "{8175D820-4116-3358-CE9C-CFB4558EB420}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheatreManagement.Client", "TheatreManagement.Client\TheatreManagement.Client.csproj", "{AED802B3-05C2-97BE-89CC-50BFD51ECABB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TheatreManagement.Client", "TheatreManagement.Client\TheatreManagement.Client.csproj", "{AED802B3-05C2-97BE-89CC-50BFD51ECABB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheatreManagement.Shared", "TheatreManagement.Shared\TheatreManagement.Shared.csproj", "{C807337A-D9EB-43E6-94FD-CCF887342A3B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TheatreManagement.Shared", "TheatreManagement.Shared\TheatreManagement.Shared.csproj", "{C807337A-D9EB-43E6-94FD-CCF887342A3B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

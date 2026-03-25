@@ -3,16 +3,16 @@ html, body {
 }
 
 :root {
-  --primary-color: #708D81;
-  --secondary-color: #D4B655;
-  --dark-header: #001427;
-
-  --dark-gray:#615f5f; 
-  --gray: #ada1a1;
-  --light-gray: #d4d1d1;
-
-  --light: #ffffff;
-  --dark: #000000;
+    --primary-color: #708D81;
+    --secondary-color: #D4B655;
+    --danger-color: #bd4a4a;
+    --danger-light: #e07272;
+    --dark-header: #001427;
+    --dark-gray: #615f5f;
+    --gray: #ada1a1;
+    --light-gray: #d4d1d1;
+    --light: #ffffff;
+    --dark: #000000;
 }
 
 h1 {
@@ -175,4 +175,35 @@ code {
 /*Модальное окно*/
 .ant-modal-body {
     padding: 20px 50px 80px 50px;
+}
+
+/*Динамические поля*/
+.dinamic-fields {
+    display: flex;
+    margin-top: 8px;
+    margin-bottom: 0px;
+    width: 100%;
+}
+
+.dinamic-fields .ant-input {
+    min-width: 250px;
+    margin-right: 10px;
+}
+
+.dinamic-fields button {
+    background: var(--danger-color);
+    padding: 5px 7px;
+    margin-left: 4px;
+    border: none;
+}
+.dinamic-fields button:hover {
+    background: var(--danger-light);
+}
+
+.dinamic-fields button[disabled], .dinamic-fields button[disabled]:hover {
+    background: var(--gray)
+}
+
+.dinamic-fields button svg {
+    color: white;
 }

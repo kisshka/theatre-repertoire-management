@@ -1,0 +1,110 @@
+@page "/users"
+@using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Client.Services
+@using TheatreManagement.Client.Helpers
+
+
+<PageTitle>Список пользователей</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Список пользователей</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="ButtonType.Primary">Архив
+            <Icon Type="@IconType.Outline.Right" />
+        </Button>
+    </PageHeaderExtra>
+</PageHeader>
+
+@* Добавление пользователя *@
+<div class="table-page-header">
+    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+        <Icon Type="@IconType.Outline.Plus" />
+    </Button>
+
+    <Search Placeholder="Введите ФИО пользователя"  EnterButton="true"/>
+
+    <Button Type="ButtonType.Default">
+        <Icon Type="@IconType.Fill.Filter"/>
+    </Button>
+</div>
+
+<Table TItem="@UserDto" DataSource="@_userViewModels" PageSize="10">
+    @foreach (var column in columns)
+    {
+        if (column == "Role")
+        {
+            <Column TData="object" DataIndex="@column" Title="Роль">
+                <Template>
+                    @RoleHelper.GetDisplayName(context.Role)
+                </Template>
+            </Column>
+        }
+        else
+        {
+            <Column TData="object" DataIndex="@column"></Column>
+        }
+    }
+</Table>
+
+<AddModal @bind-Visible="@addModalVisible"
+          OnSuccess="@OnUserAdded"/>
+
+
+
+@inject AuthenticationStateProvider provider
+@inject ModalService ModalService;
+@inject NavigationManager navManager
+@code {
+    private bool addModalVisible = false;
+
+    // Работа с ролями
+    private string _selectedRole;
+    private List<RoleItem> _roles = RoleHelper.GetAllRoles();
+
+
+    private async Task OnUserAdded()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        _userViewModels = await authStateProvider.GetAllUsersAsync();
+        StateHasChanged();
+    }
+
+    bool _visible = false;
+    bool _submitting = false;
+    private Form<RegisterModel> _form;
+
+    private RegisterModel model = new();
+
+    public string error = "";
+ 
+    @* Регистрация *@
+    private async Task RegisterAsync() {
+
+        var authStateProvider = (CustomAuthStateProvider)provider;
+
+        var response = await authStateProvider.RegisterAsync(model);
+        if (response.Succeeded) {
+
+            _userViewModels = await authStateProvider.GetAllUsersAsync();
+            _form.Reset();
+            error = "";
+        }
+        else {
+            error = "Что-то пошло не так";
+        }
+    }
+
+    private List<UserDto> _userViewModels;
+
+    // Данные для заполнения таблиц
+    string[] columns = { "Surname", "Name", "Fathername", "Role" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        _userViewModels = await authStateProvider.GetAllUsersAsync();
+    }
+
+}
+
+

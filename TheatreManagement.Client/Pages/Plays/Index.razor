@@ -1,0 +1,101 @@
+﻿@page "/plays"
+
+<PageTitle>Список спектаклей</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="ButtonType.Primary">
+            Архив
+            <Icon Type="@IconType.Outline.Right" />
+        </Button>
+    </PageHeaderExtra>
+</PageHeader>
+
+<div class="table-page-header">
+    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+        <Icon Type="@IconType.Outline.Plus" />
+    </Button>
+
+    <Search Placeholder="Введите название представления"
+            @bind-Value="@searchText"
+            EnterButton="true"
+            OnSearch="@OnSearchAsync" />
+    <Button Type="ButtonType.Default">
+        <Icon Type="@IconType.Fill.Filter" />
+    </Button>
+</div>
+
+<Table TItem="PlayDto"
+       DataSource="@plays"
+       PageSize="@pageSize"
+       Total="@total"
+       @bind-PageIndex="currentPage"
+       OnChange="@OnTableChange"
+       OnRowClick="@OnRowClick">
+
+    <PropertyColumn Property="@(c => c.Name)" Title="Название" />
+    <PropertyColumn Property="@(c => c.Duration)" Title="Длительность" />
+    <PropertyColumn Property="@(c => c.AgeCategory)" Title="Возрастная категория" />
+
+</Table>
+
+<AddModal @bind-Visible="@addModalVisible"
+          OnSuccess="@OnPlayAdded" />
+
+@inject PlayService playService
+@inject NavigationManager navManager
+
+@code {
+    private List<PlayDto> plays = new();
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
+    private bool addModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnRowClick(RowData<PlayDto> row)
+    {
+        var play = row.Data;
+        navManager.NavigateTo($"/plays/{play.PlayId}");
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<PlayDto> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    private async Task OnPlayAdded()
+    {
+        await LoadDataAsync(currentPage);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        try
+        {
+            var result = await playService.GetPlaysPagedAsync(page, pageSize, searchText);
+            if (result != null)
+            {
+                plays = result.Items ?? new List<PlayDto>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+}

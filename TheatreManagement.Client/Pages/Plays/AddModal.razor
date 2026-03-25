@@ -1,0 +1,213 @@
+﻿@using AntDesign
+@using Microsoft.AspNetCore.Components.Forms
+@using TheatreManagement.Shared.DTOs
+
+<Modal Visible="@Visible"
+       OkButtonProps="@(new ButtonProps { Disabled = Submitting })"
+Title="Добавление представления"
+OnOk="HandleOk"
+OnCancel="HandleCancel"
+ConfirmLoading="Submitting"
+MaskClosable="@false">
+
+    <Form Model="@Model"
+    OnFinishFailed="@OnFinishFailed"
+    OnFinish="@OnFinish"
+    @ref="@FormRef">
+
+        <FormItem Label="Введите название">
+            <Input @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem Label="Введите продолжительность">
+            <Input @bind-Value="@context.Duration" />
+        </FormItem>
+        <FormItem Label="Введите возрастной рейтинг">
+            <Input @bind-Value="@context.AgeCategory" />
+        </FormItem>
+
+        @* Актерские роли *@
+        <Divider Orientation="DividerOrientation.Left">Актерские роли</Divider>
+
+        <Button Type="ButtonType.Primary"
+        OnClick="@AddActorRole"
+        Icon="@IconType.Outline.Plus">
+            Добавить роль
+        </Button>
+
+        @for (int i = 0; i < ActorRoles.Count; i++)
+        {
+            var currentIndex = i;
+            <div class="dinamic-fields">
+                <FormItem Required>
+                    <Input @bind-Value="@ActorRoles[currentIndex].Name"
+                    Placeholder="Введите название роли" />
+                </FormItem>
+                <Button Danger
+                OnClick="@(() => RemoveActorRole(currentIndex))"
+                Disabled="@(ActorRoles.Count == 1)">
+                    <Icon Type="@IconType.Outline.Delete" />
+                </Button>
+            </div>
+        }
+
+        @* Технические роли *@
+        <Divider Orientation="DividerOrientation.Left">Технические роли</Divider>
+
+        <Button Type="ButtonType.Primary"
+        OnClick="@AddTechnicRole"
+        Icon="@IconType.Outline.Plus">
+            Добавить роль
+        </Button>
+
+        @for (int i = 0; i < TechnicRoles.Count; i++)
+        {
+            var currentIndex = i;
+            <div class="dinamic-fields">
+                <FormItem Required>
+                    <Input @bind-Value="@TechnicRoles[currentIndex].Name"
+                    Placeholder="Введите название роли" />
+                </FormItem>
+                <Button Danger
+                OnClick="@(() => RemoveTechnicRole(currentIndex))"
+                Disabled="@(TechnicRoles.Count == 1)">
+                    <Icon Type="@IconType.Outline.Delete" />
+                </Button>
+            </div>
+        }
+
+    </Form>
+</Modal>
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+    [Parameter] public EventCallback OnSuccess { get; set; }
+
+    [Inject] private PlayService playService { get; set; }
+
+    private Form<PlayDto> FormRef { get; set; }
+    private PlayDto Model { get; set; } = new();
+
+    private List<RoleDto> ActorRoles { get; set; } = new() { new RoleDto("Актерская") };
+    private List<RoleDto> TechnicRoles { get; set; } = new() { new RoleDto("Техническая") };
+
+    private string Error { get; set; } = "";
+    private bool Submitting { get; set; } = false;
+
+    private async Task OnFinish(EditContext editContext)
+    {
+        if (Submitting) return;
+
+        Submitting = true;
+        StateHasChanged();
+
+        try
+        {
+            // Очищаем и заполняем роли
+            Model.RoleDtos.Clear();
+
+            foreach (var role in ActorRoles)
+            {
+                // Проверяем, что роль не пустая
+                if (!string.IsNullOrWhiteSpace(role.Name))
+                {
+                    Model.RoleDtos.Add(role);
+                }
+            }
+
+            foreach (var role in TechnicRoles)
+            {
+                if (!string.IsNullOrWhiteSpace(role.Name))
+                {
+                    Model.RoleDtos.Add(role);
+                }
+            }
+
+            // Дополнительная проверка: есть ли хотя бы одна роль
+            if (Model.RoleDtos.Count == 0)
+            {
+                // Показываем сообщение об ошибке
+                return;
+            }
+
+            await playService.CreatePlayAsync(Model);
+
+            Visible = false;
+            await VisibleChanged.InvokeAsync(false);
+            await OnSuccess.InvokeAsync();
+
+            ResetForm();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+            StateHasChanged();
+        }
+        finally
+        {
+            Submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Console.WriteLine($"Failed");
+    }
+
+    private async Task HandleOk()
+    {
+        // Просто запускаем валидацию формы
+        if (FormRef != null)
+        {
+            FormRef.Submit();
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        Visible = false;
+        await VisibleChanged.InvokeAsync(false);
+        ResetForm();
+    }
+
+    private void AddActorRole()
+    {
+        ActorRoles.Add(new RoleDto("Актерская"));
+        StateHasChanged();
+    }
+
+    private void RemoveActorRole(int index)
+    {
+        if (ActorRoles.Count > 1 && index >= 0 && index < ActorRoles.Count)
+        {
+            ActorRoles.RemoveAt(index);
+            StateHasChanged();
+        }
+    }
+
+    private void AddTechnicRole()
+    {
+        TechnicRoles.Add(new RoleDto("Техническая"));
+        StateHasChanged();
+    }
+
+    private void RemoveTechnicRole(int index)
+    {
+        if (TechnicRoles.Count > 1 && index >= 0 && index < TechnicRoles.Count)
+        {
+            TechnicRoles.RemoveAt(index);
+            StateHasChanged();
+        }
+    }
+
+    private void ResetForm()
+    {
+        Model = new PlayDto();
+        ActorRoles = new List<RoleDto> { new RoleDto("Актерская") };
+        TechnicRoles = new List<RoleDto> { new RoleDto("Техническая") };
+        Error = "";
+        FormRef?.Reset();
+        StateHasChanged();
+    }
+}
