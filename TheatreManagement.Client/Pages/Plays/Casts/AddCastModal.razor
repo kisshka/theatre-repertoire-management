@@ -1,0 +1,273 @@
+﻿@using AntDesign
+@using Microsoft.AspNetCore.Components.Forms
+@using TheatreManagement.Shared.DTOs
+
+<Modal Visible="@Visible"
+       Title="Добавление состава"
+       OnOk="HandleOk"
+       OnCancel="HandleCancel"
+       ConfirmLoading="Submitting"
+       MaskClosable="@false">
+
+    <Form Model="@Model" @ref="@FormRef">
+
+        <FormItem Label="Название состава">
+            <Input @bind-Value="@Model.Name" />
+        </FormItem>
+
+        <Divider>Актеры</Divider>
+
+        @foreach (var role in play.RoleDtos.Where(r => r.RoleType == "Актерская"))
+        {
+            <div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                <b>@role.Name</b>
+
+                @for (int i = 0; i < GetCount(role.RoleInPlayId); i++)
+                {
+                    var roleId = role.RoleInPlayId;
+                    var index = i;
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <Select Mode="SelectMode.Default"
+                                DataSource="@actors"
+                                Value="@GetEmployeeId(roleId, index)"
+                                ValueChanged="@((int value) => SetEmployeeId(roleId, index, value))"
+                                LabelName="@nameof(EmployeeDto.Surname)"
+                                ValueName="@nameof(EmployeeDto.EmployeeId)"
+                                Style="flex: 1" />
+
+                        <Button Danger OnClick="() => Remove(roleId, index)">
+                            <Icon Type="@IconType.Outline.Delete" />
+                        </Button>
+                    </div>
+                }
+
+                <Button Type="ButtonType.Primary"
+                        OnClick="() => Add(role.RoleInPlayId)"
+                        Style="margin-top: 10px">
+                    + Добавить актера
+                </Button>
+            </div>
+        }
+
+        <Divider>Технический состав</Divider>
+
+        @foreach (var role in play.RoleDtos.Where(r => r.RoleType == "Техническая"))
+        {
+            <div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                <b>@role.Name</b>
+
+                @for (int i = 0; i < GetCount(role.RoleInPlayId); i++)
+                {
+                    var roleId = role.RoleInPlayId;
+                    var index = i;
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <Select Mode="SelectMode.Default"
+                                DataSource="@technics"
+                                Value="@GetEmployeeId(roleId, index)"
+                                ValueChanged="@((int value) => SetEmployeeId(roleId, index, value))"
+                                LabelName="@nameof(EmployeeDto.Surname)"
+                                ValueName="@nameof(EmployeeDto.EmployeeId)"
+                                Style="flex: 1" />
+
+                        <Button Danger OnClick="() => Remove(roleId, index)">
+                            <Icon Type="@IconType.Outline.Delete" />
+                        </Button>
+                    </div>
+                }
+
+                <Button Type="ButtonType.Primary"
+                        OnClick="() => Add(role.RoleInPlayId)"
+                        Style="margin-top: 10px">
+                    + Добавить сотрудника
+                </Button>
+            </div>
+        }
+
+    </Form>
+</Modal>
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+    [Parameter] public EventCallback OnSuccess { get; set; }
+    [Parameter] public int PlayId { get; set; }
+
+    [Inject] private PlayService playService { get; set; }
+    [Inject] private EmployeeService employeeService { get; set; }
+
+    private Form<CastDto> FormRef { get; set; }
+    private CastDto Model { get; set; } = new();
+    private PlayDto play { get; set; } = new();
+
+    private List<EmployeeDto> actors = new();
+    private List<EmployeeDto> technics = new();
+    private bool Submitting { get; set; } = false;
+
+    // Ключ: Id роли, Значение: список Id сотрудников
+    private Dictionary<int, List<int>> selectedEmployees = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        play = await playService.GetPlayAsync(PlayId);
+        actors = await employeeService.GetActorsAsync();
+        technics = await employeeService.GetTechnicsAsync();
+
+        // Инициализируем пустые списки для каждой роли
+        foreach (var role in play.RoleDtos)
+        {
+            selectedEmployees[role.RoleInPlayId] = new List<int>();
+        }
+    }
+
+    // Получить количество сотрудников для роли
+    private int GetCount(int roleId)
+    {
+        if (selectedEmployees.ContainsKey(roleId))
+        {
+            return selectedEmployees[roleId].Count;
+        }
+        return 0;
+    }
+
+    // Получить Id сотрудника по роли и индексу
+    private int GetEmployeeId(int roleId, int index)
+    {
+        if (selectedEmployees.ContainsKey(roleId) && index >= 0 && index < selectedEmployees[roleId].Count)
+        {
+            return selectedEmployees[roleId][index];
+        }
+        return 0;
+    }
+
+    // Установить Id сотрудника (вызывается при выборе в Select)
+    private void SetEmployeeId(int roleId, int index, int value)
+    {
+        if (!selectedEmployees.ContainsKey(roleId))
+        {
+            selectedEmployees[roleId] = new List<int>();
+        }
+
+        // Расширяем список если нужно
+        while (selectedEmployees[roleId].Count <= index)
+        {
+            selectedEmployees[roleId].Add(0);
+        }
+
+        selectedEmployees[roleId][index] = value;
+        StateHasChanged();
+    }
+
+    // Добавить нового сотрудника для роли
+    private void Add(int roleId)
+    {
+        if (!selectedEmployees.ContainsKey(roleId))
+        {
+            selectedEmployees[roleId] = new List<int>();
+        }
+        selectedEmployees[roleId].Add(0); // Добавляем пустого сотрудника
+        StateHasChanged();
+    }
+
+    // Удалить сотрудника
+    private void Remove(int roleId, int index)
+    {
+        if (selectedEmployees.ContainsKey(roleId))
+        {
+            if (index >= 0 && index < selectedEmployees[roleId].Count)
+            {
+                selectedEmployees[roleId].RemoveAt(index);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task HandleOk()
+    {
+        if (Submitting) return;
+
+        Submitting = true;
+        StateHasChanged();
+
+        try
+        {
+            // Собираем всех выбранных сотрудников в список для отправки
+            var employeeRoles = new List<EmployeeRoleCreateDto>();
+
+            foreach (var role in selectedEmployees)
+            {
+                foreach (var employeeId in role.Value)
+                {
+                    if (employeeId > 0) // Только выбранные
+                    {
+                        employeeRoles.Add(new EmployeeRoleCreateDto
+                            {
+                                RoleInPlayId = role.Key,
+                                EmployeeId = employeeId
+                            });
+                    }
+                }
+            }
+
+            // Проверяем, что есть выбранные сотрудники
+            if (employeeRoles.Any())
+            {
+                // TODO: Отправляем на сервер
+                // await playService.CreateCastAsync(new CastCreateDto
+                // {
+                //     Name = Model.Name,
+                //     PlayId = PlayId,
+                //     EmployeeRoles = employeeRoles
+                // });
+
+                Console.WriteLine($"Создание состава: {Model.Name}, ролей: {employeeRoles.Count}");
+
+                // Закрываем окно
+                Visible = false;
+                await VisibleChanged.InvokeAsync(false);
+                await OnSuccess.InvokeAsync();
+
+                // Очищаем форму
+                ResetForm();
+            }
+            else
+            {
+                // Если нет выбранных сотрудников, показываем предупреждение
+                Console.WriteLine("Не выбрано ни одного сотрудника");
+                // Здесь можно добавить уведомление пользователю
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            Submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        Visible = false;
+        await VisibleChanged.InvokeAsync(false);
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        Model = new CastDto();
+
+        // Очищаем все списки
+        foreach (var role in play.RoleDtos)
+        {
+            if (selectedEmployees.ContainsKey(role.RoleInPlayId))
+            {
+                selectedEmployees[role.RoleInPlayId] = new List<int>();
+            }
+        }
+
+        FormRef?.Reset();
+        StateHasChanged();
+    }
+}

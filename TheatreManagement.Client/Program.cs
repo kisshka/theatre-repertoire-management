@@ -11,6 +11,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 //Мои сервисы
 builder.Services.AddScoped<PlayService>();
+builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.Configuration["WebApiAdress"]!) });
 
 builder.Services.AddAntDesign();

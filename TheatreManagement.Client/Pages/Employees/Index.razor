@@ -1,0 +1,146 @@
+﻿@page "/employees"
+@inject HttpClient Http
+
+<PageTitle>Список сотрудников</PageTitle>
+
+<PageHeader>
+        <PageHeaderTitle>Список сотрудников</PageHeaderTitle>
+        <PageHeaderExtra>
+            <Button Type="ButtonType.Primary">Архив
+            <Icon Type="@IconType.Outline.Right" />
+            </Button>
+        </PageHeaderExtra>
+    </PageHeader>
+
+<div class="table-page-header">
+    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+        <Icon Type="@IconType.Outline.Plus" />
+    </Button>
+
+    <Search Placeholder="Введите ФИО сотрудника"
+            @bind-Value="@searchText"
+            EnterButton="true"
+            OnSearch="@OnSearchAsync" />
+
+    <Button Type="ButtonType.Default">
+        <Icon Type="@IconType.Fill.Filter" />
+    </Button>
+</div>
+
+<Table TItem="EmployeeDto"
+       DataSource="@employees"
+       PageSize="@pageSize"
+       Total="@total"
+       @bind-PageIndex="currentPage"
+       OnChange="@OnTableChange"
+       OnRowClick="@OnRowClick">
+    <PropertyColumn Property="@(c => c.Surname)" Title="Фамилия" />
+    <PropertyColumn Property="@(c => c.Name)" Title="Имя" />
+    <PropertyColumn Property="@(c => c.FatherName)" Title="Отчество" />
+    <PropertyColumn Property="@(c => c.Post)" Title="Должность" />
+</Table>
+
+<AddModal @bind-Visible="@addModalVisible"
+          OnSuccess="@OnPlayAdded" />
+
+@inject EmployeeService employeeService
+@inject NavigationManager navManager
+@code {
+
+    private List<EmployeeDto> employees = new();
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
+    private bool addModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnRowClick(RowData<EmployeeDto> row)
+    {
+        // var play = row.Data;
+        // navManager.NavigateTo($"/plays/{play.PlayId}");
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<EmployeeDto> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    private async Task OnPlayAdded()
+    {
+        await LoadDataAsync(currentPage);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        try
+        {
+            var result = await employeeService.GetEmployeesPagedAsync(page, pageSize, searchText);
+            if (result != null)
+            {
+                employees = result.Items ?? new List<EmployeeDto>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+
+
+   //  string[] columns = { "FullName", "Post"};
+
+   //  Data[] data = new Data[100];
+
+   //  protected override void OnInitialized()
+   //  {
+   //      for (int i = 0; i < 100; i++)
+   //      {
+   //          data[i] = new Data()
+   //          {
+   //              Key = i.ToString(),
+   //              FullName = $"Иванов Иван Иванович{i}",
+   //              Post = "Актер",
+   //              IsPresent = true,
+   //          };
+   //          data[i+1] = new Data()
+   //          {
+   //              Key = i.ToString(),
+   //              FullName = $"Иванов Иван Иванович{i}",
+   //              Post = "Актер",
+   //              IsPresent = false,
+   //          };
+   //      i++;
+   //      }
+   //  }
+   // List<Data> options = new List<Data>();
+   //  public class Data
+   //  {
+   //      [DisplayName("Key")]
+   //      public string? Key { get; set; }
+
+   //      [DisplayName("ФИО")]
+   //      public string? FullName { get; set; }
+
+   //      [DisplayName("Должность")]
+   //      public string? Post { get; set; }
+
+   //      [DisplayName("Присутствует")]
+   //      public bool IsPresent { get; set; }
+   //  }
+}
+
+

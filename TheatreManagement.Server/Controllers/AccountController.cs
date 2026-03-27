@@ -71,7 +71,6 @@ namespace TheatreManagement.Server.Controllers
                 FatherName = user.FatherName,
                 Role = roles[0]
             };
-
         }
 
         [HttpGet("all")]

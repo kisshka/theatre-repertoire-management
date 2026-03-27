@@ -68,10 +68,10 @@ namespace TheatreManagement.Server.Controllers
 
 
         [HttpGet("{playId}")]
-        public async Task<ActionResult<PlayDto>> GetPlay(int id)
+        public async Task<ActionResult<PlayDto>> GetPlay(int playId)
         {
             var play = await _context.Plays.Include(p => p.RoleInPlays)
-                                           .FirstOrDefaultAsync(p => p.PlayId == id);
+                                           .FirstOrDefaultAsync(p => p.PlayId == playId);
 
             if (play == null)
             {
@@ -104,9 +104,9 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpPut("{playId}")]
-        public async Task<IActionResult> PutPlay(int id, Play play)
+        public async Task<IActionResult> PutPlay(int playId, Play play)
         {
-            if (id != play.PlayId)
+            if (playId != play.PlayId)
             {
                 return BadRequest();
             }
@@ -119,7 +119,7 @@ namespace TheatreManagement.Server.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!PlayExists(id))
+                if (!PlayExists(playId))
                 {
                     return NotFound();
                 }

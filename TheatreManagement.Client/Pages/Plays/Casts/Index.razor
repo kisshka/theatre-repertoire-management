@@ -1,15 +1,18 @@
 ﻿@page "/plays/{id:int}/casts"
 
-<PageTitle>Список спектаклей</PageTitle>
+<PageTitle>Список составов</PageTitle>
 
 <PageHeader>
-    <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
+    <PageHeaderTitle>Список составов</PageHeaderTitle>
     <PageHeaderSubtitle></PageHeaderSubtitle>
 </PageHeader>
 
-    <Card>
+<Card>
+    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+        <Icon Type="@IconType.Outline.Plus" />
+    </Button>
 
-@*     <FormItem Label="Выберите роль">
+    @*     <FormItem Label="Выберите роль">
         <Select Mode="SelectMode.Default"
                 DataSource="@_roles"
                 @bind-Value="@context.Role"
@@ -17,10 +20,21 @@
                 ValueName="Value">
         </Select>
     </FormItem> *@
-     
-    </Card>
+
+</Card>
+
+<AddCastModal @bind-Visible="@addModalVisible"
+PlayId=@Id
+OnSuccess="@OnCastAdded" />
 
 @code {
     [Parameter] public int Id { get; set; }
+
+    private bool addModalVisible = false;
+
+    private async Task OnCastAdded()
+    {
+    }
+
 
 }
