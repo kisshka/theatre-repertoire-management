@@ -16,10 +16,11 @@ namespace TheatreManagement.Shared.DTOs
         // ссылки
         public string? UserId { get; set; }
         public UserDto? User { get; set; }
+        public int PlayId { get; set; }
+        public PlayDto? Play { get; set; }
 
         public List<EmployeeRoleCreateDto> EmployeeRolesCreate { get; set; } = new();
+        //public List<EmployeeRoleDto> EmployeeRolesDto { get; set; } = new();
     }
-
-
 
 }

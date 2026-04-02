@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheatreManagement.Domain.Data;
 
@@ -10,9 +11,11 @@ using TheatreManagement.Domain.Data;
 namespace TheatreManagement.Domain.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260328114547_EditNullablesInCasts")]
+    partial class EditNullablesInCasts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -236,15 +239,10 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PlayId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("UserId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("CastId");
-
-                    b.HasIndex("PlayId");
 
                     b.HasIndex("UserId");
 
@@ -303,8 +301,14 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<int?>("EventId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("LastEditTime")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("RoleInPlayId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("EmployeeRoleId");
 
@@ -315,6 +319,8 @@ namespace TheatreManagement.Domain.Migrations
                     b.HasIndex("EventId");
 
                     b.HasIndex("RoleInPlayId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("EmployeeRoles");
                 });
@@ -456,6 +462,9 @@ namespace TheatreManagement.Domain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("LastEditTime")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
@@ -465,9 +474,14 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<string>("Type")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("RoleInPlayId");
 
                     b.HasIndex("PlayId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("RoleInPlays");
                 });
@@ -557,17 +571,9 @@ namespace TheatreManagement.Domain.Migrations
 
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Cast", b =>
                 {
-                    b.HasOne("TheatreManagement.Domain.Entities.Play", "Play")
-                        .WithMany("Casts")
-                        .HasForeignKey("PlayId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Casts")
                         .HasForeignKey("UserId");
-
-                    b.Navigation("Play");
 
                     b.Navigation("User");
                 });
@@ -603,6 +609,10 @@ namespace TheatreManagement.Domain.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("EmployeeRoles")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("Cast");
 
                     b.Navigation("Employee");
@@ -610,6 +620,8 @@ namespace TheatreManagement.Domain.Migrations
                     b.Navigation("Event");
 
                     b.Navigation("RoleInPlay");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Event", b =>
@@ -673,7 +685,13 @@ namespace TheatreManagement.Domain.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("RoleInPlays")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("Play");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Stationar", b =>
@@ -698,11 +716,15 @@ namespace TheatreManagement.Domain.Migrations
                 {
                     b.Navigation("Casts");
 
+                    b.Navigation("EmployeeRoles");
+
                     b.Navigation("Employees");
 
                     b.Navigation("Events");
 
                     b.Navigation("Plays");
+
+                    b.Navigation("RoleInPlays");
                 });
 
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Cast", b =>
@@ -733,8 +755,6 @@ namespace TheatreManagement.Domain.Migrations
 
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Play", b =>
                 {
-                    b.Navigation("Casts");
-
                     b.Navigation("Events");
 
                     b.Navigation("PlayEvents");

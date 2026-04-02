@@ -1,0 +1,127 @@
+﻿@using AntDesign
+@using Microsoft.AspNetCore.Components.Forms
+@using TheatreManagement.Shared.DTOs
+
+<Modal Visible="@Visible"
+OkButtonProps="@(new ButtonProps { Disabled = Submitting })"
+Title="Редактирование сотрудника"
+OnOk="HandleOk"
+OnCancel="HandleCancel"
+ConfirmLoading="Submitting"
+MaskClosable="@false">
+
+    <Form Model="@Model"
+    OnFinishFailed="@OnFinishFailed"
+    OnFinish="@OnFinish"
+    @ref="@FormRef">
+
+        <FormItem Label="Введите фамилию">
+            <Input @bind-Value="@context.Surname" />
+        </FormItem>
+        <FormItem Label="Введите имя">
+            <Input @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem Label="Введите отчество">
+            <Input @bind-Value="@context.FatherName" />
+        </FormItem>
+        <FormItem Label="Введите должность">
+            <Input @bind-Value="@context.Post" />
+        </FormItem>
+
+    </Form>
+</Modal>
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+    [Parameter] public EventCallback OnSuccess { get; set; }
+    [Parameter] public int EmployeeId { get; set; }
+
+    [Inject] private EmployeeService employeeService { get; set; }
+
+    private Form<EmployeeDto> FormRef { get; set; }
+    private EmployeeDto Model { get; set; } = new();
+
+
+    private string Error { get; set; } = "";
+    private bool Submitting { get; set; } = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Visible)
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        var employee = await employeeService.GetEmployeeAsync(EmployeeId);
+
+        Model.EmployeeId = employee.EmployeeId;
+        Model.Surname = employee.Surname;   
+        Model.Name = employee.Name;   
+        Model.FatherName = employee.FatherName;
+        Model.IsActive = employee.IsActive;
+        Model.Post = employee.Post;
+
+        StateHasChanged();
+    }
+
+    private async Task OnFinish(EditContext editContext)
+    {
+        if (Submitting) return;
+
+        Submitting = true;
+        StateHasChanged();
+
+        try
+        {
+            await employeeService.UpdateEmployeeAsync(Model);
+
+            Visible = false;
+            await VisibleChanged.InvokeAsync(false);
+            await OnSuccess.InvokeAsync();
+
+            ResetForm();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+            StateHasChanged();
+        }
+        finally
+        {
+            Submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Console.WriteLine($"Failed");
+    }
+
+    private async Task HandleOk()
+    {
+        if (FormRef != null)
+        {
+            FormRef.Submit();
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        Visible = false;
+        await VisibleChanged.InvokeAsync(false);
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        Model = new EmployeeDto();
+        Error = "";
+        FormRef?.Reset();
+        StateHasChanged();
+    }
+}

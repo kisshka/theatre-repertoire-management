@@ -21,14 +21,23 @@
         <Icon Type="@IconType.Outline.Plus" />
     </Button>
 
-    <Search Placeholder="Введите ФИО пользователя"  EnterButton="true"/>
+    <Search Placeholder="Введите ФИО пользователя"
+    @bind-Value="@searchText"
+    EnterButton="true"
+    OnSearch="@OnSearchAsync" />
 
     <Button Type="ButtonType.Default">
         <Icon Type="@IconType.Fill.Filter"/>
     </Button>
 </div>
 
-<Table TItem="@UserDto" DataSource="@_userViewModels" PageSize="10">
+<Table TItem="@UserDto"
+DataSource="@users"
+PageSize="@pageSize"
+Total="@total"
+@bind-PageIndex="currentPage"
+OnChange="@OnTableChange"
+OnRowClick="@OnRowClick">
     @foreach (var column in columns)
     {
         if (column == "Role")
@@ -47,8 +56,11 @@
 </Table>
 
 <AddModal @bind-Visible="@addModalVisible"
-          OnSuccess="@OnUserAdded"/>
+OnSuccess="@OnUserAdded"/>
 
+<EditModal @bind-Visible="@editModalVisible"
+           Id="@editId"
+           OnSuccess="@OnUserAdded" />
 
 
 @inject AuthenticationStateProvider provider
@@ -56,53 +68,65 @@
 @inject NavigationManager navManager
 @code {
     private bool addModalVisible = false;
+    private bool editModalVisible = false;
+    private string editId = "";
 
-    // Работа с ролями
-    private string _selectedRole;
-    private List<RoleItem> _roles = RoleHelper.GetAllRoles();
+    private List<UserDto> users;
 
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
 
     private async Task OnUserAdded()
     {
         var authStateProvider = (CustomAuthStateProvider)provider;
-        _userViewModels = await authStateProvider.GetAllUsersAsync();
+        await LoadDataAsync(currentPage);
         StateHasChanged();
     }
-
-    bool _visible = false;
-    bool _submitting = false;
-    private Form<RegisterModel> _form;
-
-    private RegisterModel model = new();
-
-    public string error = "";
- 
-    @* Регистрация *@
-    private async Task RegisterAsync() {
-
-        var authStateProvider = (CustomAuthStateProvider)provider;
-
-        var response = await authStateProvider.RegisterAsync(model);
-        if (response.Succeeded) {
-
-            _userViewModels = await authStateProvider.GetAllUsersAsync();
-            _form.Reset();
-            error = "";
-        }
-        else {
-            error = "Что-то пошло не так";
-        }
-    }
-
-    private List<UserDto> _userViewModels;
 
     // Данные для заполнения таблиц
     string[] columns = { "Surname", "Name", "Fathername", "Role" };
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<UserDto> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    private async Task OnRowClick(RowData<UserDto> row)
+    {
+        editId = row.Data.Id;
+        editModalVisible = true;
+    }
+    
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
         var authStateProvider = (CustomAuthStateProvider)provider;
-        _userViewModels = await authStateProvider.GetAllUsersAsync();
+        try
+        {
+            var result = await authStateProvider.GetUsersPagedAsync(page, pageSize, searchText);
+            if (result != null)
+            {
+                users = result.Items ?? new List<UserDto>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
     }
 
 }

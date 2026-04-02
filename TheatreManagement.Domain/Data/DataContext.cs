@@ -42,7 +42,7 @@ namespace TheatreManagement.Domain.Data
                 .HasOne(e => e.Tour)
                 .WithOne(t => t.Event)
                 .HasForeignKey<Tour>(t => t.TourId)
-                .IsRequired(false); 
+                .IsRequired(false);
         }
     }
 }

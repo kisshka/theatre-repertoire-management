@@ -93,8 +93,8 @@ namespace TheatreManagement.Server.Controllers
             {
                 RoleInPlayId = r.RoleInPlayId,
                 RoleType = r.Type,
-                Name = r.Name,
-                LastEditTime = r.LastEditTime,
+                IsUsed = _context.EmployeeRoles.Any(er => er.RoleInPlayId == r.RoleInPlayId),
+                Name = r.Name
             }
             ).ToList();
 
@@ -103,36 +103,6 @@ namespace TheatreManagement.Server.Controllers
             return playDto;
         }
 
-        [HttpPut("{playId}")]
-        public async Task<IActionResult> PutPlay(int playId, Play play)
-        {
-            if (playId != play.PlayId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(play).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!PlayExists(playId))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/Plays
         [HttpPost]
         public async Task<IActionResult> PostPlay(PlayDto playDto)
         {
@@ -153,7 +123,6 @@ namespace TheatreManagement.Server.Controllers
                 {
                     Name = role.Name,
                     Type = role.RoleType,
-                    LastEditTime = DateTime.UtcNow,
                     Play = play
                 });
             }
@@ -164,9 +133,97 @@ namespace TheatreManagement.Server.Controllers
             return Ok();
         }
 
-        private bool PlayExists(int id)
+        [HttpPut]
+        public async Task<IActionResult> PutPlay(PlayDto playDto)
         {
-            return _context.Plays.Any(e => e.PlayId == id);
+            var play = await _context.Plays.Where(p => p.PlayId == playDto.PlayId)
+                                     .Include(p => p.RoleInPlays)
+                                     .FirstOrDefaultAsync();
+
+            var errors = new List<string>();
+
+            play.Name = playDto.Name;
+            play.Duration = playDto.Duration;
+            play.IsActive = true;
+            play.AgeCategory = playDto.AgeCategory;
+            play.LastEditTime = DateTime.Now;
+
+
+            var updatedRoleIds = playDto.RoleDtos
+                .Where(r => r.RoleInPlayId > 0)
+                .Select(r => r.RoleInPlayId)
+                .ToHashSet();
+
+            var existingRoleIds = play.RoleInPlays
+                .Select(r => r.RoleInPlayId)
+                .ToHashSet();
+
+            foreach (var role in playDto.RoleDtos.Where(r => r.RoleInPlayId > 0))
+            {
+                var existingRole = play.RoleInPlays
+                     .FirstOrDefault(r => r.RoleInPlayId == role.RoleInPlayId);
+
+                if (existingRole != null)
+                {
+                    existingRole.Name = role.Name;
+                    existingRole.Type = role.RoleType;
+                }
+            }
+
+            foreach (var roleDto in playDto.RoleDtos.Where(r => r.RoleInPlayId == 0))
+            {
+                var newRole = new RoleInPlay
+                {
+                    Name = roleDto.Name,
+                    Type = roleDto.RoleType,
+                    Play = play
+                };
+                _context.RoleInPlays.Add(newRole);
+            }
+
+            var rolesToDelete = existingRoleIds.Except(updatedRoleIds).ToList();
+
+            foreach (var roleId in rolesToDelete)
+            {
+                var role = play.RoleInPlays.First(r => r.RoleInPlayId == roleId);
+
+                // Используется ли роль в ассоциативной таблице
+                var isUsed = await _context.EmployeeRoles
+                    .AnyAsync(er => er.RoleInPlayId == roleId);
+
+                if (isUsed)
+                {
+                    return BadRequest(new
+                    {
+                        Message = $"{role.Name} Используется в составах или мероприятиях",
+                    });
+                }
+                _context.RoleInPlays.Remove(role);
+
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
+
+
+        [HttpPut("{playId}/soft-delete")]
+        public async Task<IActionResult> SoftDeletePlay(int playId)
+        {
+            var play = await _context.Plays.Where(p => p.PlayId == playId)
+                                           .FirstOrDefaultAsync();
+
+            var errors = new List<string>();
+
+            play.DeletionTime = DateTime.Now;
+            play.IsActive = false;
+
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
     }
 }

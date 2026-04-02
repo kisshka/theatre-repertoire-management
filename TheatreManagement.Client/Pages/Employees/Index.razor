@@ -61,8 +61,8 @@
 
     private async Task OnRowClick(RowData<EmployeeDto> row)
     {
-        // var play = row.Data;
-        // navManager.NavigateTo($"/plays/{play.PlayId}");
+        var employee = row.Data;
+        navManager.NavigateTo($"/employees/{employee.EmployeeId}");
     }
 
     private async Task OnSearchAsync()

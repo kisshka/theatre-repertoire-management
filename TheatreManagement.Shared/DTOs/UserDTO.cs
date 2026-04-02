@@ -6,6 +6,8 @@ namespace TheatreManagement.Shared.DTOs
 {
     public class UserDto
     {
+        public string Id { get; set; }
+
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
         public string Email { get; set; } = string.Empty;
         [Required(ErrorMessage = "Поле обязательно для заполнения")]

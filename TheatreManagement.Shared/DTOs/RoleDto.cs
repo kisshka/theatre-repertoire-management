@@ -21,6 +21,7 @@ namespace TheatreManagement.Shared.DTOs
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
         public string? Name { get; set; }
         public string? RoleType { get; set; }
+        public bool IsUsed { get; set; }
         public DateTime LastEditTime { get; set; }
     }
 }

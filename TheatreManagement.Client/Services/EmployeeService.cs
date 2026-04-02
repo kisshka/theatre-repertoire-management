@@ -16,6 +16,14 @@ namespace TheatreManagement.Client.Services
         {
             return await _httpClient.PostAsJsonAsync("api/employees", employee);
         }
+        public async Task<HttpResponseMessage> UpdateEmployeeAsync(EmployeeDto employee)
+        {
+            return await _httpClient.PutAsJsonAsync("api/employees", employee);
+        }
+        public async Task<HttpResponseMessage> SoftDeleteEmployeeAsync(int employeeId)
+        {
+            return await _httpClient.PutAsJsonAsync($"api/employees/{employeeId}/soft-delete", new { });
+        }
 
         public async Task<PagedResult<EmployeeDto>> GetEmployeesPagedAsync(int page = 1, int pageSize = 10, string? searchText = null)
         {
@@ -28,6 +36,7 @@ namespace TheatreManagement.Client.Services
             return await _httpClient.GetFromJsonAsync<EmployeeDto>(
                 $"api/employees/{id}");
         }
+
 
         public async Task<List<EmployeeDto>> GetActorsAsync()
         {

@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json.Nodes;
+using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs;
 
 
@@ -110,6 +111,30 @@ namespace TheatreManagement.Client.Services
             return new FormResult {Succeeded = false, Errors = ["Ошибка подключения"] };
         }
 
+        public async Task<FormResult> UpdateUserAsync(UserDto userDto)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync("api/Account", userDto);
+                return new FormResult { Succeeded = true };
+            }
+            catch { }
+
+            return new FormResult { Succeeded = false, Errors = ["Ошибка подключения"] };
+        }
+
+        public async Task<FormResult> SoftDeleteUserAsync(string userId)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/Account/{userId}", new { });
+                return new FormResult { Succeeded = true };
+            }
+            catch { }
+
+            return new FormResult { Succeeded = false, Errors = ["Ошибка подключения"] };
+        }
+
         public async Task<UserDto> GetCurrentUserAsync()
         {
             try
@@ -128,26 +153,19 @@ namespace TheatreManagement.Client.Services
             }
         }
 
-        public async Task<List<UserDto>> GetAllUsersAsync()
+        public async Task<PagedResult<UserDto>> GetUsersPagedAsync(int page = 1, int pageSize = 10, string? searchText = null)
         {
-            try
-            {
-                var response = await _httpClient.GetAsync("api/Account/all");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync< List<UserDto>>();
-                }
-                return null;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return await _httpClient.GetFromJsonAsync<PagedResult<UserDto>>(
+                $"api/Account?page={page}&pageSize={pageSize}&searchText={searchText}");
         }
+
+        public async Task<UserDto> GetUserByIdAsync( string userId)
+        {
+            return await _httpClient.GetFromJsonAsync<UserDto>(
+                $"api/Account/{userId}"); 
+        }
+
     }
-
-
 
     public class FormResult
     {

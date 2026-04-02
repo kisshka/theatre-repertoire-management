@@ -51,8 +51,6 @@ namespace TheatreManagement.Server.Controllers
             return techics;
         }
 
-
-
         [HttpGet]
         public async Task<ActionResult<PagedResult<EmployeeDto>>> GetEmployees(
             [FromQuery] string searchText = null,
@@ -138,6 +136,38 @@ namespace TheatreManagement.Server.Controllers
             };
 
             _context.Employees.Add(employee);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> PutEmployee(EmployeeDto employeeDto)
+        {
+
+            var employee = await _context.Employees.Where(e => e.EmployeeId == employeeDto.EmployeeId)
+                                             .FirstOrDefaultAsync();
+
+            employee.Surname = employeeDto.Surname;
+            employee.Name = employeeDto.Name;
+            employee.FatherName = employeeDto.FatherName;
+            employee.Post = employeeDto.Post;
+            employee.IsActive = employeeDto.IsActive;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPut("{employeeId}/soft-delete")]
+        public async Task<IActionResult> SoftDeleteEmployee(int employeeId)
+        {
+            var employee = await _context.Employees.Where(e => e.EmployeeId == employeeId)
+                                             .FirstOrDefaultAsync();
+
+            employee.IsActive = false;
+            employee.DeletionTime = DateTime.Now;
+
             await _context.SaveChangesAsync();
 
             return Ok();

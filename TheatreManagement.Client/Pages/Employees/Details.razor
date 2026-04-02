@@ -1,0 +1,79 @@
+﻿@page "/employees/{id:int}"
+
+<PageTitle>Информация о сотруднике</PageTitle>
+
+<PageHeader>
+
+    <PageHeaderTitle>Информация о сотруднике</PageHeaderTitle>
+    <PageHeaderExtra>
+
+        <Button Type="ButtonType.Primary"
+        OnClick="@GoBack">
+            Назад
+            <Icon Type="@IconType.Outline.Left" />
+        </Button>
+
+    </PageHeaderExtra>
+</PageHeader>
+
+
+
+<Card Title=@fullName>
+    <CardAction>
+        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+            <Icon Type="@IconType.Outline.Edit" />
+        </Button>
+        <Button Danger OnClick="@SoftDelete">
+            <Icon Type="@IconType.Outline.Delete" />
+        </Button>
+    </CardAction>
+
+    <CardGrid Style="width:50%;text-align:center" Hoverable="false">
+        Должность: @employee.Post
+    </CardGrid>
+    <CardGrid Style="width:50%;text-align:center" Hoverable="false">
+        Активен: @employee.IsActive
+    </CardGrid>
+</Card>
+
+<EditModal @bind-Visible="@editModalVisible"
+EmployeeId="@Id"
+OnSuccess="@OnEmployeeEdit" />
+
+@inject EmployeeService employeeService
+@inject NavigationManager navManager
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private EmployeeDto employee = new();
+    private string fullName = "";
+
+    private bool editModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        employee = await employeeService.GetEmployeeAsync(Id);
+        fullName = $"{employee.Surname} {employee.Name} {employee.FatherName}";
+    }
+
+    private async Task OnEmployeeEdit()
+    {
+        await LoadData();
+    }
+
+    private async Task SoftDelete()
+    {
+        await employeeService.SoftDeleteEmployeeAsync(Id);
+        navManager.NavigateTo("/employees");
+    }
+
+    private void GoBack()
+    {
+        navManager.NavigateTo("/employees");
+    }
+}

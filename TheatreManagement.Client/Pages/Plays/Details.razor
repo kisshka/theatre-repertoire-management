@@ -23,20 +23,28 @@
 
 
 
-<Card Title=@_play.Name>
+<Card Title=@play.Name>
+    <CardAction>
+        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+            <Icon Type="@IconType.Outline.Edit" />
+        </Button>
+        <Button Danger>
+            <Icon Type="@IconType.Outline.Delete" OnClick="@SoftDelete" />
+        </Button>
+    </CardAction>
     <CardGrid Style="width:33%;text-align:center" Hoverable="false">
-        Длительность: @_play.Duration
+        Длительность: @play.Duration
     </CardGrid>
     <CardGrid Style="width:33%;text-align:center" Hoverable="false">
-        Рейтинг: @_play.AgeCategory+
+        Рейтинг: @play.AgeCategory+
     </CardGrid>
     <CardGrid Style="width:33%;text-align:center" Hoverable="false">
-        Статус: @_play.IsActive
+        Статус: @play.IsActive
     </CardGrid>
 
     <CardGrid Style="width:50%;text-align:center" Hoverable="false">
 
-        <AntList Bordered DataSource="@_actorRoles">
+        <AntList Bordered DataSource="@actorRoles">
             <Header>Актерские роли</Header>
             <ChildContent Context="item">
                 <ListItem>
@@ -47,7 +55,7 @@
 
     </CardGrid>
     <CardGrid Style="width:50%;text-align:center" Hoverable="false">
-        <AntList Bordered DataSource="@_technicRoles">
+        <AntList Bordered DataSource="@technicRoles">
             <Header>Технические роли</Header>
             <ChildContent Context="item">
                 <ListItem>
@@ -59,23 +67,43 @@
 
 </Card>
 
-
+<EditModal @bind-Visible="@editModalVisible"
+PlayId="Id"
+OnSuccess="@OnPlayAdded" />
 
 @inject PlayService playService
 @inject NavigationManager navManager
 @code {
     [Parameter] public int Id { get; set; }
 
-    private PlayDto _play = new();
-    private List<RoleDto> _actorRoles = new();
-    private List<RoleDto> _technicRoles = new();
+    private PlayDto play = new();
+    private List<RoleDto> actorRoles = new();
+    private List<RoleDto> technicRoles = new();
+
+    private bool editModalVisible = false;
 
     protected override async Task OnInitializedAsync()
     {
-        _play = await playService.GetPlayAsync(Id);
+        await LoadData();
+    }
 
-        _actorRoles = _play.RoleDtos.Where(r => r.RoleType == "Актерская").ToList();
-        _technicRoles = _play.RoleDtos.Where(r => r.RoleType == "Техническая").ToList();
+    private async Task OnPlayAdded()
+    {
+        await LoadData();
+    }
+
+    private async Task SoftDelete()
+    {
+        await playService.SoftDeletePlayAsync(Id);
+        navManager.NavigateTo("/plays");
+    }
+
+    private async Task LoadData()
+    {
+        play = await playService.GetPlayAsync(Id);
+
+        actorRoles = play.RoleDtos.Where(r => r.RoleType == "Актерская").ToList();
+        technicRoles = play.RoleDtos.Where(r => r.RoleType == "Техническая").ToList();
     }
 
     private void GoBack()
@@ -84,6 +112,6 @@
     }
     private void GoToCasts()
     {
-        navManager.NavigateTo($"/plays/{_play.PlayId}/casts");
+        navManager.NavigateTo($"/plays/{play.PlayId}/casts");
     }
 }

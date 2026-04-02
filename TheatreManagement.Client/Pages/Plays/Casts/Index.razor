@@ -7,34 +7,130 @@
     <PageHeaderSubtitle></PageHeaderSubtitle>
 </PageHeader>
 
-<Card>
-    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
-        <Icon Type="@IconType.Outline.Plus" />
-    </Button>
+<Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+    <Icon Type="@IconType.Outline.Plus" /> Добавить
+</Button>
 
-    @*     <FormItem Label="Выберите роль">
-        <Select Mode="SelectMode.Default"
-                DataSource="@_roles"
-                @bind-Value="@context.Role"
-                LabelName="Text"
-                ValueName="Value">
+@if (castes != null && castes.Any())
+{
+    <Card>
+        <p>
+            Выберите состав, информацию о котором хотите увидеть
+        </p>
+
+        <Select
+        TItem="CastDto"
+        TItemValue="int"
+        DataSource="@castes"
+        @bind-Value="@selectedCastId"
+        LabelName="@nameof(CastDto.Name)"
+        ValueName="@nameof(CastDto.CastId)"
+        OnSelectedItemChanged="@OnSelectedItemChangedHandler">
         </Select>
-    </FormItem> *@
 
-</Card>
+        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+            <Icon Type="@IconType.Outline.Edit" />
+        </Button>
+        <Button Danger>
+            <Icon Type="@IconType.Outline.Delete" OnClick="@SoftDelete" />
+        </Button>
+
+        <Card Title="Актеры">
+            @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Актерская"))
+            {
+                <CardGrid Style="width:50%">
+                    @role.RoleName
+                </CardGrid>
+                <CardGrid Style="width:50%">
+                    @foreach (var employee in role.Employees)
+                    {
+                        <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                    }
+                </CardGrid>
+            }
+        </Card>
+
+        <Card Title="Технический состав">
+            @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Техническая"))
+            {
+                <CardGrid Style="width:50%">
+                    @role.RoleName
+                </CardGrid>
+                <CardGrid Style="width:50%">
+                    @foreach (var employee in role.Employees)
+                    {
+                        <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                    }
+                </CardGrid>
+            }
+        </Card>
+
+        <p>Последнее изменение: @selectedCast.LastEditTime.ToString()</p>
+    </Card>
+}
+else
+{
+    <Card>
+        <p>Отсутствуют готовые составы</p>
+    </Card>
+}
+
+<EditCastModal @bind-Visible="@editModalVisible"
+CastId="@selectedCastId"
+PlayId="@Id"
+OnSuccess="@OnCastEdited" />
 
 <AddCastModal @bind-Visible="@addModalVisible"
-PlayId=@Id
+PlayId="@Id"
 OnSuccess="@OnCastAdded" />
+
+@inject PlayService playService
 
 @code {
     [Parameter] public int Id { get; set; }
 
-    private bool addModalVisible = false;
+    private List<CastDto> castes = new();
+    private int selectedCastId;
+    private CastWithRolesDto selectedCast = new();
 
+    private bool addModalVisible = false;
+    private bool editModalVisible = false;
+
+    private async Task OnCastEdited()
+    {
+        await LoadDataAsync();
+    }
     private async Task OnCastAdded()
     {
+        await LoadDataAsync();
     }
 
+    private async Task LoadDataAsync()
+    {
+        castes = await playService.GetCastsAsync(Id);
+        castes = castes.OrderByDescending(c => c.CastId).ToList();
+        if (castes.Count > 0)
+        {
+            selectedCastId = castes[0].CastId;
+            selectedCast = await playService.GetCastAsync(selectedCastId);
+        }
+        StateHasChanged();
+    }
+
+    private async Task SoftDelete()
+    {
+        await playService.SoftDeleteCastAsync(selectedCastId);
+        await LoadDataAsync();
+    }
+
+    private async Task OnSelectedItemChangedHandler()
+    {
+        selectedCast = await playService.GetCastAsync(selectedCastId);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
 
 }

@@ -11,6 +11,8 @@ namespace TheatreManagement.Domain.Entities
         public DateTime? DeletionTime { get; set; }
 
         // ссылки
+        public int PlayId { get; set; }
+        public Play? Play { get; set; }
         public string? UserId { get; set; }
         public User? User { get; set; }
         public List<EmployeeRole> EmployeeRoles { get; set; } = new();

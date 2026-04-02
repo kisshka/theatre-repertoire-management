@@ -19,5 +19,6 @@ namespace TheatreManagement.Domain.Entities
         public List<Event> Events { get; set; } = new();
         public List<RoleInPlay> RoleInPlays { get; set; }  = new();
         public List<PlayEvent> PlayEvents { get; set; } = new();
+        public List<Cast> Casts { get; set; } = new();
     }
 }
