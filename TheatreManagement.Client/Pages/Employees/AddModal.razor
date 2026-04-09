@@ -15,17 +15,23 @@
           OnFinish="@OnFinish"
           @ref="@FormRef">
 
-        <FormItem Label="Введите фамилию">
+        <FormItem Label="Введите фамилию" Required>
             <Input @bind-Value="@context.Surname" />
         </FormItem>
-        <FormItem Label="Введите имя">
+        <FormItem Label="Введите имя" Required>
             <Input @bind-Value="@context.Name" />
         </FormItem>
         <FormItem Label="Введите отчество">
             <Input @bind-Value="@context.FatherName" />
         </FormItem>
-        <FormItem Label="Введите должность">
-            <Input @bind-Value="@context.Post" />
+        <FormItem Label="Выберите должность" Required>
+            <Select Mode="SelectMode.Default"
+                    DataSource="@postTypes"
+                    @bind-Value="@selectedPost"
+                    LabelName="Name"
+                    ValueName="Value"
+                    Placeholder="Выберите должность">
+            </Select>
         </FormItem>
 
     </Form>
@@ -44,6 +50,14 @@
 
     private string Error { get; set; } = "";
     private bool Submitting { get; set; } = false;
+    private string selectedPost { get; set; } = "";
+
+    private List<SelectItem> postTypes = new()
+    {
+        new SelectItem { Name = "Актер", Value = "Актер" },
+        new SelectItem { Name = "Технический сотрудник", Value = "Технический сотрудник" }
+    };
+
 
     private async Task OnFinish(EditContext editContext)
     {
@@ -54,6 +68,8 @@
 
         try
         {
+            Model.Post = selectedPost;
+
             await employeeService.CreateEmployeeAsync(Model);
 
             Visible = false;

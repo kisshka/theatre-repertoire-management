@@ -3,8 +3,13 @@
 <PageTitle>Список составов</PageTitle>
 
 <PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
     <PageHeaderTitle>Список составов</PageHeaderTitle>
-    <PageHeaderSubtitle></PageHeaderSubtitle>
 </PageHeader>
 
 <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
@@ -64,8 +69,7 @@
                 </CardGrid>
             }
         </Card>
-
-        <p>Последнее изменение: @selectedCast.LastEditTime.ToString()</p>
+        <p>Последнее изменение: @selectedCast.LastEditTime.ToString() - @selectedCast.UserFullName.ToString()</p>
     </Card>
 }
 else
@@ -85,6 +89,7 @@ PlayId="@Id"
 OnSuccess="@OnCastAdded" />
 
 @inject PlayService playService
+@inject NavigationManager navManager
 
 @code {
     [Parameter] public int Id { get; set; }
@@ -131,6 +136,10 @@ OnSuccess="@OnCastAdded" />
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
+    }
+    private void GoBack()
+    {
+        navManager.NavigateTo($"/plays/{Id}");
     }
 
 }

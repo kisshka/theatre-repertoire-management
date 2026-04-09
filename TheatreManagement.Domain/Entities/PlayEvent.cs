@@ -16,8 +16,8 @@ namespace TheatreManagement.Domain.Entities
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
          
-        public Play Play { get; set; }
-        public Event Event { get; set; }
+        public Play? Play { get; set; }
+        public Event? Event { get; set; }
 
     }
 }

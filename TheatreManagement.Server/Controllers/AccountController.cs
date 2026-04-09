@@ -18,13 +18,12 @@ namespace TheatreManagement.Server.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly DataContext _context;
-        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public AccountController(UserManager<User> userManager, DataContext context, RoleManager<IdentityRole> roleManager)
+
+        public AccountController(UserManager<User> userManager, DataContext context)
         {
             _userManager = userManager;
             _context = context;
-            _roleManager = roleManager;
         }
 
         [HttpPost("register")]

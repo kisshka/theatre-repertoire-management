@@ -16,9 +16,10 @@ namespace TheatreManagement.Shared.DTOs
         public bool IsActive { get; set; }
         public DateTime LastEditTime { get; set; }
         public DateTime? DeletionTime { get; set; }
+        public string UserFullName { get; set; } = "";
         // ссылки 
-        public string? UserId { get; set; }
-        public UserDto? User { get; set; }
+        //public string? UserId { get; set; }
+        //public UserDto? User { get; set; }
         //public List<EmployeeRoleDto> EmployeeRoles { get; set; } = new();
     }
 }

@@ -34,6 +34,12 @@ namespace TheatreManagement.Client.Services
                 $"api/plays?page={page}&pageSize={pageSize}&searchText={searchText}");
         }
 
+        public async Task<List<PlayDto>> GetPlaysAsync()
+        {
+            return await _httpClient.GetFromJsonAsync<List<PlayDto>>(
+                $"api/plays/all");
+        }
+
         public async Task<PlayDto> GetPlayAsync(int id)
         {
             return await _httpClient.GetFromJsonAsync<PlayDto>(

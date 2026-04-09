@@ -222,3 +222,32 @@ th {
 .archive-btn {
     margin-left: auto;
 }
+
+
+/*ОТОБРАЖЕНИЕ КАРТОЧЕК МЕРОПРИЯТИЙ*/
+
+.card-stationar {
+    background: var(--stationar);
+    margin: 2px 0px;
+    border: solid 1px var(--gray);
+}
+
+.card-visit {
+    background: var(--visit);
+    margin: 0;
+    border: solid 1px var(--gray);
+}
+
+.card-tour {
+    background: var(--tour);
+    margin: 0;
+    border: solid 1px var(--gray);
+}
+.event-card-container {
+    background: var(--gray);
+}
+
+.events-card {
+    padding: 0;
+    margin: 0;
+}

@@ -14,8 +14,8 @@ namespace TheatreManagement.Shared.DTOs
         public DateTime? DeletionTime { get; set; }
 
         // ссылки
-        public string? UserId { get; set; }
-        public UserDto? User { get; set; }
+        //public string? UserId { get; set; }
+        //public UserDto? User { get; set; }
         public int PlayId { get; set; }
         public PlayDto? Play { get; set; }
 

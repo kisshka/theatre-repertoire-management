@@ -5,6 +5,8 @@ using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared;
+using Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -12,10 +14,13 @@ namespace TheatreManagement.Server.Controllers
     [ApiController]
     public class EmployeesController : ControllerBase
     {
+        private readonly UserManager<User> _userManager;
         private readonly DataContext _context;
 
-        public EmployeesController(DataContext context)
+
+        public EmployeesController(UserManager<User> userManager, DataContext context)
         {
+            _userManager = userManager;
             _context = context;
         }
 
@@ -57,6 +62,7 @@ namespace TheatreManagement.Server.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
+
             var query = _context.Employees
                 .Where(p => p.IsActive && p.DeletionTime == null);
 
@@ -98,7 +104,9 @@ namespace TheatreManagement.Server.Controllers
         [HttpGet("{employeeId}")]
         public async Task<ActionResult<EmployeeDto>> GetEmployee(int employeeId)
         {
-            var employee = await _context.Employees.FirstOrDefaultAsync(p => p.EmployeeId == employeeId);
+
+            var employee = await _context.Employees.Include(p => p.User)
+                                                    .FirstOrDefaultAsync(p => p.EmployeeId == employeeId);
 
             if (employee == null)
             {
@@ -113,7 +121,8 @@ namespace TheatreManagement.Server.Controllers
                 FatherName = employee.FatherName,
                 Post = employee.Post,
                 IsActive = employee.IsActive,
-                LastEditTime = employee.LastEditTime
+                LastEditTime = employee.LastEditTime,
+                UserFullName = (employee.User != null ? employee.User.Surname + " " + employee.User.Name + " " + employee.User.FatherName : ""),
             };
 
             return employeeDto;
@@ -122,6 +131,12 @@ namespace TheatreManagement.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> PostEmployee(EmployeeDto employeeDto)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
 
             var employee = new Employee
             {
@@ -130,8 +145,9 @@ namespace TheatreManagement.Server.Controllers
                 FatherName = employeeDto.FatherName,
                 Post = employeeDto.Post,
                 IsActive = true,
+                User = currentUser,
 
-                LastEditTime = DateTime.UtcNow,
+                LastEditTime = DateTime.Now,
                 DeletionTime = null
             };
 
@@ -144,6 +160,12 @@ namespace TheatreManagement.Server.Controllers
         [HttpPut]
         public async Task<IActionResult> PutEmployee(EmployeeDto employeeDto)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
 
             var employee = await _context.Employees.Where(e => e.EmployeeId == employeeDto.EmployeeId)
                                              .FirstOrDefaultAsync();
@@ -153,6 +175,9 @@ namespace TheatreManagement.Server.Controllers
             employee.FatherName = employeeDto.FatherName;
             employee.Post = employeeDto.Post;
             employee.IsActive = employeeDto.IsActive;
+            employee.LastEditTime = DateTime.Now;
+
+            employee.User = currentUser;
 
             await _context.SaveChangesAsync();
 
@@ -162,11 +187,19 @@ namespace TheatreManagement.Server.Controllers
         [HttpPut("{employeeId}/soft-delete")]
         public async Task<IActionResult> SoftDeleteEmployee(int employeeId)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
             var employee = await _context.Employees.Where(e => e.EmployeeId == employeeId)
                                              .FirstOrDefaultAsync();
 
             employee.IsActive = false;
+            employee.User = currentUser;
             employee.DeletionTime = DateTime.Now;
+
 
             await _context.SaveChangesAsync();
 

@@ -9,6 +9,8 @@ using TheatreManagement.Domain.Data;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Domain.Entities;
 using TheatreManagement.Shared;
+using Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -16,11 +18,30 @@ namespace TheatreManagement.Server.Controllers
     [ApiController]
     public class PlaysController : ControllerBase
     {
+        private readonly UserManager<User> _userManager;
         private readonly DataContext _context;
 
-        public PlaysController(DataContext context)
+        public PlaysController(UserManager<User> userManager, DataContext context)
         {
+            _userManager = userManager;
             _context = context;
+        }
+
+
+        [HttpGet("all")]
+        public async Task<ActionResult<List<PlayDto>>> GetPlays()
+        {
+            var plays = await _context.Plays
+                .Where(p => p.IsActive && p.DeletionTime == null)
+                .Include(p => p.RoleInPlays)
+                .Select(p => new PlayDto
+                {
+                    PlayId = p.PlayId,
+                    Name = p.Name,
+                })
+                .ToListAsync();
+
+            return plays;
         }
 
 
@@ -71,6 +92,7 @@ namespace TheatreManagement.Server.Controllers
         public async Task<ActionResult<PlayDto>> GetPlay(int playId)
         {
             var play = await _context.Plays.Include(p => p.RoleInPlays)
+                                            .Include(p=> p.User)
                                            .FirstOrDefaultAsync(p => p.PlayId == playId);
 
             if (play == null)
@@ -86,6 +108,7 @@ namespace TheatreManagement.Server.Controllers
                 AgeCategory = play.AgeCategory,
                 IsActive = play.IsActive,
                 LastEditTime = play.LastEditTime,
+                UserFullName = $"{play.User?.Surname} {play.User?.Name} {play.User?.FatherName}" ?? ""
             };
 
             var roles = play.RoleInPlays.Select(r =>
@@ -106,6 +129,12 @@ namespace TheatreManagement.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> PostPlay(PlayDto playDto)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
 
             var play = new Play
             {
@@ -113,8 +142,9 @@ namespace TheatreManagement.Server.Controllers
                 Duration = playDto.Duration,
                 IsActive = true,
                 AgeCategory = playDto.AgeCategory,
-                LastEditTime = DateTime.UtcNow,
-                DeletionTime = null
+                LastEditTime = DateTime.Now,
+                DeletionTime = null,
+                User = currentUser
             };
 
             foreach (var role in playDto.RoleDtos)
@@ -136,6 +166,13 @@ namespace TheatreManagement.Server.Controllers
         [HttpPut]
         public async Task<IActionResult> PutPlay(PlayDto playDto)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
             var play = await _context.Plays.Where(p => p.PlayId == playDto.PlayId)
                                      .Include(p => p.RoleInPlays)
                                      .FirstOrDefaultAsync();
@@ -147,7 +184,7 @@ namespace TheatreManagement.Server.Controllers
             play.IsActive = true;
             play.AgeCategory = playDto.AgeCategory;
             play.LastEditTime = DateTime.Now;
-
+            play.User = currentUser;
 
             var updatedRoleIds = playDto.RoleDtos
                 .Where(r => r.RoleInPlayId > 0)
@@ -211,6 +248,12 @@ namespace TheatreManagement.Server.Controllers
         [HttpPut("{playId}/soft-delete")]
         public async Task<IActionResult> SoftDeletePlay(int playId)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
             var play = await _context.Plays.Where(p => p.PlayId == playId)
                                            .FirstOrDefaultAsync();
 
@@ -218,6 +261,7 @@ namespace TheatreManagement.Server.Controllers
 
             play.DeletionTime = DateTime.Now;
             play.IsActive = false;
+            play.User = currentUser;
 
 
             await _context.SaveChangesAsync();

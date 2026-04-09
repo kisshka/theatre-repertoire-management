@@ -9,7 +9,8 @@
 <div class="card-page">
 
     <Card>
-        <Form Model="@_user"
+        <Form Model="@Model"
+        @ref="@formRef"
         Layout="FormLayout.Vertical"
         OnFinish="OnFinish"
         OnFinishFailed="OnFinishFailed"
@@ -29,7 +30,8 @@
             </FormItem>
             <p>Роль: @RoleHelper.GetDisplayName(context.Role)</p>
 
-            <Button Type="ButtonType.Primary">
+            <Button Type="ButtonType.Primary"
+            OnClick="SaveChanges">
                 Сохранить изменения
             </Button>
             <Button Type="ButtonType.Primary">
@@ -40,24 +42,56 @@
 
 </div>
 
+@inject IMessageService message
 @inject AuthenticationStateProvider provider
 @code {
-    private UserDto _user = new();
-
+    private UserDto Model = new();
+    private Form<UserDto> formRef { get; set; }
+    private bool Submitting { get; set; } = false;
+    public string error = "";
 
     protected override async Task OnInitializedAsync()
     {
         var authStateProvider = (CustomAuthStateProvider)provider;
-        _user = await authStateProvider.GetCurrentUserAsync();
+        Model = await authStateProvider.GetCurrentUserAsync();
     }
 
-    private void OnFinish(EditContext editContext)
+    private async Task OnFinish(EditContext editContext)
     {
+        if (Submitting) return;
 
+        Submitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var authStateProvider = (CustomAuthStateProvider)provider;
+            await authStateProvider.UpdateUserAsync(Model);
+
+            message.Success("Информация успешно обновлена");
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            StateHasChanged();
+        }
+        finally
+        {
+            Submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        if (formRef != null)
+        {
+            formRef.Submit();
+        }
     }
 
     private void OnFinishFailed(EditContext editContext)
     {
-        Console.WriteLine($"Failed:{JsonSerializer.Serialize(_user)}");
+        Console.WriteLine($"Failed:{JsonSerializer.Serialize(Model)}");
     }
 }

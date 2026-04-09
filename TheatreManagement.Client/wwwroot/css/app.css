@@ -13,6 +13,11 @@ html, body {
     --light-gray: #d4d1d1;
     --light: #ffffff;
     --dark: #000000;
+    /*Карточки мероприятий*/
+    --stationar: #b9e3b8;
+    --visit: #b8c6e3;
+    --tour: #ebe1b2;
+    --canceled: #e3c0b8;
 }
 
 h1 {

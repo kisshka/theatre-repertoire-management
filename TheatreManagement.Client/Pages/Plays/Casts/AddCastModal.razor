@@ -103,7 +103,7 @@
     private List<EmployeeDto> technics = new();
     private bool Submitting { get; set; } = false;
 
-    // Ключ: Id роли, Значение: список Id сотрудников
+    // id роли - список id сотрудников
     private Dictionary<int, List<int>> selectedEmployees = new();
 
     protected override async Task OnInitializedAsync()
@@ -139,7 +139,7 @@
         return 0;
     }
 
-    // Установить Id сотрудника (вызывается при выборе в Select)
+    // Установить Id сотрудника 
     private void SetEmployeeId(int roleId, int index, int value)
     {
         if (!selectedEmployees.ContainsKey(roleId))
@@ -147,7 +147,6 @@
             selectedEmployees[roleId] = new List<int>();
         }
 
-        // Расширяем список если нужно
         while (selectedEmployees[roleId].Count <= index)
         {
             selectedEmployees[roleId].Add(0);
@@ -164,7 +163,7 @@
         {
             selectedEmployees[roleId] = new List<int>();
         }
-        selectedEmployees[roleId].Add(0); // Добавляем пустого сотрудника
+        selectedEmployees[roleId].Add(0);
         StateHasChanged();
     }
 
@@ -197,7 +196,7 @@
             {
                 foreach (var employeeId in role.Value)
                 {
-                    if (employeeId > 0) // Только выбранные
+                    if (employeeId > 0)
                     {
                         employeeRoles.Add(new EmployeeRoleCreateDto
                             {
@@ -208,7 +207,6 @@
                 }
             }
 
-            // Проверяем, что есть выбранные сотрудники
             if (employeeRoles.Any())
             {
                 await playService.CreateCastAsync(
@@ -221,19 +219,15 @@
 
                 Console.WriteLine($"Создание состава: {Model.Name}, ролей: {employeeRoles.Count}");
 
-                // Закрываем окно
                 Visible = false;
                 await VisibleChanged.InvokeAsync(false);
                 await OnSuccess.InvokeAsync();
-
-                // Очищаем форму
                 ResetForm();
             }
             else
-            {
-                // Если нет выбранных сотрудников, показываем предупреждение
+            { // Пока так
                 Console.WriteLine("Не выбрано ни одного сотрудника");
-                // Здесь можно добавить уведомление пользователю
+
             }
         }
         catch (Exception ex)
@@ -258,7 +252,6 @@
     {
         Model = new CastDto();
 
-        // Очищаем все списки
         foreach (var role in play.RoleDtos)
         {
             if (selectedEmployees.ContainsKey(role.RoleInPlayId))

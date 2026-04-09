@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Domain.Entities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
@@ -12,22 +14,33 @@ namespace TheatreManagement.Server.Controllers
     public class CastsController : ControllerBase
     {
 
+        private readonly UserManager<User> _userManager;
         private readonly DataContext _context;
 
-        public CastsController(DataContext context)
+
+        public CastsController(UserManager<User> userManager, DataContext context)
         {
+            _userManager = userManager;
             _context = context;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateCast(CastDto castDto)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
             var cast = new Cast
             {
                 Name = castDto.Name,
                 PlayId = castDto.PlayId,
                 LastEditTime = DateTime.UtcNow,
                 DeletionTime = null,
+                User = currentUser
             };
 
             var employeeRoles = new List<EmployeeRole>();
@@ -83,11 +96,13 @@ namespace TheatreManagement.Server.Controllers
         {
             var cast = await _context.Castes
                 .Where(c => c.CastId == castId)
+                .Include(c => c.User)
                 .Select(c => new CastWithRolesDto
                 {
                     CastId = c.CastId,
                     Name = c.Name,
                     LastEditTime = c.LastEditTime,
+                    UserFullName = (c.User != null ? c.User.Surname + " " + c.User.Name + " " + c.User.FatherName : ""),
                     Roles = new List<RoleGroupDto>()
                 })
                 .FirstOrDefaultAsync();
@@ -126,6 +141,13 @@ namespace TheatreManagement.Server.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateCast(CastDto updateCastDto)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
             var cast = await _context.Castes
                 .Include(c => c.EmployeeRoles)
                 .FirstOrDefaultAsync(c => c.CastId == updateCastDto.CastId);
@@ -136,6 +158,7 @@ namespace TheatreManagement.Server.Controllers
             // Изменение полей каста
             cast.Name = updateCastDto.Name;
             cast.LastEditTime = DateTime.Now;
+            cast.User = currentUser;
 
 
             _context.EmployeeRoles.RemoveRange(cast.EmployeeRoles);
@@ -175,10 +198,17 @@ namespace TheatreManagement.Server.Controllers
         [HttpPut("{castId}/soft-delete")]
         public async Task<IActionResult> SoftDeleteCast(int castId)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
             var cast = await _context.Castes
                 .FirstOrDefaultAsync(c => c.CastId == castId);
 
             cast.DeletionTime = DateTime.Now;
+            cast.User = currentUser;
 
             await _context.SaveChangesAsync();
 

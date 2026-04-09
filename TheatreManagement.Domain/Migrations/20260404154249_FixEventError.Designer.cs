@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheatreManagement.Domain.Data;
 
@@ -10,9 +11,11 @@ using TheatreManagement.Domain.Data;
 namespace TheatreManagement.Domain.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260404154249_FixEventError")]
+    partial class FixEventError
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -328,7 +331,7 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<DateTime?>("EndTime")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("InstitutionId")
+                    b.Property<int>("InstitutionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsCanceled")
@@ -343,10 +346,10 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<DateTime?>("StartTime")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("StationarId")
+                    b.Property<int>("StationarId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("TourId")
+                    b.Property<int>("TourId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Type")
@@ -616,7 +619,9 @@ namespace TheatreManagement.Domain.Migrations
                 {
                     b.HasOne("TheatreManagement.Domain.Entities.Institution", "Institution")
                         .WithMany("Events")
-                        .HasForeignKey("InstitutionId");
+                        .HasForeignKey("InstitutionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("TheatreManagement.Domain.Entities.Play", null)
                         .WithMany("Events")

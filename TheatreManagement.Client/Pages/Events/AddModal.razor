@@ -1,0 +1,727 @@
+﻿@using AntDesign
+@using Microsoft.AspNetCore.Components.Forms
+@using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Shared.DTOs.Events
+
+@* // ПЕРВОЕ МОДАЛЬНОЕ ОКНО *@
+<Modal Visible="@Visible"
+VisibleChanged="@VisibleChanged"
+Title="Создание мероприятия"
+OnOk="HandleOk"
+OnCancel="HandleCancel"
+ConfirmLoading="Submitting"
+MaskClosable="@false">
+
+    <Form Model="@Model" @ref="@FormRef">
+
+        <FormItem Label="Тип мероприятия" Required>
+            <Select Mode="SelectMode.Default"
+            DataSource="@eventTypes"
+            @bind-Value="@selectedEventType"
+            LabelName="Name"
+            ValueName="Value"
+            Placeholder="Выберите тип мероприятия"
+            OnChange="OnEventTypeChanged">
+            </Select>
+        </FormItem>
+
+        <FormItem Label="Дата и время начала" Required>
+            <TimePicker @bind-Value="@startTime"
+            AllowClear="false"
+            ChangeOnClose="true"
+            Format="HH:mm"/>
+        </FormItem>
+
+        <FormItem Label="Дата и время окончания" Required>
+            <TimePicker @bind-Value="@endTime"
+            AllowClear= "false"
+            ChangeOnClose="true"
+            Format="HH:mm"/>
+        </FormItem>
+
+        <!-- Поля для Стационара -->
+        @if (selectedEventType == "stationar")
+        {
+            <Divider>Стационар</Divider>
+
+            <FormItem Label="Зал" Required>
+                <Select Mode="SelectMode.Default"
+                        DataSource="@hallTypes"
+                        @bind-Value="@selectedHall"
+                        LabelName="Name"
+                        ValueName="Value"
+                        Placeholder="Выберите зал">
+                </Select>
+            </FormItem>
+
+            <FormItem Label="Тип выступления" Required>
+                <Select Mode="SelectMode.Default"
+                        DataSource="@performanceTypes"
+                        @bind-Value="@selectedPerformanceType"
+                        LabelName="Name"
+                        ValueName="Value"
+                        Placeholder="Выберите тип выступления">
+                </Select>
+            </FormItem>
+        }
+
+        <!-- Поля для Гастролей -->
+        @if (selectedEventType == "tour")
+        {
+            <Divider>Гастроли</Divider>
+
+            <FormItem Label="Страна" Required>
+                <Input @bind-Value="@Model.Tour.Country" />
+            </FormItem>
+
+            <FormItem Label="Город/Регион" Required>
+                <Input @bind-Value="@Model.Tour.Area" />
+            </FormItem>
+        }
+
+        <!-- Поля для Выезда -->
+        @if (selectedEventType == "visit")
+        {
+            <Divider>Учреждение</Divider>
+            <FormItem Label="Название" Required>
+                <Input @bind-Value="@Model.Institution.Name" />
+            </FormItem>                        
+            <FormItem Label="Город" Required>
+                <Input @bind-Value="@Model.Institution.Town" />
+            </FormItem>
+            <FormItem Label="Улица" Required>
+                <Input @bind-Value="@Model.Institution.Street" />
+            </FormItem>
+            <FormItem Label="Дом" Required>
+                <Input @bind-Value="@Model.Institution.House" />
+            </FormItem>
+        }
+
+        <!-- Спектакли -->
+        <Divider>Спектакли</Divider>
+
+        @for (int i = 0; i < Model.PlayEvents.Count; i++)
+        {
+            var index = i;
+            <div style="border: 1px solid #d9d9d9; border-radius: 4px; padding: 12px; margin-bottom: 12px;">
+                <Button Danger OnClick="() => RemovePlayEvent(index)">
+                    Удалить
+                </Button>
+                <Button Type="ButtonType.Primary"
+                OnClick="() => OpenRolesModal(index)">
+                    Состав
+                </Button>
+
+                <FormItem Label="Спектакль">
+                    <Select Mode="SelectMode.Default"
+                    DataSource="@availablePlays"
+                    @bind-Value="@Model.PlayEvents[index].PlayId"
+                    LabelName="@nameof(PlayDto.Name)"
+                    ValueName="@nameof(PlayDto.PlayId)" />
+                </FormItem>
+
+@*                 <FormItem Label="Время начала">
+                    <DatePicker @bind-Value="@Model.PlayEvents[index].StartTime"
+                    Format="yyyy-MM-dd HH:mm"/>
+                </FormItem>
+
+                <FormItem Label="Время окончания">
+                    <DatePicker @bind-Value="@Model.PlayEvents[index].EndTime"
+                    Format="yyyy-MM-dd HH:mm"/>
+                </FormItem> *@
+
+                @if (Model.PlayEvents[index].RoleDisplays.Any())
+                {
+                    <div>Назначенные роли:</div>
+                    @foreach (var roleDisplay in Model.PlayEvents[index].RoleDisplays)
+                    {
+                        <div style="font-size: 12px; margin-bottom: 4px;">
+                            <b>@roleDisplay.RoleName:</b> @roleDisplay.EmployeeNames
+                        </div>
+                    }
+                }
+
+            </div>
+        }
+
+        <Button Type="ButtonType.Dashed" OnClick="AddPlayEvent" Block>
+            + Добавить спектакль
+        </Button>
+
+    </Form>
+</Modal>
+
+@* ВТОРОЕ МОДАЛЬНОЕ ОКНО *@
+
+<Modal Visible="@rolesModalVisible"
+OnOk="SaveRoles"
+OnCancel="CancelRoles"
+Title="Назначение ролей">
+    <div>
+        <b>Спектакль:</b> @currentPlayName
+    </div>
+
+    @* Выбор готового каста *@
+    <Select TItem="CastDto"
+    TItemValue="int"
+    DataSource="@currentPlayCasts"
+    @bind-Value="@selectedCastId"
+    LabelName="@nameof(CastDto.Name)"
+    ValueName="@nameof(CastDto.CastId)"
+    OnSelectedItemChanged="@OnSelectedItemChangedHandler">
+    </Select>
+
+    <Form Model="@EmployeeRolesModel" @ref="@EmployeeRolesFormRef">
+
+
+
+        @* Динамическое добавление сотрудников на роли *@
+        <Divider>Актеры</Divider>
+
+        @foreach (var role in play.RoleDtos.Where(r => r.RoleType == "Актерская"))
+        {
+            <div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                <b>@role.Name</b>
+
+                @for (int i = 0; i < GetCount(role.RoleInPlayId); i++)
+                {
+                    var roleId = role.RoleInPlayId;
+                    var index = i;
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <Select Mode="SelectMode.Default"
+                        DataSource="@actors"
+                        Value="@GetEmployeeId(roleId, index)"
+                        ValueChanged="@((int value) => SetEmployeeId(roleId, index, value))"
+                        LabelName="@nameof(EmployeeDto.Surname)"
+                        ValueName="@nameof(EmployeeDto.EmployeeId)"
+                        Style="flex: 1" />
+
+                        <Button Danger OnClick="() => Remove(roleId, index)">
+                            <Icon Type="@IconType.Outline.Delete" />
+                        </Button>
+                    </div>
+                }
+
+                <Button Type="ButtonType.Primary"
+                OnClick="() => Add(role.RoleInPlayId)"
+                Style="margin-top: 10px">
+                    + Добавить актера
+                </Button>
+            </div>
+        }
+
+        <Divider>Технический состав</Divider>
+
+        @foreach (var role in play.RoleDtos.Where(r => r.RoleType == "Техническая"))
+        {
+            <div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                <b>@role.Name</b>
+
+                @for (int i = 0; i < GetCount(role.RoleInPlayId); i++)
+                {
+                    var roleId = role.RoleInPlayId;
+                    var index = i;
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <Select Mode="SelectMode.Default"
+                        DataSource="@technics"
+                        Value="@GetEmployeeId(roleId, index)"
+                        ValueChanged="@((int value) => SetEmployeeId(roleId, index, value))"
+                        LabelName="@nameof(EmployeeDto.Surname)"
+                        ValueName="@nameof(EmployeeDto.EmployeeId)"
+                        Style="flex: 1" />
+
+                        <Button Danger OnClick="() => Remove(roleId, index)">
+                            <Icon Type="@IconType.Outline.Delete" />
+                        </Button>
+                    </div>
+                }
+
+                <Button Type="ButtonType.Primary"
+                OnClick="() => Add(role.RoleInPlayId)"
+                Style="margin-top: 10px">
+                    + Добавить сотрудника
+                </Button>
+            </div>
+        }
+    </Form>
+
+</Modal>
+
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+    [Parameter] public EventCallback OnSuccess { get; set; }
+    [Parameter] public DateTime EventDate { get; set; }
+
+    [Inject] private PlayService playService { get; set; }
+    [Inject] private EmployeeService employeeService { get; set; }
+    [Inject] private EventService eventService { get; set; }
+    [Inject] private IMessageService messageService { get; set; }
+
+    private Form<EventPostModel> FormRef { get; set; }
+    private EventPostModel Model { get; set; } = new();
+
+    private string selectedEventType = "stationar";
+    private List<PlayDto> availablePlays = new();
+    private bool Submitting { get; set; } = false;
+
+
+    private DateTime? startTime;
+    private DateTime? endTime;
+
+    // Метод для объединения даты и времени
+    private DateTime? CombineDateAndTime(DateTime date, DateTime? time)
+    {
+        if (time == null) return null;
+        return new DateTime(date.Year, date.Month, date.Day, time.Value.Hour, time.Value.Minute, time.Value.Second);
+    }
+
+    // Для стационара
+    private string selectedHall = "";
+    private string selectedPerformanceType = "";
+
+    // Списки для стационара
+    private List<SelectItem> hallTypes = new()
+    {
+        new SelectItem { Name = "Большой зал", Value = "Большой зал" },
+        new SelectItem { Name = "Малый зал", Value = "Малый зал" }
+    };
+
+    private List<SelectItem> performanceTypes = new()
+    {
+        new SelectItem { Name = "Репетиция", Value = "Репетиция" },
+        new SelectItem { Name = "Выступление", Value = "Выступление" }
+    };
+
+    public List<SelectItem> eventTypes = new()
+    {
+        new SelectItem { Name = "Стационар", Value = "stationar" },
+        new SelectItem { Name = "Гастроли", Value = "tour" },
+        new SelectItem { Name = "Выезд", Value = "visit" }
+    };
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Visible)
+        {
+            await LoadPlays();
+            AddPlayEvent();
+        }
+    }
+
+    private async Task LoadPlays()
+    {
+        availablePlays = await playService.GetPlaysAsync();
+    }
+
+    private void AddPlayEvent()
+    {
+        Model.PlayEvents.Add(new PlayEventDto());
+        StateHasChanged();
+    }
+
+    private void RemovePlayEvent(int index)
+    {
+        Model.PlayEvents.RemoveAt(index);
+        StateHasChanged();
+    }
+
+    private async Task HandleOk()
+    {
+        if (Submitting) return;
+        StateHasChanged();
+
+        try
+        {
+            Submitting = true;
+
+            Model.StartTime = CombineDateAndTime(EventDate, startTime);
+            Model.EndTime = CombineDateAndTime(EventDate, endTime);
+            Model.Type = selectedEventType;
+
+            if (selectedEventType == "stationar")
+            {
+                Model.Stationar.Hall = selectedHall;
+                Model.Stationar.Type = selectedPerformanceType;
+            }
+
+            // Собираем все EmployeeRoles из всех спектаклей
+            var allEmployeeRoles = new List<EmployeeRoleCreateDto>();
+
+            foreach (var playEvent in Model.PlayEvents)
+            {
+                // Добавляем роли из выбранных сотрудников
+                if (playEvent.SelectedEmployees != null && playEvent.SelectedEmployees.Any())
+                {
+                    foreach (var role in playEvent.SelectedEmployees)
+                    {
+                        int roleId = role.Key;
+                        foreach (var employeeId in role.Value)
+                        {
+                            if (employeeId > 0)
+                            {
+                                allEmployeeRoles.Add(new EmployeeRoleCreateDto
+                                    {
+                                        RoleInPlayId = roleId,
+                                        EmployeeId = employeeId,
+                                        CastId = playEvent.CastId > 0 ? playEvent.CastId : null
+                                    });
+                            }
+                        }
+                    }
+                }
+            }
+
+            Model.EmployeeRolesCreate = allEmployeeRoles;
+
+            await eventService.CreateEventAsync(Model);
+
+           messageService.Success("Мероприятие успешно создано!");
+
+            Visible = false;
+            await VisibleChanged.InvokeAsync(false);
+            await OnSuccess.InvokeAsync();
+            ResetForm();
+        }
+        catch (Exception ex)
+        {
+            messageService.Error($"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            Submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        Visible = false;
+        await VisibleChanged.InvokeAsync(false);
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        Model = new EventPostModel();
+        selectedEventType = "stationar";
+        FormRef?.Reset();
+        StateHasChanged();
+    }
+
+    //ВТОРОЕ МОДЕЛЬНОЕ ОКНО
+    private bool rolesModalVisible = false;
+
+    private Form<EmployeeRoleCreateDto> EmployeeRolesFormRef { get; set; }
+    private EmployeeRoleCreateDto EmployeeRolesModel { get; set; } = new();
+
+    // Данные для ролей
+    private PlayDto play = new();
+
+    private List<EmployeeDto> actors = new();
+    private List<EmployeeDto> technics = new();
+    private Dictionary<int, List<int>> selectedEmployees = new();
+
+    private int currentPlayEventIndex = -1;
+    private int currentPlayId = 0;
+    private string currentPlayName = "";
+
+    // Переменные для подгрузки сотрудников из каста
+    private List<CastDto> currentPlayCasts = new();
+    private int selectedCastId;
+    private CastWithRolesDto selectedCast = new();
+
+    private void OpenRolesModal(int index)
+    {
+        currentPlayEventIndex = index;
+        currentPlayId = Model.PlayEvents[currentPlayEventIndex].PlayId;
+
+        var selectedPlay = availablePlays.FirstOrDefault(p => p.PlayId == currentPlayId);
+        currentPlayName = selectedPlay?.Name ?? "Не выбран";
+
+        selectedCastId = Model.PlayEvents[currentPlayEventIndex].CastId;
+        LoadPlayData(currentPlayId);
+
+        // Загружаем сохраненные роли, если есть
+        LoadSavedRoles();
+        StateHasChanged();
+
+        rolesModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void LoadRolesData()
+    {
+        selectedEmployees = Model.PlayEvents[currentPlayEventIndex].SelectedEmployees;
+    }
+
+    private void LoadSavedRoles()
+    {
+        if (currentPlayEventIndex >= 0)
+        {
+            var playEvent = Model.PlayEvents[currentPlayEventIndex];
+
+            if (playEvent.SelectedEmployees != null && playEvent.SelectedEmployees.Any())
+            {
+                // Очищаем текущие выбранные сотрудники
+                selectedEmployees.Clear();
+
+                // Инициализируем пустые списки для всех ролей
+                foreach (var role in play.RoleDtos)
+                {
+                    selectedEmployees[role.RoleInPlayId] = new List<int>();
+                }
+
+                // Загружаем сохраненные данные
+                foreach (var savedRole in playEvent.SelectedEmployees)
+                {
+                    int roleId = savedRole.Key;
+                    var employeeIds = savedRole.Value;
+
+                    if (selectedEmployees.ContainsKey(roleId))
+                    {
+                        foreach (var empId in employeeIds)
+                        {
+                            if (empId > 0)
+                            {
+                                selectedEmployees[roleId].Add(empId);
+                            }
+                        }
+                        Console.WriteLine($"Загружена роль {roleId}: {string.Join(", ", selectedEmployees[roleId])}");
+                    }
+                }
+
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async void LoadPlayData(int playId)
+    {
+        if (playId > 0)
+        {
+            play = await playService.GetPlayAsync(playId);
+            actors = await employeeService.GetActorsAsync();
+            technics = await employeeService.GetTechnicsAsync();
+
+            currentPlayCasts = await playService.GetCastsAsync(playId);
+
+            // Подгрузка выбранных сотрудников
+            InitializeSelectedEmployeesForPlayEvent();
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnSelectedItemChangedHandler()
+    {
+        selectedCast = await playService.GetCastAsync(selectedCastId);
+
+        // Заполняем существующими сотрудниками
+        foreach (var role in selectedCast.Roles)
+        {
+            var employeeIds = role.Employees.Select(e => e.EmployeeId).ToList();
+            selectedEmployees[role.RoleInPlayId] = employeeIds;
+        }
+        StateHasChanged();
+    }
+
+    private void SaveRoles()
+    {
+        if (currentPlayEventIndex >= 0)
+        {
+            // Сохраняем выбранных сотрудников в текущий PlayEvent
+            var playEvent = Model.PlayEvents[currentPlayEventIndex];
+
+            // Копируем выбранных сотрудников
+            playEvent.SelectedEmployees.Clear();
+            foreach (var role in selectedEmployees)
+            {
+                var employeeIds = new List<int>();
+                foreach (var employeeId in role.Value)
+                {
+                    if (employeeId > 0)
+                    {
+                        employeeIds.Add(employeeId);
+                    }
+                }
+                playEvent.SelectedEmployees[role.Key] = employeeIds;
+            }
+
+            // Создаем отображение для UI
+            playEvent.RoleDisplays.Clear();
+            foreach (var role in play.RoleDtos)
+            {
+                if (playEvent.SelectedEmployees.ContainsKey(role.RoleInPlayId) &&
+                    playEvent.SelectedEmployees[role.RoleInPlayId].Any())
+                {
+                    var employeeIds = playEvent.SelectedEmployees[role.RoleInPlayId];
+                    var employeeNames = new List<string>();
+
+                    foreach (var empId in employeeIds)
+                    {
+                        var actor = actors.FirstOrDefault(a => a.EmployeeId == empId);
+                        if (actor != null)
+                            employeeNames.Add($"{actor.Surname} {actor.Name}");
+
+                        var tech = technics.FirstOrDefault(t => t.EmployeeId == empId);
+                        if (tech != null)
+                            employeeNames.Add($"{tech.Surname} {tech.Name}");
+                    }
+
+                    playEvent.RoleDisplays.Add(new PlayEventRoleDisplay
+                        {
+                            RoleName = role.Name,
+                            EmployeeNames = string.Join(", ", employeeNames),
+                            Count = employeeIds.Count
+                        });
+                }
+            }
+
+            playEvent.CastId = selectedCastId;
+
+
+        }
+
+        rolesModalVisible = false;
+        StateHasChanged();
+
+        messageService.Success("Роли сохранены локально");
+        ResetRolesModalState();
+    }
+
+    private void CancelRoles()
+    {
+        rolesModalVisible = false;
+        StateHasChanged();
+        ResetRolesModalState();
+    }
+
+    private void ResetRolesModalState()
+    {
+        // Сбрасываем выбранный состав
+        selectedCastId = 0;
+        selectedCast = new CastWithRolesDto();
+
+        // Очищаем выбранных сотрудников
+        selectedEmployees.Clear();
+
+        // Очищаем временные данные
+        currentPlayEventIndex = -1;
+        currentPlayId = 0;
+        currentPlayName = "";
+
+        // Очищаем списки ролей и сотрудников
+        play = new PlayDto();
+        actors = new List<EmployeeDto>();
+        technics = new List<EmployeeDto>();
+        currentPlayCasts = new List<CastDto>();
+
+        StateHasChanged();
+    }
+
+    private void InitializeSelectedEmployeesForPlayEvent()
+    {
+        // Очищаем текущие списки
+        selectedEmployees.Clear();
+
+        // Инициализируем пустые списки для всех ролей спектакля
+        foreach (var role in play.RoleDtos)
+        {
+            selectedEmployees[role.RoleInPlayId] = new List<int>();
+        }
+
+        // Если есть сохраненные данные для этого спектакля, загружаем их
+        if (currentPlayEventIndex >= 0)
+        {
+            var playEvent = Model.PlayEvents[currentPlayEventIndex];
+
+            if (playEvent.SelectedEmployees != null && playEvent.SelectedEmployees.Any())
+            {
+                foreach (var savedRole in playEvent.SelectedEmployees)
+                {
+                    int roleId = savedRole.Key;
+                    var employeeIds = savedRole.Value;
+
+                    if (selectedEmployees.ContainsKey(roleId))
+                    {
+                        foreach (var empId in employeeIds)
+                        {
+                            if (empId > 0)
+                            {
+                                selectedEmployees[roleId].Add(empId);
+                            }
+                        }
+                    }
+                }
+            }
+            selectedCastId = playEvent.CastId;
+        }
+
+    }
+
+    //Вспомогательные методы для назначения сотрудников на роли
+
+    private int GetCount(int roleId)
+    {
+        if (selectedEmployees.ContainsKey(roleId))
+        {
+            return selectedEmployees[roleId].Count;
+        }
+        return 0;
+    }
+
+    // Получить Id сотрудника по роли и индексу
+    private int GetEmployeeId(int roleId, int index)
+    {
+        if (selectedEmployees.ContainsKey(roleId) && index >= 0 && index < selectedEmployees[roleId].Count)
+        {
+            return selectedEmployees[roleId][index];
+        }
+        return 0;
+    }
+
+    // Установить Id сотрудника
+    private void SetEmployeeId(int roleId, int index, int value)
+    {
+        if (!selectedEmployees.ContainsKey(roleId))
+        {
+            selectedEmployees[roleId] = new List<int>();
+        }
+
+        // Расширяем список если нужно
+        while (selectedEmployees[roleId].Count <= index)
+        {
+            selectedEmployees[roleId].Add(0);
+        }
+
+        selectedEmployees[roleId][index] = value;
+        StateHasChanged();
+    }
+
+    // Добавить нового сотрудника для роли
+    private void Add(int roleId)
+    {
+        if (!selectedEmployees.ContainsKey(roleId))
+        {
+            selectedEmployees[roleId] = new List<int>();
+        }
+        selectedEmployees[roleId].Add(0); // Добавляем пустого сотрудника
+        StateHasChanged();
+    }
+
+    // Удалить сотрудника
+    private void Remove(int roleId, int index)
+    {
+        if (selectedEmployees.ContainsKey(roleId))
+        {
+            if (index >= 0 && index < selectedEmployees[roleId].Count)
+            {
+                selectedEmployees[roleId].RemoveAt(index);
+                StateHasChanged();
+            }
+        }
+    }
+}

@@ -14,6 +14,7 @@ namespace TheatreManagement.Domain.Data
         public virtual DbSet<Employee> Employees { get; set; }
         public virtual DbSet<EmployeeRole> EmployeeRoles { get; set; }
         public virtual DbSet<Event> Events { get; set; }
+        public virtual DbSet<PlayEvent> PlayEvents { get; set; }
         public virtual DbSet<Institution> Institutions { get; set; }
         public virtual DbSet<Play> Plays { get; set; }
         public virtual DbSet<RoleInPlay> RoleInPlays { get; set; }

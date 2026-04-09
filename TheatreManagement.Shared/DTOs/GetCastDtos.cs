@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 
 namespace TheatreManagement.Shared.DTOs
 {
-    // DTO для сгруппированного ответа
+    // для сгруппированного ответа
     public class CastWithRolesDto
     {
         public int CastId { get; set; }
         public string Name { get; set; }
         public DateTime? LastEditTime { get; set; }
         public List<RoleGroupDto> Roles { get; set; }
+        public string UserFullName { get; set; } = "";
     }
 
     public class RoleGroupDto
@@ -22,14 +23,4 @@ namespace TheatreManagement.Shared.DTOs
         public string RoleType { get; set; }
         public List<EmployeeDto> Employees { get; set; }
     }
-
-    //public class EmployeeRoleDetailDto
-    //{
-    //    //public int EmployeeRoleId { get; set; }
-    //    public int EmployeeId { get; set; }
-    //    public string EmployeeSurname { get; set; }
-    //    public string EmployeeName { get; set; }
-    //    public string EmployeeFatherName { get; set; }
-    //    public string EmployeePost { get; set; }
-    //}
 }

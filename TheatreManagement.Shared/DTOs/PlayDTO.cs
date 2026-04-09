@@ -25,5 +25,9 @@ namespace TheatreManagement.Shared.DTOs
         public DateTime? DeletionTime { get; set; }
 
         public List<RoleDto> RoleDtos { get; set; } = new();
+
+        // Для отображения
+
+        public string UserFullName { get; set; } = "";
     }
 }

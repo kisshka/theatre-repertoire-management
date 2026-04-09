@@ -3,17 +3,13 @@
 <PageTitle>Информация о сотруднике</PageTitle>
 
 <PageHeader>
-
-    <PageHeaderTitle>Информация о сотруднике</PageHeaderTitle>
-    <PageHeaderExtra>
-
-        <Button Type="ButtonType.Primary"
-        OnClick="@GoBack">
-            Назад
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
             <Icon Type="@IconType.Outline.Left" />
+            Назад
         </Button>
-
-    </PageHeaderExtra>
+    </BackIconTemplate>
+    <PageHeaderTitle>Информация о сотруднике</PageHeaderTitle>
 </PageHeader>
 
 
@@ -34,6 +30,8 @@
     <CardGrid Style="width:50%;text-align:center" Hoverable="false">
         Активен: @employee.IsActive
     </CardGrid>
+
+    <p>Последнее изменение: @employee.LastEditTime.ToString() - @employee.UserFullName.ToString()</p>
 </Card>
 
 <EditModal @bind-Visible="@editModalVisible"

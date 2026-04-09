@@ -1,0 +1,115 @@
+﻿@page "/events/{datestring}/details/{eventid:int}"
+@using TheatreManagement.Shared.DTOs.Events
+@using System.Globalization
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>Информация о мероприятии</PageHeaderTitle>
+</PageHeader>
+
+<Card Title="@Model.TimePeriod">
+    <Extra>
+        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+            <Icon Type="@IconType.Outline.Edit" />
+        </Button>
+        <Button Danger OnClick="@SoftDelete">
+            <Icon Type="@IconType.Outline.Delete" />
+        </Button>
+    </Extra>
+    <Body>
+        @foreach(var play in Model.PlaysWithRoles)
+        {
+    <Card Title="@play.PlayName">
+       
+        <Card Title="Актеры">
+                @foreach (var role in play.RoleGroups.Where(r => r.RoleType == "Актерская"))
+            {
+                <CardGrid Style="width:50%">
+                    @role.RoleName
+                </CardGrid>
+                <CardGrid Style="width:50%">
+                    @foreach (var employee in role.Employees)
+                    {
+                        <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                    }
+                </CardGrid>
+            }
+        </Card>
+
+        <Card Title="Технический состав">
+            @foreach (var role in play.RoleGroups.Where(r => r.RoleType == "Техническая"))
+            {
+                <CardGrid Style="width:50%">
+                    @role.RoleName
+                </CardGrid>
+                <CardGrid Style="width:50%">
+                    @foreach (var employee in role.Employees)
+                    {
+                        <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                    }
+                </CardGrid>
+            }
+        </Card>
+
+
+    </Card>
+}
+            <p>Последнее изменение: @Model.LastEditTime.ToString() - @Model.UserFullName.ToString()</p>
+    </Body>
+</Card>
+
+<EditModal @bind-Visible="editModalVisible"
+          OnSuccess="OnModalSuccess"
+          EventId="@EventId"
+          EventDate="@Date" />
+
+
+@inject EventService eventService
+@inject NavigationManager navManager
+@code {
+    [Parameter] public int EventId { get; set; }
+    [Parameter] public string DateString { get; set; }
+    private DateTime Date { get; set; }
+
+    private EventGetModel Model = new();
+
+
+    private bool editModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Date = DateTime.ParseExact(DateString, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        await LoadData();
+    }
+    private async Task OnModalSuccess()
+    {
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task LoadData()
+    {
+        Model = await eventService.GetEventDetailsAsync(EventId);
+    }
+
+    private async Task OnEmployeeEdit()
+    {
+        await LoadData();
+    }
+
+    private async Task SoftDelete()
+    {
+        // await eventService.SoftDeleteEmployeeAsync(EventId);
+        // navManager.NavigateTo($"/events/{DateString}");
+    }
+
+    private void GoBack()
+    {
+        navManager.NavigateTo($"/events/{DateString}");
+    }
+}

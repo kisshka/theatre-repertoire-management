@@ -22,6 +22,5 @@ namespace TheatreManagement.Shared.DTOs
         public string? Name { get; set; }
         public string? RoleType { get; set; }
         public bool IsUsed { get; set; }
-        public DateTime LastEditTime { get; set; }
     }
 }

@@ -1,17 +1,24 @@
 ﻿@page "/events"
 @page "/"
+@using System.Globalization
+@using AntDesign
+@using TheatreManagement.Shared.DTOs.Events
 
 <PageTitle>Мероприятия</PageTitle>
 
-
 <Calendar   Value="currentDate"
-            OnChange="OnValueChanged"
-            DateCellRender="DateCellRender"
-            HeaderRender="CustomHead" />
-            
-@code
-{
+DateCellRender="DateCellRender"
+HeaderRender="CustomHead"
+OnSelect="OnDateSelect"
+CultureInfo="@CultureInfo.InvariantCulture" />
+
+@inject NavigationManager navManager
+@inject EventService eventService
+
+@code {
     private DateTime currentDate = DateTime.Now;
+    private List<EventGetModel> allEvents = new();
+    private bool isLoading = false;
 
     class ListData
     {
@@ -19,82 +26,128 @@
         public string content;
     }
 
-@* Заполенение календаря данными о событиях *@
-    private List<ListData> GetListData(DateTime value)
-    {
-        List<ListData> listData = null;
-        switch (value.Day)
-        { 
-            case 8:
-                listData = new List<ListData>
-                {
-                new ListData { type = BadgeStatus.Warning, content = "Отмененное событие" },
-                new ListData { type = BadgeStatus.Success, content = "Стационарное событие" },
-                };
-                break;
-            case 15:
-                listData = new List<ListData> {
-                new ListData { type = BadgeStatus.Warning, content = "Гастрольное событие" },
-                new ListData { type = BadgeStatus.Success, content = "Стационарное событие с очень длииииииииинным описанием" },
-                new ListData { type = BadgeStatus.Error, content = "Отмененное событие" },
-                };
-                break;
-        }
-        return listData ?? new List<ListData>();
-    }
-
-@* Шапка календаря *@
-    private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
-    {
-return @<Template>
-<div class="calendar-header-container">
-    <div class="calendar-header">
-        <Button @onclick="PreviusMonth">
-            <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
-        </Button>
-
-        <DatePicker ValueChanged="OnValueChanged"
-                    AllowClear="false" 
-                    Value="currentDate"
-                    ShowToday="true"
-                    TValue="DateTime"
-                    Picker="DatePickerType.Month" />
-
-        <Button @onclick="NextMonth">
-            <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
-        </Button>
-    </div>
-
-    <Button Type="ButtonType.Primary" Class="archive-btn">
-        Архив
-        <Icon Type="@IconType.Outline.Right" />
-    </Button>
-</div>
-    </Template>;
-    }
-
-@* Обработчики кнопок шапки*@
-    private void OnValueChanged(DateTime newDate)
+    // Загружаем события при смене месяца через Value
+    private async Task OnValueChanged(DateTime newDate)
     {
         currentDate = newDate;
+        await LoadEventsForMonth(currentDate);
+    }
+
+    private async Task LoadEventsForMonth(DateTime date)
+    {
+        if (isLoading) return;
+        isLoading = true;
+
+        try
+        {
+            // Получаем первый и последний день месяца
+            var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
+            var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
+            var startDate = firstDayOfMonth.AddDays(-14);
+            var endDate = lastDayOfMonth.AddDays(14);
+
+            allEvents = await eventService.GetEventsByDateRangeAsync(startDate, endDate);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private List<ListData> GetListData(DateTime value)
+    {
+        var listData = new List<ListData>();
+
+        var eventsOnDay = allEvents.Where(e => 
+            e.StartTime?.Date == value.Date || 
+            (e.StartTime?.Date <= value.Date && e.EndTime?.Date >= value.Date));
+
+        foreach (var ev in eventsOnDay)
+        {
+            string content = " ";
+            var status = ev.IsCanceled ? BadgeStatus.Error : BadgeStatus.Success;
+
+            content += ev.TimePeriod + " ";
+            foreach (var play in ev.Plays)
+            {
+                content += play.Name + " ";
+            }
+            content += ev.Type == "stationar" ? "- Стационар" :
+          ev.Type == "tour" ? "- Гастроли" : " - Выезд";
+
+            listData.Add(new ListData { type = status, content = content });
+        }
+        
+        return listData;
+    }
+
+    private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
+    {
+        return @<Template>
+            <div class="calendar-header-container">
+                <div class="calendar-header">
+                    <Button @onclick="PreviousMonth">
+                        <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
+                    </Button>
+
+                    <DatePicker ValueChanged="OnDatePickerChanged"
+                                AllowClear="false" 
+                                Value="currentDate"
+                                ShowToday="true"
+                                TValue="DateTime"
+                                Picker="DatePickerType.Month" />
+
+                    <Button @onclick="NextMonth">
+                        <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
+                    </Button>
+                </div>
+            </div>
+        </Template>;
+    }
+
+    private void OnDateSelect(DateTime date)
+    {
+        var dateString = $"{date.Year:0000}-{date.Month:00}-{date.Day:00}";
+        navManager.NavigateTo($"/events/{dateString}");
+    }
+
+    private async Task OnDatePickerChanged(DateTime newDate)
+    {
+        currentDate = newDate;
+        await LoadEventsForMonth(currentDate);
         StateHasChanged();
     }
-    private void NextMonth()
+    
+    private async Task NextMonth()
     {
         currentDate = currentDate.AddMonths(1);
-        StateHasChanged();
+        await LoadEventsForMonth(currentDate);
+        StateHasChanged(); 
     }
-    private void PreviusMonth()
+    
+    private async Task PreviousMonth()
     {
         currentDate = currentDate.AddMonths(-1);
+        await LoadEventsForMonth(currentDate);
         StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventsForMonth(currentDate);
     }
 
     private RenderFragment DateCellRender(DateTime value)
     {
         var listData = GetListData(value);
         return @<Template>
-            <ul class="events">
+            <ul class="events" style="cursor: pointer; min-height: 60px;">
                 @foreach (var data in listData)
                 {
                     <li key="@data.content">

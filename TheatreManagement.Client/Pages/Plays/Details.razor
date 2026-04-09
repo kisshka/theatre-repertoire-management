@@ -5,19 +5,18 @@
 <PageHeader>
 
     <PageHeaderTitle>Информация о спектакле</PageHeaderTitle>
-    <PageHeaderExtra>
-
-        <Button Type="ButtonType.Primary"
-        OnClick="@GoBack">
-            Назад
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
             <Icon Type="@IconType.Outline.Left" />
+            Назад
         </Button>
-        <Button Type="ButtonType.Primary"
+    </BackIconTemplate>
+    <PageHeaderExtra>
+        <Button class="right-pageheader-button" Type="ButtonType.Primary"
         OnClick="@GoToCasts">
             Составы
             <Icon Type="@IconType.Outline.Right" />
         </Button>
-
     </PageHeaderExtra>
 </PageHeader>
 
@@ -65,6 +64,7 @@
         </AntList>
     </CardGrid>
 
+    <p>Последнее изменение: @play.LastEditTime.ToString() - @play.UserFullName.ToString()</p>
 </Card>
 
 <EditModal @bind-Visible="@editModalVisible"
