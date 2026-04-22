@@ -12,33 +12,44 @@
     <PageHeaderTitle>Список составов</PageHeaderTitle>
 </PageHeader>
 
-<Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
-    <Icon Type="@IconType.Outline.Plus" /> Добавить
-</Button>
+<AuthorizeView Roles="MainAdmin">
+     <Authorized>
+        <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+            <Icon Type="@IconType.Outline.Plus" /> Добавить
+        </Button>
+    </Authorized>
+</AuthorizeView>
+
 
 @if (castes != null && castes.Any())
 {
+    <p>Выберите состав, информацию о котором хотите увидеть</p>
+
+    <InputGroup Compact>
+
+            <Select TItem="CastDto"
+                    TItemValue="int"
+                    DataSource="@castes"
+                    @bind-Value="@selectedCastId"
+                    LabelName="@nameof(CastDto.Name)"
+                    ValueName="@nameof(CastDto.CastId)"
+                    OnSelectedItemChanged="@OnSelectedItemChangedHandler">
+            </Select>
+
+            <AuthorizeView Roles="MainAdmin">
+                <Authorized>
+                    <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+                        <Icon Type="@IconType.Outline.Edit" />
+                    </Button>
+
+                    <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                    </DeleteButtonWithConfirm>
+                </Authorized>
+            </AuthorizeView>
+
+    </InputGroup>
+
     <Card>
-        <p>
-            Выберите состав, информацию о котором хотите увидеть
-        </p>
-
-        <Select
-        TItem="CastDto"
-        TItemValue="int"
-        DataSource="@castes"
-        @bind-Value="@selectedCastId"
-        LabelName="@nameof(CastDto.Name)"
-        ValueName="@nameof(CastDto.CastId)"
-        OnSelectedItemChanged="@OnSelectedItemChangedHandler">
-        </Select>
-
-        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
-            <Icon Type="@IconType.Outline.Edit" />
-        </Button>
-        <Button Danger>
-            <Icon Type="@IconType.Outline.Delete" OnClick="@SoftDelete" />
-        </Button>
 
         <Card Title="Актеры">
             @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Актерская"))

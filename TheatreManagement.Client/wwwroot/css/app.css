@@ -5,8 +5,8 @@ html, body {
 :root {
     --primary-color: #708D81;
     --secondary-color: #D4B655;
-    --danger-color: #bd4a4a;
-    --danger-light: #e07272;
+    --danger-color: #e07272;
+    --danger-light: #f79f9f;
     --dark-header: #001427;
     --dark-gray: #615f5f;
     --gray: #ada1a1;
@@ -16,8 +16,28 @@ html, body {
     /*Карточки мероприятий*/
     --stationar: #b9e3b8;
     --visit: #b8c6e3;
-    --tour: #ebe1b2;
+    --tour: #f2e4aa;
     --canceled: #e3c0b8;
+    /*Отображение на календаре*/
+    --stationar-text: #187800;
+    --visit-text: #0f00b3;
+    --tour-text: #997a00;
+    --canceled-text: #7a4033;
+    /*Переопределение*/
+    --ant-primary-color: #708D81;
+    --ant-primary-color-hover: #D4B655;
+    --ant-primary-color-active: #D4B655;
+    --ant-primary-color-outline: rgb(42, 77, 41);
+    --ant-success-color: #52c41a;
+    --ant-warning-color: #faad14;
+    --ant-error-color: #bd4a4a;
+    --ant-font-size-base: 14px;
+    --ant-heading-color: rgba(0, 0, 0, 0.85);
+    --ant-text-color: rgba(0, 0, 0, 0.65);
+    --ant-text-color-secondary: rgba(0, 0, 0, 0.45);
+    --ant-disabled-color: rgba(0, 0, 0, 0.25);
+    --ant-border-radius-base: 2px;
+    --ant-border-color-base: #d9d9d9;
 }
 
 h1 {
@@ -72,8 +92,9 @@ justify-content: space-between;
     border-radius: 5px;
 }
 .ant-btn-default:hover, .ant-btn-default:focus {
-    border-color:   var(--light-gray);
-    background:   var(--light-gray);
+    border-color: var(--light-gray);
+    color: var(--dark);
+    background: var(--light-gray);
     box-shadow: none;
 }
 .ant-btn-default .anticon {
@@ -195,13 +216,15 @@ code {
     margin-right: 10px;
 }
 
-.dinamic-fields button {
+/*Кнопки удлаения*/
+.danger-button {
     background: var(--danger-color);
     padding: 5px 7px;
     margin-left: 4px;
     border: none;
 }
-.dinamic-fields button:hover {
+
+.danger-button:hover, .danger-button:focus {
     background: var(--danger-light);
 }
 

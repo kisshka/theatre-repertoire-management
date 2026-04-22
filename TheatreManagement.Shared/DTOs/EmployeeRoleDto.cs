@@ -12,6 +12,7 @@ namespace TheatreManagement.Shared.DTOs
         public int RoleInPlayId { get; set; }
 
         public int? CastId { get; set; }
-        public int? EventId { get; set; }
+        public int? PlayEventId { get; set; }
     }
+
 }

@@ -24,6 +24,15 @@
         <FormItem Label="Введите отчество">
             <Input @bind-Value="@context.FatherName" />
         </FormItem>
+        <FormItem Label="Статус" Required>
+            <Select Mode="SelectMode.Default"
+                    DataSource="@Status"
+                    @bind-Value="@selectedStatus"
+                    LabelName="Name"
+                    ValueName="Value">
+            </Select>
+        </FormItem>
+
         <FormItem Label="Выберите должность" Required>
             <Select Mode="SelectMode.Default"
                     DataSource="@postTypes"
@@ -52,10 +61,17 @@
     private bool Submitting { get; set; } = false;
     private string selectedPost { get; set; } = "";
 
-    private List<SelectItem> postTypes = new()
+    private bool selectedStatus = true;
+    private List<SelectItem<bool>> Status = new()
     {
-        new SelectItem { Name = "Актер", Value = "Актер" },
-        new SelectItem { Name = "Технический сотрудник", Value = "Технический сотрудник" }
+        new SelectItem<bool> { Name = "Активен", Value = true },
+        new SelectItem<bool> { Name = "Неактивен", Value = false }
+    };
+
+    private List<SelectItem<string>> postTypes = new()
+    {
+        new SelectItem<string> { Name = "Актер", Value = "Актер" },
+        new SelectItem<string> { Name = "Технический сотрудник", Value = "Технический сотрудник" }
     };
 
 

@@ -15,23 +15,36 @@
 
 
 <Card Title=@fullName>
-    <CardAction>
-        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
-            <Icon Type="@IconType.Outline.Edit" />
-        </Button>
-        <Button Danger OnClick="@SoftDelete">
-            <Icon Type="@IconType.Outline.Delete" />
-        </Button>
-    </CardAction>
+    <Extra>
+        <AuthorizeView Roles="MainAdmin">
+            <Authorized>
+                <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+                    <Icon Type="@IconType.Outline.Edit" />
+                </Button>
 
-    <CardGrid Style="width:50%;text-align:center" Hoverable="false">
-        Должность: @employee.Post
-    </CardGrid>
-    <CardGrid Style="width:50%;text-align:center" Hoverable="false">
-        Активен: @employee.IsActive
-    </CardGrid>
+                <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                </DeleteButtonWithConfirm>
+            </Authorized>
+        </AuthorizeView>
+    </Extra>
+    <Body>
+
+        <CardGrid Style="width:50%;text-align:center" Hoverable="false">
+            Должность: @employee.Post
+        </CardGrid>
+        <CardGrid Style="width:50%;text-align:center" Hoverable="false">
+            @if (employee.IsActive)
+            {
+                <Tag Color="TagColor.Success">Присутствует</Tag>
+            }
+            else
+            {
+                <Tag Color="TagColor.Red">Отсутствует</Tag>
+            }
+        </CardGrid>
 
     <p>Последнее изменение: @employee.LastEditTime.ToString() - @employee.UserFullName.ToString()</p>
+    </Body>
 </Card>
 
 <EditModal @bind-Visible="@editModalVisible"

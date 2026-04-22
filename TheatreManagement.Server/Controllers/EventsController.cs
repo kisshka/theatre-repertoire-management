@@ -30,7 +30,6 @@ namespace TheatreManagement.Server.Controllers
         public async Task<IActionResult> CreateEvent(EventPostModel model)
         {
             var currentUser = await _userManager.GetUserAsync(User);
-
             if (currentUser == null)
             {
                 return Unauthorized("Пользователь не авторизован");
@@ -43,6 +42,7 @@ namespace TheatreManagement.Server.Controllers
                 LastEditTime = DateTime.Now,
                 IsCanceled = model.IsCanceled,
                 User = currentUser,
+                DeletionTime = null,
                 Type = model.Type
             };
 
@@ -50,75 +50,68 @@ namespace TheatreManagement.Server.Controllers
             switch (model.Type)
             {
                 case "stationar":
-                    var stationar = new Stationar
+                    newEvent.Stationar = new Stationar
                     {
                         Hall = model.Stationar.Hall,
                         Type = model.Stationar.Type
                     };
-                    _context.Stationars.Add(stationar);
-                    newEvent.Stationar = stationar;
                     break;
 
                 case "tour":
-                    var tour = new Tour
+                    newEvent.Tour = new Tour
                     {
                         Country = model.Tour.Country,
                         Area = model.Tour.Area
                     };
-                    _context.Tours.Add(tour);
-                    newEvent.Tour = tour;
                     break;
 
                 case "visit":
-                    var institution = new Institution
+                    newEvent.Institution = new Institution
                     {
                         Name = model.Institution.Name,
                         Town = model.Institution.Town,
                         Street = model.Institution.Street,
                         House = model.Institution.House
                     };
-                    _context.Institutions.Add(institution);
-                    newEvent.Institution = institution;
                     break;
             }
 
-            // Связи
-            foreach (var playEvent in model.PlayEvents)
+            // Добавляем PlayEvents (только спектакли, без ролей)
+            foreach (var playEventDto in model.PlayEvents)
             {
-                if (playEvent.PlayId > 0)
+                if (playEventDto.PlayId <= 0) continue;
+
+                newEvent.PlayEvents.Add(new PlayEvent
                 {
-                    newEvent.PlayEvents.Add(new PlayEvent
-                    {
-                        PlayId = playEvent.PlayId,
-                        StartTime = playEvent.StartTime,
-                        EndTime = playEvent.EndTime
-                    });
-                }
+                    PlayId = playEventDto.PlayId,
+                    StartTime = playEventDto.StartTime,
+                    EndTime = playEventDto.EndTime
+                });
             }
 
-            // Связи с ролями и сотрудниками
-            if (model.EmployeeRolesCreate != null && model.EmployeeRolesCreate.Any())
+            // Добавляем EmployeeRoles (роли сотрудников, привязанные только к Event)
+            foreach (var playEventDto in model.PlayEvents)
             {
-                foreach (var employeeRoleCreate in model.EmployeeRolesCreate)
+                foreach (var selectedEmployee in playEventDto.SelectedEmployees)
                 {
+                    if (selectedEmployee.EmployeeId <= 0) continue;
+
                     // Проверяем существование сотрудника
-                    var employee = await _context.Employees
-                        .FindAsync(employeeRoleCreate.EmployeeId);
+                    var employee = await _context.Employees.FindAsync(selectedEmployee.EmployeeId);
                     if (employee == null)
-                        return BadRequest($"Сотрудник с ID {employeeRoleCreate.EmployeeId} не найден");
+                        return BadRequest($"Сотрудник с ID {selectedEmployee.EmployeeId} не найден");
 
                     // Проверяем существование роли
-                    var roleInPlay = await _context.RoleInPlays
-                        .FindAsync(employeeRoleCreate.RoleInPlayId);
+                    var roleInPlay = await _context.RoleInPlays.FindAsync(selectedEmployee.RoleInPlayId);
                     if (roleInPlay == null)
-                        return BadRequest($"Роль с ID {employeeRoleCreate.RoleInPlayId} не найдена");
+                        return BadRequest($"Роль с ID {selectedEmployee.RoleInPlayId} не найдена");
 
                     var employeeRole = new EmployeeRole
                     {
-                        EmployeeId = employeeRoleCreate.EmployeeId,
-                        RoleInPlayId = employeeRoleCreate.RoleInPlayId,
+                        EmployeeId = selectedEmployee.EmployeeId,
+                        RoleInPlayId = selectedEmployee.RoleInPlayId,
                         Event = newEvent,
-                        //CastId = employeeRoleCreate.CastId
+                        CastId = playEventDto.CastId > 0 ? playEventDto.CastId : null
                     };
 
                     _context.EmployeeRoles.Add(employeeRole);
@@ -242,6 +235,7 @@ namespace TheatreManagement.Server.Controllers
         {
             var eventEntity = await _context.Events
                 .Where(e => e.EventId == eventId)
+                .Include(e => e.User)
                 .Select(e => new EventGetModel
                 {
                     EventId = e.EventId,
@@ -321,7 +315,7 @@ namespace TheatreManagement.Server.Controllers
                                     FatherName = er.Employee?.FatherName,
                                     Post = er.Employee?.Post
                                 })
-                                .DistinctBy(e => e.EmployeeId)
+                                //.DistinctBy(e => e.EmployeeId)
                                 .ToList()
                         }).ToList()
                 })
@@ -364,6 +358,7 @@ namespace TheatreManagement.Server.Controllers
                         Street = e.Institution.Street,
                         House = e.Institution.House
                     } : null,
+
                     PlayEvents = e.PlayEvents.Select(pe => new PlayEventDto
                     {
                         PlayEventId = pe.PlayEventId,
@@ -372,7 +367,15 @@ namespace TheatreManagement.Server.Controllers
                         StartTime = pe.StartTime,
                         EndTime = pe.EndTime,
 
-                        SelectedEmployees = new Dictionary<int, List<int>>()
+                        SelectedEmployees = _context.EmployeeRoles
+                            .Where(er => er.EventId == eventId && er.RoleInPlay.PlayId == pe.PlayId)
+                            .Select(er => new EmployeeRoleSelectDto
+                            {
+                                EmployeeId = er.EmployeeId,
+                                RoleInPlayId = er.RoleInPlayId,
+                                RoleName = er.RoleInPlay.Name,
+                                EmployeeFullName = er.Employee.Surname + " " + er.Employee.Name
+                            }).ToList()
                     }).ToList()
                 })
                 .FirstOrDefaultAsync();
@@ -382,100 +385,40 @@ namespace TheatreManagement.Server.Controllers
                 return NotFound();
             }
 
-            var employeeRoles = await _context.EmployeeRoles
-                .Where(er => er.EventId == eventId)
-                .Include(er => er.Employee)
-                .Include(er => er.RoleInPlay)
-                .ToListAsync();
-
-
-            foreach (var playEvent in eventEntity.PlayEvents)
-            {
-                var rolesForPlayEvent = employeeRoles
-                    .Where(er => er.EventId == eventId)
-                    .GroupBy(er => er.RoleInPlayId)
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.Select(er => er.EmployeeId).ToList()
-                    );
-
-                playEvent.SelectedEmployees = rolesForPlayEvent;
-
-                // Восстанавливаем отображение ролей
-                await RestoreRoleDisplays(playEvent);
-            }
-
             return Ok(eventEntity);
         }
 
-        private async Task RestoreRoleDisplays(PlayEventDto playEvent)
-        {
-            playEvent.RoleDisplays.Clear();
-
-            foreach (var role in playEvent.SelectedEmployees)
-            {
-                int roleId = role.Key;
-                var employeeIds = role.Value;
-
-                // Получаем название роли
-                var roleInfo = await _context.RoleInPlays
-                    .Where(r => r.RoleInPlayId == roleId)
-                    .Select(r => r.Name)
-                    .FirstOrDefaultAsync();
-
-                var employeeNames = new List<string>();
-
-                foreach (var empId in employeeIds.Where(id => id > 0))
-                {
-                    var employee = await _context.Employees
-                        .Where(e => e.EmployeeId == empId)
-                        .Select(e => $"{e.Surname} {e.Name}")
-                        .FirstOrDefaultAsync();
-
-                    if (employee != null)
-                        employeeNames.Add(employee);
-                }
-
-                playEvent.RoleDisplays.Add(new PlayEventRoleDisplay
-                {
-                    RoleName = roleInfo,
-                    EmployeeNames = string.Join(", ", employeeNames),
-                    Count = employeeIds.Count
-                });
-            }
-        }
 
         [HttpPut]
         public async Task<IActionResult> UpdateEvent(EventPostModel model)
         {
             var currentUser = await _userManager.GetUserAsync(User);
-
             if (currentUser == null)
-            {
-                return Unauthorized("Пользователь не авторизован");
-            }
+                return Unauthorized();
 
-            var editedEvent = await _context.Events.Where(e=> e.EventId == model.EventId)
-                                                   .Include(e => e.Stationar)
-                                                   .Include(e => e.Tour)
-                                                   .Include(e => e.Institution)
-                                                   .Include(e => e.EmployeeRoles)
-                                                   .Include(e => e.PlayEvents)
-                                                   .FirstOrDefaultAsync();
+            var editedEvent = await _context.Events
+                .Include(e => e.Stationar)
+                .Include(e => e.Tour)
+                .Include(e => e.Institution)
+                .Include(e => e.EmployeeRoles)
+                .Include(e => e.PlayEvents)
+                .FirstOrDefaultAsync(e => e.EventId == model.EventId);
+
+            if (editedEvent == null)
+                return NotFound();
 
             editedEvent.StartTime = model.StartTime;
             editedEvent.EndTime = model.EndTime;
             editedEvent.IsCanceled = model.IsCanceled;
             editedEvent.Type = model.Type;
             editedEvent.LastEditTime = DateTime.Now;
+            editedEvent.User = currentUser;
 
-            // Специфичные данные
             switch (model.Type)
             {
                 case "stationar":
                     if (editedEvent.Stationar == null)
                         editedEvent.Stationar = new Stationar();
-
                     editedEvent.Stationar.Hall = model.Stationar?.Hall;
                     editedEvent.Stationar.Type = model.Stationar?.Type;
 
@@ -494,7 +437,6 @@ namespace TheatreManagement.Server.Controllers
                 case "tour":
                     if (editedEvent.Tour == null)
                         editedEvent.Tour = new Tour();
-
                     editedEvent.Tour.Country = model.Tour?.Country;
                     editedEvent.Tour.Area = model.Tour?.Area;
 
@@ -513,7 +455,6 @@ namespace TheatreManagement.Server.Controllers
                 case "visit":
                     if (editedEvent.Institution == null)
                         editedEvent.Institution = new Institution();
-
                     editedEvent.Institution.Name = model.Institution?.Name;
                     editedEvent.Institution.Town = model.Institution?.Town;
                     editedEvent.Institution.Street = model.Institution?.Street;
@@ -534,54 +475,118 @@ namespace TheatreManagement.Server.Controllers
 
             // Удаление старых связей
             _context.EmployeeRoles.RemoveRange(editedEvent.EmployeeRoles);
-            _context.PlayEvents.RemoveRange(editedEvent.PlayEvents);
+            await _context.SaveChangesAsync();
+            editedEvent.EmployeeRoles.Clear();
 
-            // Связи
-            foreach (var playEvent in model.PlayEvents)
+            // Создание новых связей
+            foreach (var playEventDto in model.PlayEvents)
             {
-                if (playEvent.PlayId > 0)
+                foreach (var assignment in playEventDto.SelectedEmployees)
+                {
+                    var roleInPlay = await _context.RoleInPlays
+                        .FirstOrDefaultAsync(r => r.RoleInPlayId == assignment.RoleInPlayId && r.PlayId == playEventDto.PlayId);
+
+                    var employeeRole = new EmployeeRole
+                    {
+                        EmployeeId = assignment.EmployeeId,
+                        RoleInPlayId = assignment.RoleInPlayId,
+                        Event = editedEvent
+                    };
+
+                    editedEvent.EmployeeRoles.Add(employeeRole);
+                }
+            }
+
+            // Обновление связанных спектаклей
+            foreach (var playEventDto in model.PlayEvents)
+            {
+                var existingPlayEvent = editedEvent.PlayEvents
+                    .FirstOrDefault(pe => pe.PlayEventId == playEventDto.PlayEventId);
+
+                if (existingPlayEvent != null)
+                {
+                    existingPlayEvent.StartTime = playEventDto.StartTime;
+                    existingPlayEvent.EndTime = playEventDto.EndTime;
+                }
+                else if (playEventDto.PlayEventId == 0 && playEventDto.PlayId > 0)
                 {
                     editedEvent.PlayEvents.Add(new PlayEvent
                     {
-                        PlayId = playEvent.PlayId,
-                        StartTime = playEvent.StartTime,
-                        EndTime = playEvent.EndTime
+                        PlayId = playEventDto.PlayId,
+                        StartTime = playEventDto.StartTime,
+                        EndTime = playEventDto.EndTime
                     });
                 }
             }
 
-            // Связи с ролями и сотрудниками
-            if (model.EmployeeRolesCreate != null && model.EmployeeRolesCreate.Any())
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+
+        [HttpPut("{eventId}/cancel")]
+        public async Task<IActionResult> CancelEvent(int eventId)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
             {
-                foreach (var employeeRoleCreate in model.EmployeeRolesCreate)
-                {
-                    // Проверяем существование сотрудника
-                    var employee = await _context.Employees
-                        .FindAsync(employeeRoleCreate.EmployeeId);
-                    if (employee == null)
-                        return BadRequest($"Сотрудник с ID {employeeRoleCreate.EmployeeId} не найден");
-
-                    // Проверяем существование роли
-                    var roleInPlay = await _context.RoleInPlays
-                        .FindAsync(employeeRoleCreate.RoleInPlayId);
-                    if (roleInPlay == null)
-                        return BadRequest($"Роль с ID {employeeRoleCreate.RoleInPlayId} не найдена");
-
-                    var employeeRole = new EmployeeRole
-                    {
-                        EmployeeId = employeeRoleCreate.EmployeeId,
-                        RoleInPlayId = employeeRoleCreate.RoleInPlayId,
-                        Event = editedEvent,
-                        //CastId = employeeRoleCreate.CastId
-                    };
-
-                    _context.EmployeeRoles.Add(employeeRole);
-                }
+                return Unauthorized("Пользователь не авторизован");
             }
+
+            var canceledEvent = await _context.Events.Where(e => e.EventId == eventId)
+                                                   .FirstOrDefaultAsync();
+
+            canceledEvent.IsCanceled = true;
+            canceledEvent.User = currentUser;
 
             await _context.SaveChangesAsync();
 
             return Ok();
         }
+
+        [HttpPut("{eventId}/restore-cancel")]
+        public async Task<IActionResult> RestoreCancelEvent(int eventId)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
+            var canceledEvent = await _context.Events.Where(e => e.EventId == eventId)
+                                                   .FirstOrDefaultAsync();
+
+            canceledEvent.IsCanceled = false;
+            canceledEvent.User = currentUser;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPut("{eventId}/soft-delete")]
+        public async Task<IActionResult> SoftDeleteEvent(int eventId)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
+            var deletedEvent = await _context.Events.Where(e => e.EventId == eventId)
+                                                   .FirstOrDefaultAsync();
+
+            deletedEvent.DeletionTime = DateTime.Now;
+            deletedEvent.User = currentUser;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+
     }
 }

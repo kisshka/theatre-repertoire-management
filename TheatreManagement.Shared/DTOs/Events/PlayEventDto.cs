@@ -16,18 +16,39 @@ namespace TheatreManagement.Shared.DTOs.Events
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
 
-        public List<PlayEventRoleDisplay> RoleDisplays { get; set; } = new();
+        public List<EmployeeRoleSelectDto> SelectedEmployees { get; set; } = new();
 
-        public Dictionary<int, List<int>> SelectedEmployees { get; set; } = new();
-        
+        public List<PlayEventRoleDisplay> RoleDisplays => BuildRoleDisplays();
+
+        private List<PlayEventRoleDisplay> BuildRoleDisplays()
+        {
+            return SelectedEmployees
+                .GroupBy(er => er.RoleInPlayId)
+                .Select(g => new PlayEventRoleDisplay
+                {
+                    RoleName = g.First().RoleName,
+                    EmployeeNames = string.Join(", ", g.Select(er => er.EmployeeFullName)),
+                    Count = g.Count()
+                })
+                .ToList();
+        }
+
         public int CastId { get; set; }
     }
 
     public class PlayEventRoleDisplay
     {
-        public string RoleName { get; set; }
-        public string EmployeeNames { get; set; }
+        public string? RoleName { get; set; }
+        public string? EmployeeNames { get; set; }
         public int Count { get; set; }
+    }
+
+    public class EmployeeRoleSelectDto
+    {
+        public int EmployeeId { get; set; }
+        public int RoleInPlayId { get; set; }
+        public string? EmployeeFullName { get; set; }
+        public string? RoleName { get; set; }
     }
 
 }

@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using Microsoft.Extensions.Logging;
+using System.Net.Http.Json;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Events;
 
@@ -46,6 +47,20 @@ namespace TheatreManagement.Client.Services
         public async Task UpdateEventAsync(EventPostModel model)
         {
             await _httpClient.PutAsJsonAsync($"api/events", model);
+        }
+
+        public async Task CancelEventAsync(int eventId)
+        {
+            await _httpClient.PutAsJsonAsync($"api/events/{eventId}/cancel", new { });
+        }
+        public async Task RestoreCancelEventAsync(int eventId)
+        {
+            await _httpClient.PutAsJsonAsync($"api/events/{eventId}/restore-cancel", new { });
+        }
+
+        public async Task SoftDeleteEventAsync(int eventId)
+        {
+            await _httpClient.PutAsJsonAsync($"api/events/{eventId}/soft-delete", new {});
         }
 
     }

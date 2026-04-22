@@ -1,0 +1,11 @@
+﻿<Popconfirm Placement="Placement.TopRight" Title="Вы уверены, что хотите удалить объект?" OnConfirm="OnConfirm"
+            OkText="Ок" CancelText="Отмена">
+    <Button Danger Class="danger-button">
+        <Icon Type="@IconType.Outline.Delete" />
+    </Button>
+</Popconfirm>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Вы уверены, что хотите удалить объект?";
+    [Parameter] public EventCallback OnConfirm { get; set; }
+}

@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 
-namespace TheatreManagement.Shared.DTOs
+namespace TheatreManagement.Shared.DTOs.Users
 {
     public class UserDto
     {
@@ -23,16 +23,5 @@ namespace TheatreManagement.Shared.DTOs
         [DisplayName("Роль")]
         public string Role { get; set; } = string.Empty;
     }
-
-    public class RegisterModel : UserDto
-    {
-        [Required(ErrorMessage = "Поле обязательно для заполнения")]
-        public string Password { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Поле обязательно для заполнения")]
-        [Compare(nameof(Password), ErrorMessage = "Пароли не совпадают")]
-        public string ConfirmPassword { get; set; } = string.Empty;
-    }
-
 
 }

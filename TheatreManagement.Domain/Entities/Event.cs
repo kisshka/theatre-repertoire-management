@@ -9,6 +9,7 @@ namespace TheatreManagement.Domain.Entities
         public DateTime? EndTime { get; set; } 
         public string? Type { get; set; }
         public DateTime LastEditTime { get; set; }
+        public DateTime? DeletionTime { get; set; }
         public bool IsCanceled { get; set; }
 
         // ссылки

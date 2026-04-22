@@ -19,28 +19,31 @@
 <Row Gutter="0" class="event-container">
     <!-- Стационарные мероприятия -->
     <Col Span="8" class="events">
+
     <Card class="events-card" Title="Стационар" Bordered="false">
             @foreach (var e in events.Where(e => e.Type == "stationar"))
             {
             <div @onclick="() => GoToDetails(e.EventId)">
-            <Card Title="@e.TimePeriod" class="card-stationar" Bordered="true">
-                  <div class="event-content">
-                            <span class="event-value">@(e.Stationar?.Hall)</span>
-                            <span class="event-label"> - </span>
-                            <span class="event-value">@(e.Stationar?.Type)</span>
-
-                        @if (e.Plays != null && e.Plays.Any())
+                <Card Title="@e.StationarTimePeriod"
+                    class="@(e.IsCanceled ? "card-cancelled" : "card-stationar")"
+                    Bordered="true">
+                    <Extra>
+                        @e.Stationar?.Type
+                    </Extra>
+                    <Body>
+                    @if (e.Plays != null && e.Plays.Any())
+                    {
+                        @foreach (var p in e.Plays)
                         {
-                            <Divider />
-                            <div class="event-label">Спектакли:</div>
-                            <ul class="event-plays-list">
-                                @foreach (var p in e.Plays)
-                                {
-                                    <li>@p.Name</li>
-                                }
-                            </ul>
+                                <div>
+                                    <strong>@p.Name</strong>
+                                </div>
                         }
-                  </div>
+                    }
+
+                    <div>@(e.Stationar?.Hall)</div>
+
+                    </Body>
                 </Card>
             </div>
             }
@@ -53,34 +56,29 @@
             @foreach (var e in events.Where(e => e.Type == "visit"))
             {
             <div @onclick="() => GoToDetails(e.EventId)">
-           <Card class="card-visit" Bordered="true" Title="@e.TimePeriod">
-                    <div class="event-content">
-
-                        <div class="event-info-row">
-                            <span class="event-label">Учреждение:</span>
-                            <span class="event-value">@(e.Institution?.Name)</span>
-                        </div>
-                        <div class="event-info-row">
-                            <span class="event-label">Адрес:</span>
-                            <span class="event-value">
-                                @(e.Institution?.Town ?? "")
-                                @(e.Institution?.Street ?? "")
-                                @(e.Institution?.House ?? "")
-                            </span>
-                        </div>
+                <Card class="@(e.IsCanceled ? "card-cancelled" : "card-visit")"
+                    Bordered="true"
+                    Title="@e.StationarTimePeriod">
 
                         @if (e.Plays != null && e.Plays.Any())
                         {
-                            <Divider />
-                            <div class="event-label">Спектакли:</div>
-                            <ul class="event-plays-list">
-                                @foreach (var p in e.Plays)
-                                {
-                                    <li>@p.Name</li>
-                                }
-                            </ul>
+                            @foreach (var p in e.Plays)
+                            {
+                            <div>
+                                <strong>@p.Name</strong>
+                            </div>
+                            }
                         }
-                    </div>
+                        <div>
+                            @e.Institution?.Name
+                        </div>
+                        <div>
+                            <span>
+                               г.@(e.Institution?.Town ?? "")
+                               ул.@(e.Institution?.Street ?? "")
+                               дом @(e.Institution?.House ?? "")
+                            </span>
+                        </div>
                 </Card>
             </div>
             }
@@ -93,29 +91,20 @@
             @foreach (var e in events.Where(e => e.Type == "tour"))
             {
             <div @onclick="() => GoToDetails(e.EventId)">
-            <Card class="card-tour" Bordered="true" Title="@e.TimePeriod">
-                    <div class="event-content">
-
-                        <div class="event-info-row">
-                            <span class="event-label">Страна:</span>
-                        </div>
-
-                        <div class="event-info-row">
-                            <span class="event-label">Город/Регион:</span>
-                        </div>
-
+                <Card class="@(e.IsCanceled ? "card-cancelled" : "card-tour")"
+                  Bordered="true"
+                  Title="@e.StationarTimePeriod">
                         @if (e.Plays != null && e.Plays.Any())
                         {
-                            <Divider />
-                            <div class="event-label">Спектакли:</div>
-                            <ul class="event-plays-list">
-                                @foreach (var p in e.Plays)
-                                {
-                                    <li>@p.Name</li>
-                                }
-                            </ul>
+                            @foreach (var p in e.Plays)
+                            {
+                            <div>
+                                <strong>@p.Name</strong>
+                            </div>
+                            }
                         }
-                    </div>
+                            <div>@(e.Tour?.Country ?? "")</div>
+                            <div>@(e.Tour?.Area ?? "")</div>
                 </Card>
             </div>
             }

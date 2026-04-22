@@ -22,8 +22,23 @@ CultureInfo="@CultureInfo.InvariantCulture" />
 
     class ListData
     {
-        public BadgeStatus type;
+        public string TimePeriod;
+        public string EventType;
         public string content;
+        public bool IsCanceled;
+    }
+
+    private string GetEventStyleByType(string eventType, bool isCanceled)
+    {
+        if (isCanceled) return "color: var(--canceled-text); text-decoration: line-through;";
+
+        return eventType switch
+        {
+            "stationar" => "color: var(--stationar-text);",
+            "tour" => "color: var(--tour-text);",
+            "visit" => "color: var(--visit-text);",
+            _ => "color: #000000;"
+        };
     }
 
     // Загружаем события при смене месяца через Value
@@ -64,26 +79,27 @@ CultureInfo="@CultureInfo.InvariantCulture" />
     {
         var listData = new List<ListData>();
 
-        var eventsOnDay = allEvents.Where(e => 
-            e.StartTime?.Date == value.Date || 
-            (e.StartTime?.Date <= value.Date && e.EndTime?.Date >= value.Date));
+        var eventsOnDay = allEvents.Where(e =>
+        e.StartTime?.Date == value.Date ||
+        (e.StartTime?.Date <= value.Date && e.EndTime?.Date >= value.Date));
 
         foreach (var ev in eventsOnDay)
         {
-            string content = " ";
-            var status = ev.IsCanceled ? BadgeStatus.Error : BadgeStatus.Success;
+            string content = "";
+            content += ev.Plays.Select(p => p.Name).First();
 
-            content += ev.TimePeriod + " ";
-            foreach (var play in ev.Plays)
-            {
-                content += play.Name + " ";
-            }
-            content += ev.Type == "stationar" ? "- Стационар" :
-          ev.Type == "tour" ? "- Гастроли" : " - Выезд";
+            string timePeriod = ev.Type == "stationar" ? $"{ev.StationarTimePeriod}" :
+            ev.Type == "tour" ? $"{ev.TourTimePeriod}" : $"{ev.VisitTimePeriod}";
 
-            listData.Add(new ListData { type = status, content = content });
+            listData.Add(new ListData
+                    {
+                        EventType = ev.Type,
+                        IsCanceled = ev.IsCanceled,
+                        content = content,
+                        TimePeriod = timePeriod
+                    });
         }
-        
+
         return listData;
     }
 
@@ -151,7 +167,10 @@ CultureInfo="@CultureInfo.InvariantCulture" />
                 @foreach (var data in listData)
                 {
                     <li key="@data.content">
-                        <Badge Status="@data.type" Text="@data.content" />
+                            <span style="font-weight:inherit;">@data.TimePeriod</span>
+                            <span style="@GetEventStyleByType(data.EventType, data.IsCanceled)">
+                                @data.content
+                            </span>
                     </li>
                 }
             </ul>

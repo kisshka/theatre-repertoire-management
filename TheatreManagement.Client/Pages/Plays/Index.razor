@@ -5,17 +5,25 @@
 <PageHeader>
     <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
     <PageHeaderExtra>
-        <Button Type="ButtonType.Primary">
-            Архив
-            <Icon Type="@IconType.Outline.Right" />
-        </Button>
+        <AuthorizeView Roles="MainAdmin">
+            <Authorized>
+                <Button Type="ButtonType.Primary">
+                    Архив
+                    <Icon Type="@IconType.Outline.Right" />
+                </Button>
+            </Authorized>
+        </AuthorizeView>
     </PageHeaderExtra>
 </PageHeader>
 
 <div class="table-page-header">
-    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
-        <Icon Type="@IconType.Outline.Plus" />
-    </Button>
+    <AuthorizeView Roles="MainAdmin">
+        <Authorized>
+            <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+                <Icon Type="@IconType.Outline.Plus" />
+            </Button>
+        </Authorized>
+    </AuthorizeView>
 
     <Search Placeholder="Введите название представления"
             @bind-Value="@searchText"
@@ -38,6 +46,16 @@
     <PropertyColumn Property="@(c => c.Name)" Title="Название" />
     <PropertyColumn Property="@(c => c.Duration)" Title="Длительность" />
     <PropertyColumn Property="@(c => c.AgeCategory)" Title="Возрастная категория" />
+    <PropertyColumn Property="c =>c.IsActive" Title="Активен">
+        @if (context.IsActive)
+        {
+            <Icon Type="@IconType.Outline.CheckSquare" Style="color:var(--primary-color); font-size:20px;" />
+        }
+        else
+        {
+            <Icon Type="@IconType.Outline.CloseSquare" Style="color:var(--danger-color); font-size:20px;" />
+        }
+    </PropertyColumn>
 
 </Table>
 

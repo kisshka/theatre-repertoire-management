@@ -26,6 +26,5 @@ namespace TheatreManagement.Shared.DTOs.Events
 
         public List<PlayEventDto> PlayEvents { get; set; } = new();
 
-        public List<EmployeeRoleCreateDto> EmployeeRolesCreate { get; set; } = new();
     }
 }

@@ -1,16 +1,18 @@
 ﻿@using AntDesign
 @using Microsoft.AspNetCore.Components.Forms
 @using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Shared.DTOs.Users
 
 @{
     RenderFragment footer = @<Template>
+        <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+        </DeleteButtonWithConfirm>
+        <Button OnClick="@HandleCancel" @key="@( "back" )">Отмена</Button>
+
         <Button OnClick="@HandleOk" @key="@( "submit" )"
                 Type="ButtonType.Primary">
             Сохранить
         </Button>
-        <Button OnClick="@HandleCancel" @key="@( "back" )">Отмена</Button>
-
-        <Button OnClick="@SoftDelete" @key="@( "delete" )">Удалить</Button>
     </Template>;
 }
 
@@ -155,7 +157,7 @@ Footer="@footer">
 
     private void ResetForm()
     {
-        Model = new RegisterModel();
+        Model = new UserDto();
         error = "";
         FormRef?.Reset();
         StateHasChanged();

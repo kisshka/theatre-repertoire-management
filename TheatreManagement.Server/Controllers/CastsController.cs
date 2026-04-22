@@ -81,6 +81,7 @@ namespace TheatreManagement.Server.Controllers
         public async Task<ActionResult<List<CastDto>>> GetCasts(int playId)
         {
             var casts = await _context.Castes.Where(c => c.PlayId == playId)
+                                             .Where(c => c.DeletionTime == null)
                                              .Select(c => new CastDto
                                              {
                                                  CastId = c.CastId,
@@ -111,7 +112,7 @@ namespace TheatreManagement.Server.Controllers
 
 
             var employeeRoles = await _context.EmployeeRoles
-                .Where(er => er.CastId == castId)
+                .Where(er => er.CastId == castId && er.EventId == null)
                 .Include(er => er.Employee)
                 .Include(er => er.RoleInPlay)
                 .ToListAsync();

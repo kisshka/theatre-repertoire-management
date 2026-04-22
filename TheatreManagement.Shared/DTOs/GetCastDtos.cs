@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +11,8 @@ namespace TheatreManagement.Shared.DTOs
     public class CastWithRolesDto
     {
         public int CastId { get; set; }
+
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
         public string Name { get; set; }
         public DateTime? LastEditTime { get; set; }
         public List<RoleGroupDto> Roles { get; set; }

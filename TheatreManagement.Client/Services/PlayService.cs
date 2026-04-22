@@ -55,6 +55,7 @@ namespace TheatreManagement.Client.Services
         {
             return await _httpClient.PutAsJsonAsync("api/casts", updateCastDto);
         }
+
         public async Task<HttpResponseMessage> SoftDeleteCastAsync(int castId)
         {
             return await _httpClient.PutAsJsonAsync($"api/casts/{castId}/soft-delete", new {});

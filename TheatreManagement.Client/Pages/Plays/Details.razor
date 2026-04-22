@@ -23,14 +23,18 @@
 
 
 <Card Title=@play.Name>
-    <CardAction>
-        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
-            <Icon Type="@IconType.Outline.Edit" />
-        </Button>
-        <Button Danger>
-            <Icon Type="@IconType.Outline.Delete" OnClick="@SoftDelete" />
-        </Button>
-    </CardAction>
+    <Extra>
+        <AuthorizeView Roles="MainAdmin">
+            <Authorized>
+                <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+                    <Icon Type="@IconType.Outline.Edit" />
+                </Button>
+                <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                </DeleteButtonWithConfirm>
+            </Authorized>
+        </AuthorizeView>
+    </Extra>
+    <Body>
     <CardGrid Style="width:33%;text-align:center" Hoverable="false">
         Длительность: @play.Duration
     </CardGrid>
@@ -38,7 +42,14 @@
         Рейтинг: @play.AgeCategory+
     </CardGrid>
     <CardGrid Style="width:33%;text-align:center" Hoverable="false">
-        Статус: @play.IsActive
+            @if (play.IsActive)
+            {
+                <Tag Color="TagColor.Success">Активен</Tag>
+            }
+            else
+            {
+                <Tag Color="TagColor.Red">Неактивен</Tag>
+            }
     </CardGrid>
 
     <CardGrid Style="width:50%;text-align:center" Hoverable="false">
@@ -65,6 +76,7 @@
     </CardGrid>
 
     <p>Последнее изменение: @play.LastEditTime.ToString() - @play.UserFullName.ToString()</p>
+    </Body>
 </Card>
 
 <EditModal @bind-Visible="@editModalVisible"

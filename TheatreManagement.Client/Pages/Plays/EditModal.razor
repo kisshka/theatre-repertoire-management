@@ -24,6 +24,14 @@ MaskClosable="@false">
         <FormItem Label="Введите возрастной рейтинг">
             <Input @bind-Value="@context.AgeCategory" />
         </FormItem>
+        <FormItem Label="Статус" Required>
+            <Select Mode="SelectMode.Default"
+            DataSource="@Status"
+            @bind-Value="@selectedStatus"
+            LabelName="Name"
+            ValueName="Value">
+            </Select>
+        </FormItem>
 
         @* Актерские роли *@
         <Divider Orientation="DividerOrientation.Left">Актерские роли</Divider>
@@ -42,7 +50,7 @@ MaskClosable="@false">
                     <Input @bind-Value="@ActorRoles[currentIndex].Name"
                     Placeholder="Введите название роли" />
                 </FormItem>
-                <Button Danger
+                <Button Danger Class="danger-button"
                 OnClick="@(() => RemoveActorRole(currentIndex))"
                 Disabled="@(ActorRoles.Count == 1 || ActorRoles[i].IsUsed)">
                     <Icon Type="@IconType.Outline.Delete" />
@@ -67,7 +75,7 @@ MaskClosable="@false">
                     <Input @bind-Value="@TechnicRoles[currentIndex].Name"
                     Placeholder="Введите название роли" />
                 </FormItem>
-                <Button Danger
+                <Button Danger Class="danger-button"
                 OnClick="@(() => RemoveTechnicRole(currentIndex))"
                 Disabled="@(TechnicRoles.Count == 1 || TechnicRoles[i].IsUsed)">
                     <Icon Type="@IconType.Outline.Delete" />
@@ -96,6 +104,13 @@ MaskClosable="@false">
     private string Error { get; set; } = "";
     private bool Submitting { get; set; } = false;
 
+    private bool selectedStatus = true;
+    private List<SelectItem<bool>> Status = new()
+    {
+        new SelectItem<bool> { Name = "Активен", Value = true },
+        new SelectItem<bool> { Name = "Неактивен", Value = false }
+    };
+
     protected override async Task OnParametersSetAsync()
     {
         if (Visible)
@@ -107,6 +122,7 @@ MaskClosable="@false">
     private async Task LoadData()
     {
         Model = await playService.GetPlayAsync(PlayId);
+        selectedStatus = Model.IsActive;
 
         ActorRoles = Model.RoleDtos.Where(r => r.RoleType == "Актерская").ToList();
         TechnicRoles = Model.RoleDtos.Where(r => r.RoleType == "Техническая").ToList();
@@ -122,12 +138,12 @@ MaskClosable="@false">
 
         try
         {
-            // Очищаем и заполняем роли
+
+            Model.IsActive = selectedStatus;
             Model.RoleDtos.Clear();
 
             foreach (var role in ActorRoles)
             {
-                // Проверяем, что роль не пустая
                 if (!string.IsNullOrWhiteSpace(role.Name))
                 {
                     Model.RoleDtos.Add(role);

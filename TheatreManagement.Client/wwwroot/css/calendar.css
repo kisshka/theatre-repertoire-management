@@ -226,6 +226,7 @@ th {
 
 /*ОТОБРАЖЕНИЕ КАРТОЧЕК МЕРОПРИЯТИЙ*/
 
+
 .card-stationar {
     background: var(--stationar);
     margin: 2px 0px;
@@ -234,15 +235,30 @@ th {
 
 .card-visit {
     background: var(--visit);
-    margin: 0;
+    margin: 2px 0px;
     border: solid 1px var(--gray);
 }
 
 .card-tour {
     background: var(--tour);
-    margin: 0;
+    margin: 2px 0px;
     border: solid 1px var(--gray);
 }
+
+.card-cancelled .ant-card-head,
+.card-stationar .ant-card-head,
+.card-visit .ant-card-head,
+.card-tour .ant-card-head {
+    border-bottom: solid 1px var(--gray);
+    font-weight: bold;
+}
+
+.card-cancelled {
+    background: var(--canceled);
+    margin: 2px 0px;
+    border: solid 1px var(--gray);
+}
+
 .event-card-container {
     background: var(--gray);
 }

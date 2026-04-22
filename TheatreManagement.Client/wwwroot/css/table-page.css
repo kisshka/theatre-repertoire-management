@@ -81,3 +81,11 @@
     background-color: var(--light-gray);
     border-color: var(--light-gray);
 }
+
+/*Для сотрудников*/
+.inactive-row, .inactive-row > td {
+    background: var( --canceled);
+}
+.inactive-row:hover, .inactive-row:hover > td {
+    background: var( --canceled) !important;
+}

@@ -12,69 +12,120 @@
     <PageHeaderTitle>Информация о мероприятии</PageHeaderTitle>
 </PageHeader>
 
-<Card Title="@Model.TimePeriod">
+<Card Title="@Model.StationarTimePeriod">
     <Extra>
-        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
-            <Icon Type="@IconType.Outline.Edit" />
-        </Button>
-        <Button Danger OnClick="@SoftDelete">
-            <Icon Type="@IconType.Outline.Delete" />
-        </Button>
+        @if (Model.IsCanceled)
+        {
+            <Tag Color="TagColor.Red">Отменено</Tag>
+        }
+
+        @if(IsAllow)
+        {
+            <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+                <Icon Type="@IconType.Outline.Edit" />
+            </Button>
+            @if (Model.IsCanceled)
+            {
+                <Button Type="ButtonType.Default" OnClick="@RestoreCancelEventAsync">
+                    <Icon Type="@IconType.Outline.Undo" />
+                </Button>
+            }
+            else
+            {
+                <Button Danger OnClick="@CancelEvent" Class="danger-button">
+                    <Icon Type="@IconType.Outline.Stop" />
+                </Button>
+            }
+        }
+
+        <AuthorizeView Roles="MainAdmin">
+            <Authorized>
+                <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                </DeleteButtonWithConfirm>
+            </Authorized>
+        </AuthorizeView>
     </Extra>
     <Body>
+
+        @* СПЕЦИФИЧЕСКИЕ ЧАСТИ ДЛЯ КАЖДОГО ТИПА*@
+        @if(Model.Institution != null) {
+            <Card Title="Выезд">
+                <CardGrid Style="width:50%;text-align:center;">
+                    @Model.Institution.Name
+                </CardGrid>
+                <CardGrid Style="width:50%;text-align:center;">
+                    @Model.Institution.Town
+                </CardGrid>
+            </Card>
+        }
+        @if (Model.Stationar != null)
+        {
+            <Card Title="Стационар">
+
+            </Card>
+        }
+        @if (Model.Tour != null)
+        {
+            <Card Title="Гастроли">
+
+            </Card>
+        }
+
         @foreach(var play in Model.PlaysWithRoles)
         {
-    <Card Title="@play.PlayName">
-       
-        <Card Title="Актеры">
-                @foreach (var role in play.RoleGroups.Where(r => r.RoleType == "Актерская"))
-            {
-                <CardGrid Style="width:50%">
-                    @role.RoleName
-                </CardGrid>
-                <CardGrid Style="width:50%">
-                    @foreach (var employee in role.Employees)
+            <Card Title="@play.PlayName">
+
+                <Card Title="Актеры">
+                    @foreach (var role in play.RoleGroups.Where(r => r.RoleType == "Актерская"))
                     {
-                        <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                        <CardGrid Style="width:50%">
+                            @role.RoleName
+                        </CardGrid>
+                        <CardGrid Style="width:50%">
+                            @foreach (var employee in role.Employees)
+                            {
+                                <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                            }
+                        </CardGrid>
                     }
-                </CardGrid>
-            }
-        </Card>
+                </Card>
 
-        <Card Title="Технический состав">
-            @foreach (var role in play.RoleGroups.Where(r => r.RoleType == "Техническая"))
-            {
-                <CardGrid Style="width:50%">
-                    @role.RoleName
-                </CardGrid>
-                <CardGrid Style="width:50%">
-                    @foreach (var employee in role.Employees)
+                <Card Title="Технический состав">
+                    @foreach (var role in play.RoleGroups.Where(r => r.RoleType == "Техническая"))
                     {
-                        <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                        <CardGrid Style="width:50%">
+                            @role.RoleName
+                        </CardGrid>
+                        <CardGrid Style="width:50%">
+                            @foreach (var employee in role.Employees)
+                            {
+                                <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                            }
+                        </CardGrid>
                     }
-                </CardGrid>
-            }
-        </Card>
+                </Card>
 
 
-    </Card>
-}
-            <p>Последнее изменение: @Model.LastEditTime.ToString() - @Model.UserFullName.ToString()</p>
+            </Card>
+        }
+        <p>Последнее изменение: @Model.LastEditTime.ToString() - @Model.UserFullName.ToString()</p>
     </Body>
 </Card>
 
 <EditModal @bind-Visible="editModalVisible"
-          OnSuccess="OnModalSuccess"
-          EventId="@EventId"
-          EventDate="@Date" />
+OnSuccess="OnModalSuccess"
+EventId="@EventId"
+EventDate="@Date" />
 
-
-@inject EventService eventService
-@inject NavigationManager navManager
 @code {
     [Parameter] public int EventId { get; set; }
     [Parameter] public string DateString { get; set; }
+
+    [Inject] private AuthenticationStateProvider provider { get; set; }
+    [Inject] private EventService eventService { get; set; }
+    [Inject] private NavigationManager navManager { get; set; }
     private DateTime Date { get; set; }
+    private bool IsAllow { get; set; } = false;
 
     private EventGetModel Model = new();
 
@@ -85,9 +136,10 @@
     {
         Date = DateTime.ParseExact(DateString, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         await LoadData();
+        await GiveAccess();
     }
     private async Task OnModalSuccess()
-    {
+    {   
         await LoadData();
         StateHasChanged();
     }
@@ -97,6 +149,17 @@
         Model = await eventService.GetEventDetailsAsync(EventId);
     }
 
+    private async Task GiveAccess()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        string userRole = await authStateProvider.GetCurrentUserRoleAsync();
+
+        IsAllow = userRole == "MainAdmin" ||
+                  (userRole == "StationarAdmin" && Model.Type == "stationar") ||
+                  (userRole == "TourAdmin" && Model.Type == "tour") ||
+                  (userRole == "VisitAdmin" && Model.Type == "visit");
+    }
+
     private async Task OnEmployeeEdit()
     {
         await LoadData();
@@ -104,8 +167,22 @@
 
     private async Task SoftDelete()
     {
-        // await eventService.SoftDeleteEmployeeAsync(EventId);
-        // navManager.NavigateTo($"/events/{DateString}");
+        await eventService.SoftDeleteEventAsync(EventId);
+        navManager.NavigateTo($"/events/{DateString}");
+    }
+
+    private async Task RestoreCancelEventAsync()
+    {
+        await eventService.RestoreCancelEventAsync(EventId);
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task CancelEvent()
+    {
+        await eventService.CancelEventAsync(EventId);
+        await LoadData();
+        StateHasChanged();
     }
 
     private void GoBack()

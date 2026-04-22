@@ -4,23 +4,32 @@
 <PageTitle>Список сотрудников</PageTitle>
 
 <PageHeader>
-        <PageHeaderTitle>Список сотрудников</PageHeaderTitle>
-        <PageHeaderExtra>
-            <Button Type="ButtonType.Primary">Архив
-            <Icon Type="@IconType.Outline.Right" />
-            </Button>
-        </PageHeaderExtra>
-    </PageHeader>
+    <PageHeaderTitle>Список сотрудников</PageHeaderTitle>
+    <PageHeaderExtra>
+        <AuthorizeView Roles="MainAdmin">
+            <Authorized>
+                <Button Type="ButtonType.Primary">Архив
+                    <Icon Type="@IconType.Outline.Right" />
+                </Button>
+            </Authorized>
+        </AuthorizeView>
+
+    </PageHeaderExtra>
+</PageHeader>
 
 <div class="table-page-header">
-    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
-        <Icon Type="@IconType.Outline.Plus" />
-    </Button>
+    <AuthorizeView Roles="MainAdmin">
+        <Authorized>
+            <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+                <Icon Type="@IconType.Outline.Plus" />
+            </Button>
+        </Authorized>
+    </AuthorizeView>
 
     <Search Placeholder="Введите ФИО сотрудника"
-            @bind-Value="@searchText"
-            EnterButton="true"
-            OnSearch="@OnSearchAsync" />
+    @bind-Value="@searchText"
+    EnterButton="true"
+    OnSearch="@OnSearchAsync" />
 
     <Button Type="ButtonType.Default">
         <Icon Type="@IconType.Fill.Filter" />
@@ -28,16 +37,26 @@
 </div>
 
 <Table TItem="EmployeeDto"
-       DataSource="@employees"
-       PageSize="@pageSize"
-       Total="@total"
-       @bind-PageIndex="currentPage"
-       OnChange="@OnTableChange"
-       OnRowClick="@OnRowClick">
+DataSource="@employees"
+PageSize="@pageSize"
+Total="@total"
+@bind-PageIndex="currentPage"
+OnChange="@OnTableChange"
+OnRowClick="@OnRowClick">
     <PropertyColumn Property="@(c => c.Surname)" Title="Фамилия" />
     <PropertyColumn Property="@(c => c.Name)" Title="Имя" />
     <PropertyColumn Property="@(c => c.FatherName)" Title="Отчество" />
     <PropertyColumn Property="@(c => c.Post)" Title="Должность" />
+    <PropertyColumn Property="c =>c.IsActive" Title="Присутствует">
+        @if (context.IsActive)
+        {
+            <Icon Type="@IconType.Outline.CheckSquare" Style="color:var(--primary-color); font-size:20px;" />
+        }
+        else
+        {
+            <Icon Type="@IconType.Outline.CloseSquare" Style="color:var(--danger-color); font-size:20px;" />
+        }
+    </PropertyColumn>
 </Table>
 
 <AddModal @bind-Visible="@addModalVisible"
@@ -98,49 +117,6 @@
             Console.WriteLine($"Ошибка: {ex.Message}");
         }
     }
-
-
-
-   //  string[] columns = { "FullName", "Post"};
-
-   //  Data[] data = new Data[100];
-
-   //  protected override void OnInitialized()
-   //  {
-   //      for (int i = 0; i < 100; i++)
-   //      {
-   //          data[i] = new Data()
-   //          {
-   //              Key = i.ToString(),
-   //              FullName = $"Иванов Иван Иванович{i}",
-   //              Post = "Актер",
-   //              IsPresent = true,
-   //          };
-   //          data[i+1] = new Data()
-   //          {
-   //              Key = i.ToString(),
-   //              FullName = $"Иванов Иван Иванович{i}",
-   //              Post = "Актер",
-   //              IsPresent = false,
-   //          };
-   //      i++;
-   //      }
-   //  }
-   // List<Data> options = new List<Data>();
-   //  public class Data
-   //  {
-   //      [DisplayName("Key")]
-   //      public string? Key { get; set; }
-
-   //      [DisplayName("ФИО")]
-   //      public string? FullName { get; set; }
-
-   //      [DisplayName("Должность")]
-   //      public string? Post { get; set; }
-
-   //      [DisplayName("Присутствует")]
-   //      public bool IsPresent { get; set; }
-   //  }
 }
 
 

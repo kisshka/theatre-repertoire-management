@@ -64,7 +64,7 @@ namespace TheatreManagement.Server.Controllers
         {
 
             var query = _context.Employees
-                .Where(p => p.IsActive && p.DeletionTime == null);
+                .Where(p => p.DeletionTime == null);
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {

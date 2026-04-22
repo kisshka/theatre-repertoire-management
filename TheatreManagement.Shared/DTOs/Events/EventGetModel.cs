@@ -12,21 +12,49 @@ namespace TheatreManagement.Shared.DTOs.Events
             public DateTime? StartTime { get; set; }
             public DateTime? EndTime { get; set; }
 
-            public string TimePeriod
+            public string StationarTimePeriod
             {
                 get
                 {
                 if (StartTime != null & EndTime != null)
                 {
-                    return $"{StartTime.Value.ToString("HH:mm")} - {EndTime.Value.ToString("HH:mm")}";
+                    return $"{StartTime.Value.ToString("HH:mm")}-{EndTime.Value.ToString("HH:mm")}";
                 }
                 else
                     return "";
                                                               
                 }
-            }   
+            }
 
-            public string? Type { get; set; }
+            public string TourTimePeriod
+            {
+                get
+                {
+                    if (StartTime != null & EndTime != null)
+                    {
+                        return $"{StartTime.Value.ToString("dd/MM")}-{EndTime.Value.ToString("dd/MM")}";
+                    }
+                    else
+                        return "";
+
+                }
+            }
+
+            public string VisitTimePeriod
+            {
+                get
+                {
+                    if (StartTime != null & EndTime != null)
+                    {
+                        return $"{StartTime.Value.ToString("HH:mm")}-{EndTime.Value.ToString("HH:mm")}";
+                    }
+                    else
+                        return "";
+
+                }
+            }
+
+        public string? Type { get; set; }
             public DateTime LastEditTime { get; set; }
             public bool IsCanceled { get; set; }
             

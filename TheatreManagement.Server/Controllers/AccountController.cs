@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Shared;
-using TheatreManagement.Shared.DTOs;
+using TheatreManagement.Shared.DTOs.Users;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -147,7 +147,6 @@ namespace TheatreManagement.Server.Controllers
                         .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
                         .FirstOrDefault()
                 })
-                .OrderBy(x => x.User.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(x => new UserDto

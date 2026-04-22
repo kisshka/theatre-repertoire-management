@@ -1,5 +1,6 @@
 ﻿@using TheatreManagement.Client.Pages
 @using TheatreManagement.Client.Services
+@using TheatreManagement.Shared.DTOs.Users
 @inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 
@@ -14,7 +15,6 @@
             {
                 <Icon Type="@IconType.Outline.MenuFold" Class="trigger" OnClick="toggle" />
             }
-
 
             @* Отображение пользователя и действий с ним*@
             <span class="user-dropdown">
@@ -81,14 +81,17 @@
                             </NavLink>
                         </span>
                     </MenuItem>
-                    <MenuItem Key="users">
-                        <Icon Type="@IconType.Outline.Team" />
-                        <span>
-                            <NavLink href="users">
-                                Пользователи
-                            </NavLink>
-                        </span>
-                    </MenuItem>
+                    @if (_user?.Role == "MainAdmin")
+                    {
+                        <MenuItem Key="users">
+                            <Icon Type="@IconType.Outline.Team" />
+                            <span>
+                                <NavLink href="users">
+                                    Пользователи
+                                </NavLink>
+                            </span>
+                        </MenuItem>
+                    }
                 </Menu>
             </Sider>
 
@@ -130,7 +133,7 @@
     }
 
     private async Task LoadUserData()
-    {
+    {  
         var authStateProvider = (CustomAuthStateProvider)provider;
         _user = await authStateProvider.GetCurrentUserAsync();
 
@@ -159,7 +162,6 @@
     // Работа меню
     bool collapsed;
     string[] selectedKeys = new string[0];
-
 
     protected override void OnParametersSet()
     {

@@ -52,7 +52,7 @@ namespace TheatreManagement.Server.Controllers
             [FromQuery] int pageSize = 10)
         {
             var query = _context.Plays
-                .Where(p => p.IsActive && p.DeletionTime == null);
+                .Where(p => p.DeletionTime == null);
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
@@ -108,7 +108,7 @@ namespace TheatreManagement.Server.Controllers
                 AgeCategory = play.AgeCategory,
                 IsActive = play.IsActive,
                 LastEditTime = play.LastEditTime,
-                UserFullName = $"{play.User?.Surname} {play.User?.Name} {play.User?.FatherName}" ?? ""
+                UserFullName = (play.User != null ? play.User.Surname + " " + play.User.Name + " " + play.User.FatherName : ""),
             };
 
             var roles = play.RoleInPlays.Select(r =>
@@ -140,7 +140,7 @@ namespace TheatreManagement.Server.Controllers
             {
                 Name = playDto.Name,
                 Duration = playDto.Duration,
-                IsActive = true,
+                IsActive = playDto.IsActive,
                 AgeCategory = playDto.AgeCategory,
                 LastEditTime = DateTime.Now,
                 DeletionTime = null,
@@ -181,7 +181,7 @@ namespace TheatreManagement.Server.Controllers
 
             play.Name = playDto.Name;
             play.Duration = playDto.Duration;
-            play.IsActive = true;
+            play.IsActive = playDto.IsActive;
             play.AgeCategory = playDto.AgeCategory;
             play.LastEditTime = DateTime.Now;
             play.User = currentUser;
