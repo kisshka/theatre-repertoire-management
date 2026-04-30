@@ -22,6 +22,7 @@ namespace TheatreManagement.Shared.DTOs.Users
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
         [DisplayName("Роль")]
         public string Role { get; set; } = string.Empty;
+        public DateTime? DeletionTime { get; set; }
     }
 
 }

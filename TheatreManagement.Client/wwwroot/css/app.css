@@ -24,10 +24,15 @@ html, body {
     --tour-text: #997a00;
     --canceled-text: #7a4033;
     /*Переопределение*/
+
     --ant-primary-color: #708D81;
-    --ant-primary-color-hover: #D4B655;
+    --ant-primary-1: #def2dc;
+    --ant-primary-5: #309127;
+
     --ant-primary-color-active: #D4B655;
-    --ant-primary-color-outline: rgb(42, 77, 41);
+    --ant-primary-color-hover: #708D81;
+    --ant-primary-color-outline: #def2dc;
+
     --ant-success-color: #52c41a;
     --ant-warning-color: #faad14;
     --ant-error-color: #bd4a4a;

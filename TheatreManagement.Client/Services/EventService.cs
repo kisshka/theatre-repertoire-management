@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
+using TheatreManagement.Client.Helpers;
+using TheatreManagement.Shared.ConflictChecker;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Events;
 
@@ -14,10 +16,50 @@ namespace TheatreManagement.Client.Services
             _httpClient = httpClient;
         }
 
-        public async Task CreateEventAsync(EventPostModel model)
+        public async Task<FormResult> CreateEventAsync(EventPostModel model)
         {
-            var response = await _httpClient.PostAsJsonAsync("api/events", model);
-            response.EnsureSuccessStatusCode();
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/events", model);
+
+                if (response.IsSuccessStatusCode)
+                    return new FormResult { Succeeded = true };
+
+                var errorText = await response.Content.ReadAsStringAsync();
+
+                return new FormResult
+                {
+                    Succeeded = false,
+                    Errors = [string.IsNullOrEmpty(errorText) ? "Ошибка сервера" : errorText]
+                };
+            }
+            catch
+            {
+                return new FormResult { Succeeded = false, Errors = ["Ошибка подключения"] };
+            }
+        }
+
+        public async Task<FormResult> UpdateEventAsync(EventPostModel model)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/events", model);
+
+                if (response.IsSuccessStatusCode)
+                    return new FormResult { Succeeded = true };
+
+                var errorText = await response.Content.ReadAsStringAsync();
+
+                return new FormResult
+                {
+                    Succeeded = false,
+                    Errors = [string.IsNullOrEmpty(errorText) ? "Ошибка сервера" : errorText]
+                };
+            }
+            catch
+            {
+                return new FormResult { Succeeded = false, Errors = ["Ошибка подключения"] };
+            }
         }
 
         // В EventService.cs
@@ -34,6 +76,7 @@ namespace TheatreManagement.Client.Services
             return await _httpClient.GetFromJsonAsync<List<EventGetModel>>($"api/events/range?start={start}&end={end}");
         }
 
+
         public async Task<EventGetModel> GetEventDetailsAsync(int eventId)
         {
             return await _httpClient.GetFromJsonAsync<EventGetModel>($"api/events/{eventId}/details");
@@ -42,11 +85,6 @@ namespace TheatreManagement.Client.Services
         public async Task<EventPostModel> GetEventForEditAsync(int eventId)
         {
             return await _httpClient.GetFromJsonAsync<EventPostModel>($"api/events/{eventId}/for-edit");
-        }
-
-        public async Task UpdateEventAsync(EventPostModel model)
-        {
-            await _httpClient.PutAsJsonAsync($"api/events", model);
         }
 
         public async Task CancelEventAsync(int eventId)

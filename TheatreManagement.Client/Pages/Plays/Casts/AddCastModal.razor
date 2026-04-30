@@ -32,6 +32,8 @@
                         <Select Mode="SelectMode.Default"
                                 DataSource="@actors"
                                 Value="@GetEmployeeId(roleId, index)"
+                                EnableSearch="true"
+                                Placeholder="Введите ФИО сотрудника"
                                 ValueChanged="@((int value) => SetEmployeeId(roleId, index, value))"
                                 LabelName="@nameof(EmployeeDto.Surname)"
                                 ValueName="@nameof(EmployeeDto.EmployeeId)"
@@ -66,8 +68,10 @@
                         <Select Mode="SelectMode.Default"
                                 DataSource="@technics"
                                 Value="@GetEmployeeId(roleId, index)"
+                                EnableSearch="true"
+                                Placeholder="Введите ФИО сотрудника"
                                 ValueChanged="@((int value) => SetEmployeeId(roleId, index, value))"
-                                LabelName="@nameof(EmployeeDto.Surname)"
+                                LabelName="@nameof(EmployeeDto.FullName)"
                                 ValueName="@nameof(EmployeeDto.EmployeeId)"
                                 Style="flex: 1" />
 
@@ -106,6 +110,7 @@
     private bool Submitting { get; set; } = false;
 
     // id роли - список id сотрудников
+    //Потом заменить на класс как в мероприятмях
     private Dictionary<int, List<int>> selectedEmployees = new();
 
     protected override async Task OnInitializedAsync()

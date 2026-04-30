@@ -13,6 +13,9 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped<PlayService>();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<EventService>();
+builder.Services.AddScoped<InstitutionService>();
+builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<EventConflictCheckerService>();
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.Configuration["WebApiAdress"]!) });
 

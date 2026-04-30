@@ -60,36 +60,42 @@ namespace TheatreManagement.Server.Controllers
         public async Task<ActionResult<PagedResult<EmployeeDto>>> GetEmployees(
             [FromQuery] string searchText = null,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool isArchive = false)
         {
 
-            var query = _context.Employees
-                .Where(p => p.DeletionTime == null);
+            var query = _context.Employees.AsQueryable();
+
+            if (isArchive == true)
+            {
+                query = query.IgnoreQueryFilters().Where(e => e.DeletionTime != null);
+            }
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 var normalizeSearchText = searchText.Trim().ToLower();
 
-                query = query.Where(p =>
-                    DataContext.CustomLike(p.Name, normalizeSearchText));
-
+                query = query.Where(e =>
+                    DataContext.CustomLike(e.Name, normalizeSearchText));
             }
 
             var totalCount = await query.CountAsync();
 
             var items = await query
-                .OrderBy(p => p.EmployeeId)
+                .OrderBy(e => e.EmployeeId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(p => new EmployeeDto
+                .Select(e => new EmployeeDto
                 {
-                    EmployeeId = p.EmployeeId,
-                    Name = p.Name,
-                    Surname = p.Surname,
-                    FatherName = p.FatherName,
-                    Post = p.Post,
-                    IsActive = p.IsActive,
-                    LastEditTime = p.LastEditTime
+                    EmployeeId = e.EmployeeId,
+                    Name = e.Name,
+                    Surname = e.Surname,
+                    FatherName = e.FatherName,
+                    Post = e.Post,
+                    IsActive = e.IsActive,
+                    LastEditTime = e.LastEditTime,
+                    DeletionTime = e.DeletionTime,
+                    UserFullName = (e.User != null ? e.User.Surname + " " + e.User.Name + " " + e.User.FatherName : ""),
                 })
                 .ToListAsync();
 
@@ -105,7 +111,7 @@ namespace TheatreManagement.Server.Controllers
         public async Task<ActionResult<EmployeeDto>> GetEmployee(int employeeId)
         {
 
-            var employee = await _context.Employees.Include(p => p.User)
+            var employee = await _context.Employees.Include(e => e.User)
                                                     .FirstOrDefaultAsync(p => p.EmployeeId == employeeId);
 
             if (employee == null)
@@ -203,6 +209,28 @@ namespace TheatreManagement.Server.Controllers
 
             await _context.SaveChangesAsync();
 
+            return Ok();
+        }
+
+        [HttpPut("{employeeId}/restore")]
+        public async Task<IActionResult> RestoreEmployee(int employeeId)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+            var employee = await _context.Employees.Where(e => e.EmployeeId == employeeId)
+                                                   .IgnoreQueryFilters()
+                                                   .FirstOrDefaultAsync();
+
+            employee.IsActive = true;
+            employee.User = currentUser;
+            employee.LastEditTime = DateTime.Now;
+            employee.DeletionTime = null;
+
+            await _context.SaveChangesAsync();
             return Ok();
         }
 

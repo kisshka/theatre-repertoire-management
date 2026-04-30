@@ -28,10 +28,15 @@ namespace TheatreManagement.Client.Services
             return await _httpClient.PutAsJsonAsync($"api/plays/{playId}/soft-delete", new { });
         }
 
-        public async Task<PagedResult<PlayDto>> GetPlaysPagedAsync(int page = 1, int pageSize = 10, string? searchText = null)
+        public async Task<HttpResponseMessage> RestorePlayAsync(int playId)
+        {
+            return await _httpClient.PutAsJsonAsync($"api/plays/{playId}/restore", new { });
+        }
+
+        public async Task<PagedResult<PlayDto>> GetPlaysPagedAsync(int page = 1, int pageSize = 10, string? searchText = null, bool isArchive = false)
         {
             return await _httpClient.GetFromJsonAsync<PagedResult<PlayDto>>(
-                $"api/plays?page={page}&pageSize={pageSize}&searchText={searchText}");
+                $"api/plays?page={page}&pageSize={pageSize}&searchText={searchText}&isArchive={isArchive}");
         }
 
         public async Task<List<PlayDto>> GetPlaysAsync()
@@ -68,7 +73,12 @@ namespace TheatreManagement.Client.Services
 
         public async Task<CastWithRolesDto> GetCastAsync(int castId)
         {
-            return await _httpClient.GetFromJsonAsync<CastWithRolesDto>($"api/casts/{castId}/employeeroles");
+            if (castId > 0)
+            {
+                return await _httpClient.GetFromJsonAsync<CastWithRolesDto>($"api/casts/{castId}/employeeroles");
+            }
+            else 
+                return new CastWithRolesDto ();
         }
     }
 }

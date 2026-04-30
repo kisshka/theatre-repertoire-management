@@ -153,6 +153,10 @@ Footer="@footer">
     {
         var authStateProvider = (CustomAuthStateProvider)provider;
         await authStateProvider.SoftDeleteUserAsync(Id);
+        Visible = false;
+        await VisibleChanged.InvokeAsync(false);
+        await OnSuccess.InvokeAsync();
+        ResetForm();
     }
 
     private void ResetForm()

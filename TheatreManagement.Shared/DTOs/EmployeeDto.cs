@@ -12,6 +12,14 @@ namespace TheatreManagement.Shared.DTOs
         public string? Name { get; set; }
         public string? Surname { get; set; }
         public string? FatherName { get; set; }
+        public string FullName
+        {
+            get
+            {
+                return $"{Surname} {Name} {FatherName}";
+            }
+        } 
+
         public string? Post { get; set; }
         public bool IsActive { get; set; }
         public DateTime LastEditTime { get; set; }

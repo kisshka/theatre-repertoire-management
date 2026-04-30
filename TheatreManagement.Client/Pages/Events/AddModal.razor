@@ -1,9 +1,4 @@
-﻿@using AntDesign
-@using Microsoft.AspNetCore.Components.Forms
-@using TheatreManagement.Shared.DTOs
-@using TheatreManagement.Shared.DTOs.Events
-
-@* // ПЕРВОЕ МОДАЛЬНОЕ ОКНО *@
+﻿@* // ПЕРВОЕ МОДАЛЬНОЕ ОКНО *@
 <Modal Visible="@Visible"
 Title="Создание мероприятия"
 OnOk="HandleOk"
@@ -11,12 +6,14 @@ OnCancel="HandleCancel"
 ConfirmLoading="Submitting"
 MaskClosable="@false">
 
-    <Form Model="@Model" @ref="@FormRef">
+    <Form Model="@Model" @ref="@FormRef"
+    OnFinishFailed="@OnFinishFailed"
+    OnFinish="@OnFinish">
 
         <FormItem Label="Тип мероприятия" Required>
 
             <Select Mode="SelectMode.Default"
-            DataSource="@eventTypes"
+            DataSource="@SelectItemValues.EventTypes"
             @bind-Value="@selectedEventType"
             LabelName="Name"
             ValueName="Value"
@@ -27,25 +24,17 @@ MaskClosable="@false">
 
         </FormItem>
 
-        <p>Дата и время начала:</p>
-        <Space>
-            <DatePicker TValue="DateOnly" Picker="DatePickerType.Date"
-                        @bind-Value="@startDate" AllowClear="false" />
-            <TimePicker @bind-Value="@startTime"
+        <!-- Даты -->
+        <p>Даты проведения</p>
+        <FormItem Required>
+            <RangePicker TValue="DateTime[]"
+            ShowTime='@("HH:mm")'
             AllowClear="false"
             ChangeOnClose="true"
-            Format="HH:mm" />
-        </Space>
-
-        <p>Дата и время окончания:</p>
-        <Space>
-            <DatePicker TValue="DateOnly" Picker="DatePickerType.Date"
-                        AllowClear="false" @bind-Value="@endDate" />
-            <TimePicker @bind-Value="@endTime"
-            AllowClear="false"
-            ChangeOnClose="true"
-            Format="HH:mm" />
-        </Space>
+            MinDate="@(new DateTime(2026, 1, 1))"
+            MaxDate="@(new DateTime(3000, 12, 31))"
+            @bind-Value="@dateRange" />
+        </FormItem>
 
 
         <!-- Поля для Стационара -->
@@ -55,7 +44,7 @@ MaskClosable="@false">
 
             <FormItem Label="Зал" Required>
                 <Select Mode="SelectMode.Default"
-                DataSource="@hallTypes"
+                DataSource="@SelectItemValues.HallTypes"
                 @bind-Value="@selectedHall"
                 LabelName="Name"
                 ValueName="Value"
@@ -65,7 +54,7 @@ MaskClosable="@false">
 
             <FormItem Label="Тип выступления" Required>
                 <Select Mode="SelectMode.Default"
-                DataSource="@performanceTypes"
+                DataSource="@SelectItemValues.PerformanceTypes"
                 @bind-Value="@selectedPerformanceType"
                 LabelName="Name"
                 ValueName="Value"
@@ -106,6 +95,25 @@ MaskClosable="@false">
             </FormItem>
         }
 
+        <!-- Сообщение об ошибке -->
+
+        @if (error.Length > 0)
+        {
+            <Alert Type="AlertType.Error"
+            Message="@error"
+            Banner />
+        }
+
+        @if (employeeConflicts.Any())
+        {
+            <Alert Type="AlertType.Warning">
+                @foreach (var conflict in employeeConflicts)
+                {
+                    <div>@conflict</div>
+                }
+            </Alert>
+        }
+
         <!-- Спектакли -->
         <Divider>Спектакли</Divider>
 
@@ -113,8 +121,9 @@ MaskClosable="@false">
         {
             var index = i;
             <div style="border: 1px solid #d9d9d9; border-radius: 4px; padding: 12px; margin-bottom: 12px;">
-                <Button Danger OnClick="() => RemovePlayEvent(index)">
-                    Удалить
+                <Button Danger Class="danger-button" OnClick="() => RemovePlayEvent(index)"
+                        Disabled="@(Model.PlayEvents.Count == 1)">
+                    <Icon Type="@IconType.Outline.Delete" />
                 </Button>
                 <Button Type="ButtonType.Primary"
                 OnClick="() => OpenRolesModal(index)">
@@ -123,6 +132,8 @@ MaskClosable="@false">
 
                 <FormItem Label="Спектакль">
                     <Select Mode="SelectMode.Default"
+                            EnableSearch="true"
+                            Placeholder="Введите название спектакля"
                     DataSource="@availablePlays"
                     @bind-Value="@Model.PlayEvents[index].PlayId"
                     LabelName="@nameof(PlayDto.Name)"
@@ -189,7 +200,7 @@ Title="Назначение ролей">
                         DataSource="@actors"
                         Value="@GetTempAssignmentEmployeeId(roleId, index)"
                         ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
-                        LabelName="@nameof(EmployeeDto.Surname)"
+                        LabelName="@nameof(EmployeeDto.FullName)"
                         ValueName="@nameof(EmployeeDto.EmployeeId)"
                         Style="flex: 1" />
 
@@ -223,7 +234,7 @@ Title="Назначение ролей">
                         DataSource="@technics"
                         Value="@GetTempAssignmentEmployeeId(roleId, index)"
                         ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
-                        LabelName="@nameof(EmployeeDto.Surname)"
+                                LabelName="@nameof(EmployeeDto.FullName)"
                         ValueName="@nameof(EmployeeDto.EmployeeId)"
                         Style="flex: 1" />
 
@@ -256,6 +267,7 @@ Title="Назначение ролей">
     [Inject] private EmployeeService employeeService { get; set; }
     [Inject] private EventService eventService { get; set; }
     [Inject] private IMessageService messageService { get; set; }
+    [Inject] private EventConflictCheckerService _conflictChecker { get; set; }
 
     private Form<EventPostModel> FormRef { get; set; }
     private EventPostModel Model { get; set; } = new();
@@ -264,44 +276,80 @@ Title="Назначение ролей">
     private List<PlayDto> availablePlays = new();
     private bool Submitting { get; set; } = false;
 
-    private DateTime? startTime;
-    private DateTime? endTime;
-
-    private DateOnly startDate;
-    private DateOnly endDate;
-
+    private DateTime[] dateRange = new DateTime[2];
     private string userRole;
-
-    // Метод для объединения даты и времени
-    private DateTime? CombineDateAndTime(DateOnly date, DateTime? time)
-    {
-        if (time == null) return null;
-        return new DateTime(date.Year, date.Month, date.Day, time.Value.Hour, time.Value.Minute, time.Value.Second);
-    }
 
     // Для стационара
     private string selectedHall = "";
     private string selectedPerformanceType = "";
 
-    // Списки для стационара
-    private List<SelectItem<string>> hallTypes = new()
-    {
-        new SelectItem<string> { Name = "Большой зал", Value = "Большой зал" },
-        new SelectItem<string> { Name = "Малый зал", Value = "Малый зал" }
-    };
+    public string error = "";
 
-    private List<SelectItem<string>> performanceTypes = new()
-    {
-        new SelectItem<string> { Name = "Репетиция", Value = "Репетиция" },
-        new SelectItem<string> { Name = "Выступление", Value = "Выступление" }
-    };
+    //Проверка на наличие конфликтов
+    private List<string> employeeConflicts = new();
 
-    public List<SelectItem<string>> eventTypes = new()
+    private async Task CheckConflicts()
     {
-        new SelectItem<string> { Name = "Стационар", Value = "stationar" },
-        new SelectItem<string> { Name = "Гастроли", Value = "tour" },
-        new SelectItem<string> { Name = "Выезд", Value = "visit" }
-    };
+        if (dateRange == null || dateRange.Length < 2)
+            return;
+
+        var request = new ConflictCheckRequest
+            {
+                StartTime = dateRange[0],
+                EndTime = dateRange[1],
+                Type = selectedEventType,
+                Hall = selectedEventType == "stationar" ? selectedHall : null,
+                EmployeeIds = GetSelectedEmployeeIds(),
+                ExcludeEventId = Model.EventId > 0 ? Model.EventId : null
+            };
+
+        var response = await _conflictChecker.CheckConflictsAsync(request);
+
+        employeeConflicts = response.Warnings;
+        StateHasChanged();
+    }
+
+    private List<int> GetSelectedEmployeeIds()
+    {
+        var employeeIds = new List<int>();
+
+        // Добавляем только что выбранных сотрудников
+        foreach (var selection in tempSelections)
+        {
+            if (selection.EmployeeId > 0 && !employeeIds.Contains(selection.EmployeeId))
+            {
+                employeeIds.Add(selection.EmployeeId);
+            }
+        }
+
+        // Загрузка остальных добавленных сотрудников
+        //Возможно потом нужно убрать
+        if (Model?.PlayEvents != null)
+        {
+            foreach (var playEvent in Model.PlayEvents)
+            {
+                // Текущий выбранный спектакль пропущен
+                if (currentPlayEventIndex >= 0 &&
+                    Model.PlayEvents.IndexOf(playEvent) == currentPlayEventIndex)
+                {
+                    continue;
+                }
+
+                if (playEvent.SelectedEmployees != null)
+                {
+                    foreach (var employee in playEvent.SelectedEmployees)
+                    {
+                        if (employee.EmployeeId > 0 && !employeeIds.Contains(employee.EmployeeId))
+                        {
+                            employeeIds.Add(employee.EmployeeId);
+                        }
+                    }
+                }
+            }
+        }
+
+        return employeeIds;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -315,8 +363,8 @@ Title="Назначение ролей">
 
     private async Task LoadInitialData()
     {
-        startDate = DateOnly.FromDateTime(EventDate);
-        endDate = DateOnly.FromDateTime(EventDate);
+        dateRange[0] = EventDate;
+        dateRange[1] = EventDate.AddHours(23);
         availablePlays = await playService.GetPlaysAsync();
     }
 
@@ -332,97 +380,23 @@ Title="Назначение ролей">
         StateHasChanged();
     }
 
-    private bool ValidateForm()
-    {
-        if (startTime == null)
-        {
-            messageService.Error("Укажите время начала");
-            return false;
-        }
-        if (endTime == null)
-        {
-            messageService.Error("Укажите время окончания");
-            return false;
-        }
-        if (selectedEventType == "stationar")
-        {
-            if (string.IsNullOrWhiteSpace(selectedHall))
-            {
-                messageService.Error("Выберите зал");
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(selectedPerformanceType))
-            {
-                messageService.Error("Выберите тип выступления");
-                return false;
-            }
-        }
-        if (selectedEventType == "tour")
-        {
-            if (string.IsNullOrWhiteSpace(Model.Tour?.Country))
-            {
-                messageService.Error("Введите страну");
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(Model.Tour?.Area))
-            {
-                messageService.Error("Введите город/регион");
-                return false;
-            }
-        }
-        if (selectedEventType == "visit")
-        {
-            if (string.IsNullOrWhiteSpace(Model.Institution?.Name))
-            {
-                messageService.Error("Введите название учреждения");
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(Model.Institution?.Town))
-            {
-                messageService.Error("Введите город");
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(Model.Institution?.Street))
-            {
-                messageService.Error("Введите улицу");
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(Model.Institution?.House))
-            {
-                messageService.Error("Введите номер дома");
-                return false;
-            }
-        }
-        if (!Model.PlayEvents.Any())
-        {
-            messageService.Error("Добавьте хотя бы один спектакль");
-            return false;
-        }
-        foreach (var playEvent in Model.PlayEvents)
-        {
-            if (playEvent.PlayId == 0)
-            {
-                messageService.Error("Выберите спектакль");
-                return false;
-            }
-            if (!playEvent.SelectedEmployees.Any())
-            {
-                messageService.Error("Назначьте состав для спектакля");
-                return false;
-            }
-        }
-        return true;
-    }
 
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Console.WriteLine($"Failed");
+    }
 
     private async Task HandleOk()
     {
-        if (Submitting) return;
-
-        if (!ValidateForm())
+        if (FormRef != null)
         {
-            return;
+            FormRef.Submit();
         }
+    }
+
+    private async Task OnFinish(EditContext editContext)
+    {
+        if (Submitting) return;
 
         StateHasChanged();
 
@@ -430,8 +404,8 @@ Title="Назначение ролей">
         {
             Submitting = true;
 
-            Model.StartTime = CombineDateAndTime(startDate, startTime);
-            Model.EndTime = CombineDateAndTime(endDate, endTime);
+            Model.StartTime = dateRange[0];
+            Model.EndTime = dateRange[1];
             Model.Type = selectedEventType;
 
             if (selectedEventType == "stationar")
@@ -442,9 +416,17 @@ Title="Назначение ролей">
                 Model.Stationar.Type = selectedPerformanceType;
             }
 
-            await eventService.CreateEventAsync(Model);
+            var formResult = await eventService.CreateEventAsync(Model);
 
-            messageService.Success("Мероприятие успешно создано!");
+            if (formResult.Succeeded)
+            {
+                messageService.Success("Мероприятие успешно создано!");
+            }
+            else
+            {
+                error = formResult.Errors[0];
+                return;
+            }
 
             Visible = false;
             await VisibleChanged.InvokeAsync(false);
@@ -453,7 +435,7 @@ Title="Назначение ролей">
         }
         catch (Exception ex)
         {
-            messageService.Error($"Ошибка: {ex.Message}");
+            error = ex.Message;
         }
         finally
         {
@@ -475,8 +457,6 @@ Title="Назначение ролей">
         selectedEventType = "stationar";
         selectedHall = "";
         selectedPerformanceType = "";
-        startTime = null;
-        endTime = null;
         FormRef?.Reset();
         StateHasChanged();
     }
@@ -540,7 +520,7 @@ Title="Назначение ролей">
         }
     }
 
-    private void LoadSavedRolesIntoTempAssignments()
+    private async Task LoadSavedRolesIntoTempAssignments()
     {
         tempSelections.Clear();
 
@@ -562,17 +542,42 @@ Title="Назначение ролей">
                 }
             }
         }
+        await CheckConflicts();
     }
 
     private async Task OnSelectedItemChangedHandler()
     {
+        // Проверяем, что выбран реальный каст
+        if (selectedCastId <= 0)
+        {
+            // tempSelections.Clear();
+            await CheckConflicts();
+            StateHasChanged();
+            return;
+        }
+
+        // Получаем каст
         selectedCast = await playService.GetCastAsync(selectedCastId);
-        tempSelections.Clear();
+
+        // Проверяем, что каст не null и содержит роли
+        if (selectedCast == null || selectedCast.Roles == null)
+        {
+            // tempSelections.Clear();
+            await CheckConflicts();
+            StateHasChanged();
+            return;
+        }
+
+        // tempSelections.Clear();
 
         foreach (var role in selectedCast.Roles)
         {
+            if (role?.Employees == null) continue;
+
             foreach (var employee in role.Employees)
             {
+                if (employee == null) continue;
+
                 tempSelections.Add(new EmployeeRoleSelectDto
                     {
                         EmployeeId = employee.EmployeeId,
@@ -581,7 +586,9 @@ Title="Назначение ролей">
                         EmployeeFullName = $"{employee.Surname} {employee.Name}"
                     });
             }
-        }
+        } 
+
+        await CheckConflicts();
         StateHasChanged();
     }
 
@@ -659,18 +666,20 @@ Title="Назначение ролей">
         return 0;
     }
 
-    private void SetTempAssignmentEmployeeId(int roleId, int index, int value)
+    private async Task SetTempAssignmentEmployeeId(int roleId, int index, int value)
     {
         var assignments = tempSelections.Where(a => a.RoleInPlayId == roleId).ToList();
         if (index >= 0 && index < assignments.Count)
         {
             assignments[index].EmployeeId = value;
             assignments[index].EmployeeFullName = GetEmployeeFullName(value);
+
+            await CheckConflicts();
         }
         StateHasChanged();
     }
 
-    private void AddTempAssignment(int roleId)
+    private async Task AddTempAssignment(int roleId)
     {
         tempSelections.Add(new EmployeeRoleSelectDto
             {
@@ -679,10 +688,11 @@ Title="Назначение ролей">
                 RoleName = GetRoleName(roleId),
                 EmployeeFullName = ""
             });
+        await CheckConflicts();
         StateHasChanged();
     }
 
-    private void RemoveTempAssignment(int roleId, int index)
+    private async Task RemoveTempAssignment(int roleId, int index)
     {
         var assignments = tempSelections.Where(a => a.RoleInPlayId == roleId).ToList();
         if (index >= 0 && index < assignments.Count)
@@ -690,6 +700,7 @@ Title="Назначение ролей">
             var toRemove = assignments[index];
             tempSelections.Remove(toRemove);
         }
+        await CheckConflicts();
         StateHasChanged();
     }
 

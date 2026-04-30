@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
+using TheatreManagement.Domain.Entities;
 using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Users;
 
@@ -123,17 +124,22 @@ namespace TheatreManagement.Server.Controllers
         public async Task<ActionResult<PagedResult<UserDto>>> GetUsers(
         [FromQuery] string searchText = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] bool isArchive = false)
         {
-            var query = _context.Users
-                .Where(p => p.DeletionTime == null);
+            var query = _context.Users.AsQueryable();
+
+            if (isArchive == true)
+            {
+                query = query.IgnoreQueryFilters().Where(p => p.DeletionTime != null);
+            }
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 var normalizeSearchText = searchText.Trim().ToLower();
 
-                query = query.Where(p =>
-                    DataContext.CustomLike(p.Surname, normalizeSearchText));
+                query = query.Where(u =>
+                    DataContext.CustomLike(u.Surname, normalizeSearchText));
             }
 
             var totalCount = await query.CountAsync();
@@ -157,6 +163,7 @@ namespace TheatreManagement.Server.Controllers
                     FatherName = x.User.FatherName,
                     Email = x.User.Email,
                     Role = x.Role,
+                    DeletionTime = x.User.DeletionTime
                 })
                 .ToListAsync();
 
@@ -171,10 +178,39 @@ namespace TheatreManagement.Server.Controllers
         public async Task<IActionResult> SoftDeleteUser(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
+
+            user.LockoutEnd = DateTime.UtcNow.AddYears(100);
+            user.LockoutEnabled = true;
+
             if (user == null)
                 return NotFound();
 
             user.DeletionTime = DateTime.UtcNow;
+            _context.SaveChanges();
+            return Ok();
+        }
+
+        [HttpPut("{userId}/restore")]
+        public async Task<IActionResult> RestoreUser(string userId)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
+            var user = await _context.Users.Where(u => u.Id == userId)
+                                           .IgnoreQueryFilters()
+                                           .FirstOrDefaultAsync();
+
+            if (user == null)
+                return NotFound();
+
+            user.DeletionTime = null;
+            user.LockoutEnd = null;
+            user.LockoutEnabled = false;
+
+            await _context.SaveChangesAsync();
 
             return Ok();
         }

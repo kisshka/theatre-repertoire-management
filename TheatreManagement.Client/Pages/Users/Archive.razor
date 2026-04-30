@@ -1,0 +1,139 @@
+﻿@page "/users/archive"
+@using TheatreManagement.Client.Helpers
+@using TheatreManagement.Client.Services
+@using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Shared.DTOs.Users
+
+
+<PageTitle>Список пользователей(Архив)</PageTitle>
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>Список пользователей(Архив)</PageHeaderTitle>
+</PageHeader>
+
+<div class="table-page-header">
+
+    <Search Placeholder="Введите ФИО пользователя"
+            @bind-Value="@searchText"
+            EnterButton="true"
+            OnSearch="@OnSearchAsync" />
+
+    <Button Type="ButtonType.Default">
+        <Icon Type="@IconType.Fill.Filter" />
+    </Button>
+</div>
+
+<Table TItem="@UserDto"
+       DataSource="@users"
+       PageSize="@pageSize"
+       Total="@total"
+       @bind-PageIndex="currentPage"
+       OnChange="@OnTableChange"
+       OnRowClick="@OnRowClick">
+    <PropertyColumn Property="@(c => c.Surname)" Title="Фамилия" />
+    <PropertyColumn Property="@(c => c.Name)" Title="Имя" />
+    <PropertyColumn Property="@(c => c.FatherName)" Title="Отчество" />
+
+    <PropertyColumn Property="@(c => c.Role)" Title="Роль" >
+        <Template>
+            @RoleHelper.GetDisplayName(context.Role)
+        </Template>
+    </PropertyColumn>
+
+    <PropertyColumn Property="@(c => c.DeletionTime)" Title="Время удаления" />
+</Table>
+
+<AddModal @bind-Visible="@addModalVisible"
+          OnSuccess="@OnUserAdded" />
+
+<EditModal @bind-Visible="@editModalVisible"
+           Id="@editId"
+           OnSuccess="@OnUserAdded" />
+
+
+@inject AuthenticationStateProvider provider
+@inject ModalService modalService;
+@inject NavigationManager navManager
+@code {
+    [Inject] private IMessageService messageService { get; set; }
+    private bool addModalVisible = false;
+    private bool editModalVisible = false;
+    private string editId = "";
+
+    private List<UserDto> users;
+
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
+
+    private async Task OnUserAdded()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        await LoadDataAsync(currentPage);
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<UserDto> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    private async Task OnRowClick(RowData<UserDto> row)
+    {
+        var user = row.Data;
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        var confirmed = await modalService.ConfirmAsync(new ConfirmOptions
+            {
+                Content = $"Вы уверены, что хотите восстановить запись {user.Name}?",
+                OkText = "Да",
+                CancelText = "Нет"
+            });
+
+        if (confirmed)
+        {
+            await authStateProvider.RestoreUserAsync(user.Id);
+            messageService.Success("Данные успешно восстановлены");
+            await LoadDataAsync(1);
+        }
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        try
+        {
+            var result = await authStateProvider.GetUsersPagedAsync(page, pageSize, searchText, true);
+            if (result != null)
+            {
+                users = result.Items ?? new List<UserDto>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+}
+
+

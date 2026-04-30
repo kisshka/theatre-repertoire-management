@@ -1,0 +1,109 @@
+﻿@page "/institutions"
+
+<PageTitle>Список учреждений</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Список учреждений</PageHeaderTitle>
+</PageHeader>
+
+@* Добавление учреждения *@
+<div class="table-page-header">
+    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+        <Icon Type="@IconType.Outline.Plus" />
+    </Button>
+
+    <Search Placeholder="Введите название учреждения, город или улицу"
+            @bind-Value="@searchText"
+            EnterButton="true"
+            OnSearch="@OnSearchAsync" />
+
+</div>
+
+<Table TItem="@InstitutionDto"
+       DataSource="@institutions"
+       PageSize="@pageSize"
+       Total="@total"
+       @bind-PageIndex="currentPage"
+       OnChange="@OnTableChange"
+       OnRowClick="@OnRowClick">
+    @foreach (var column in columns)
+    {
+        <Column TData="object" DataIndex="@column"></Column>
+    }
+</Table>
+
+<AddModal @bind-Visible="@addModalVisible"
+          OnSuccess="@OnInstitutionAdded" />
+
+<EditModal @bind-Visible="@editModalVisible"
+           InstitutionId="@editId"
+           OnSuccess="@OnInstitutionAdded" />
+
+
+@inject InstitutionService institutionService
+@inject ModalService ModalService
+@inject NavigationManager navManager
+@code {
+    private bool addModalVisible = false;
+    private bool editModalVisible = false;
+    private int editId;
+
+    private List<InstitutionDto> institutions;
+
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
+
+    private async Task OnInstitutionAdded()
+    {
+        await LoadDataAsync(currentPage);
+        StateHasChanged();
+    }
+
+    // Данные для заполнения таблиц
+    string[] columns = { "Name", "Town", "Street", "House" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<InstitutionDto> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    private async Task OnRowClick(RowData<InstitutionDto> row)
+    {
+        editId = row.Data.InstitutionId;
+        editModalVisible = true;
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        try
+        {
+            var result = await institutionService.GetInstitutionsPagedAsync(page, pageSize, searchText);
+            if (result != null)
+            {
+                institutions = result.Items ?? new List<InstitutionDto>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+}
+
+

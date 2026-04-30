@@ -49,26 +49,41 @@
 
         @* СПЕЦИФИЧЕСКИЕ ЧАСТИ ДЛЯ КАЖДОГО ТИПА*@
         @if(Model.Institution != null) {
-            <Card Title="Выезд">
-                <CardGrid Style="width:50%;text-align:center;">
-                    @Model.Institution.Name
-                </CardGrid>
-                <CardGrid Style="width:50%;text-align:center;">
-                    @Model.Institution.Town
-                </CardGrid>
-            </Card>
+            <Space Size="@("10px")">
+            <SpaceItem>
+                Выезд
+            </SpaceItem>
+            <SpaceItem>
+                    <span>@Model.Institution.Name</span> |
+                    г. <span>@Model.Institution.Town</span>
+                    ул. <span>@Model.Institution.Street</span>
+                    дом <span>@Model.Institution.House</span>
+            </SpaceItem>
+        </Space>
         }
         @if (Model.Stationar != null)
         {
-            <Card Title="Стационар">
-
-            </Card>
+            <Space Size="@("10px")">
+                <SpaceItem>
+                    Стационар
+                </SpaceItem>
+                <SpaceItem>
+                    <span>@Model.Stationar.Hall</span> -
+                    <span>@Model.Stationar.Type</span>
+                </SpaceItem>
+            </Space>
         }
         @if (Model.Tour != null)
         {
-            <Card Title="Гастроли">
-
-            </Card>
+            <Space Size="@("10px")">
+                <SpaceItem>
+                    Гастроли
+                </SpaceItem>
+                <SpaceItem>
+                    <span>@Model.Tour.Country</span>,
+                    <span>@Model.Tour.Area</span>
+                </SpaceItem>
+            </Space>
         }
 
         @foreach(var play in Model.PlaysWithRoles)

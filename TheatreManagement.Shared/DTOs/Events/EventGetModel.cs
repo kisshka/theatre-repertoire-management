@@ -57,7 +57,11 @@ namespace TheatreManagement.Shared.DTOs.Events
         public string? Type { get; set; }
             public DateTime LastEditTime { get; set; }
             public bool IsCanceled { get; set; }
-            
+
+            //Конфликты
+            public List<string> Warnings { get; set; } = new();
+            public bool HasConflict { get; set; }
+
             // Навигационные свойства
             public StationarDto? Stationar { get; set; }
             public TourDto? Tour { get; set; }
@@ -69,6 +73,7 @@ namespace TheatreManagement.Shared.DTOs.Events
             public List<PlayDto>? Plays { get; set; }
 
             public List<PlayWithRolesDto>? PlaysWithRoles { get; set; } = new();
+            public List<int> EmployeeRoles { get; set; } = new();
 
     }
 

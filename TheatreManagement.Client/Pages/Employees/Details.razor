@@ -10,6 +10,12 @@
         </Button>
     </BackIconTemplate>
     <PageHeaderTitle>Информация о сотруднике</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="ButtonType.Primary" OnClick="@(() => _createReportModalVisible = true)">
+            Отчет
+            <Icon Type="@IconType.Outline.Right" />
+        </Button>
+    </PageHeaderExtra>
 </PageHeader>
 
 
@@ -43,6 +49,13 @@
             }
         </CardGrid>
 
+        <Card Style="width:50%;text-align:center" Title="Участие в составах">
+
+        </Card>
+        <Card Style="width:50%;text-align:center" Title="Участие в мероприятиях">
+
+        </Card>
+
     <p>Последнее изменение: @employee.LastEditTime.ToString() - @employee.UserFullName.ToString()</p>
     </Body>
 </Card>
@@ -51,6 +64,9 @@
 EmployeeId="@Id"
 OnSuccess="@OnEmployeeEdit" />
 
+<CreateReportModal @bind-Visible="_createReportModalVisible"
+                   EmployeeId="@Id" />
+
 @inject EmployeeService employeeService
 @inject NavigationManager navManager
 @code {
@@ -58,6 +74,7 @@ OnSuccess="@OnEmployeeEdit" />
 
     private EmployeeDto employee = new();
     private string fullName = "";
+    private bool _createReportModalVisible = false;
 
     private bool editModalVisible = false;
 
@@ -75,6 +92,12 @@ OnSuccess="@OnEmployeeEdit" />
     private async Task OnEmployeeEdit()
     {
         await LoadData();
+    }
+
+
+    private async Task CreateReport()
+    {
+
     }
 
     private async Task SoftDelete()

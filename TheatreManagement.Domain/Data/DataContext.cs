@@ -33,6 +33,13 @@ namespace TheatreManagement.Domain.Data
         {
             base.OnModelCreating(builder);
 
+
+            builder.Entity<Cast>().HasQueryFilter(i => i.DeletionTime == null);
+            builder.Entity<Employee>().HasQueryFilter(i => i.DeletionTime == null);
+            builder.Entity<Play>().HasQueryFilter(i => i.DeletionTime == null);
+            builder.Entity<Event>().HasQueryFilter(i => i.DeletionTime == null);
+            builder.Entity<User>().HasQueryFilter(i => i.DeletionTime == null);
+
             builder.Entity<Event>()
               .HasOne(e => e.Stationar)
               .WithOne(s => s.Event)

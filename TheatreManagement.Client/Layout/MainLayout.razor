@@ -81,6 +81,14 @@
                             </NavLink>
                         </span>
                     </MenuItem>
+                    <MenuItem Key="institutions">
+                        <Icon Type="@IconType.Outline.Bank" />
+                        <span>
+                            <NavLink href="institutions">
+                                Учреждения
+                            </NavLink>
+                        </span>
+                    </MenuItem>
                     @if (_user?.Role == "MainAdmin")
                     {
                         <MenuItem Key="users">
@@ -181,6 +189,7 @@
         if (uri.Contains("/events")) return "events";
         if (uri.Contains("/employees")) return "employees";
         if (uri.Contains("/users")) return "users";
+        if (uri.Contains("/institutions")) return "institutions";
         
         return "events";
     }

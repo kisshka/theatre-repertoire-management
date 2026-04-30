@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text.Json.Nodes;
 using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Users;
+using TheatreManagement.Client.Helpers;
 
 
 namespace TheatreManagement.Client.Services
@@ -133,7 +134,19 @@ public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"api/Account/{userId}", new { });
+                var response = await _httpClient.PutAsJsonAsync($"api/Account/{userId}/soft-delete", new { });
+                return new FormResult { Succeeded = true };
+            }
+            catch { }
+
+            return new FormResult { Succeeded = false, Errors = ["Ошибка подключения"] };
+        }
+
+        public async Task<FormResult> RestoreUserAsync(string userId)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/Account/{userId}/restore", new { });
                 return new FormResult { Succeeded = true };
             }
             catch { }
@@ -159,10 +172,10 @@ public override async Task<AuthenticationState> GetAuthenticationStateAsync()
             }
         }
 
-        public async Task<PagedResult<UserDto>> GetUsersPagedAsync(int page = 1, int pageSize = 10, string? searchText = null)
+        public async Task<PagedResult<UserDto>> GetUsersPagedAsync(int page = 1, int pageSize = 10, string? searchText = null, bool isArchive = false)
         {
             return await _httpClient.GetFromJsonAsync<PagedResult<UserDto>>(
-                $"api/Account?page={page}&pageSize={pageSize}&searchText={searchText}");
+                $"api/Account?page={page}&pageSize={pageSize}&searchText={searchText}&isArchive={isArchive}");
         }
 
         public async Task<UserDto> GetUserByIdAsync( string userId)
@@ -221,14 +234,6 @@ public override async Task<AuthenticationState> GetAuthenticationStateAsync()
             _refreshTimer = new Timer(async _ => await RefreshTokenAsync(),
                 null, TimeSpan.FromMinutes(RefreshIntervalMinutes), TimeSpan.FromMinutes(RefreshIntervalMinutes));
         }
-    }
-
-
-
-    public class FormResult
-    {
-        public bool Succeeded { get; set; }
-        public string[] Errors { get; set; } = [];
     }
 
 }

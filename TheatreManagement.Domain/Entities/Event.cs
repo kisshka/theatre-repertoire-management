@@ -5,8 +5,8 @@ namespace TheatreManagement.Domain.Entities
     public class Event
     {
         public int EventId { get; set; }
-        public DateTime? StartTime { get; set; }
-        public DateTime? EndTime { get; set; } 
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; } 
         public string? Type { get; set; }
         public DateTime LastEditTime { get; set; }
         public DateTime? DeletionTime { get; set; }
@@ -23,7 +23,7 @@ namespace TheatreManagement.Domain.Entities
         public string? UserId { get; set; }
         public User? User { get; set; }
 
-        public List<EmployeeRole>? EmployeeRoles { get; set; } = new();
+        public List<EmployeeRole> EmployeeRoles { get; set; } = new();
         public List<PlayEvent> PlayEvents { get; set; } = new();
     }
 }

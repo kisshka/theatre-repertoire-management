@@ -4,13 +4,19 @@
 @using AntDesign
 @using TheatreManagement.Shared.DTOs.Events
 
+
 <PageTitle>Мероприятия</PageTitle>
 
-<Calendar   Value="currentDate"
-DateCellRender="DateCellRender"
-HeaderRender="CustomHead"
-OnSelect="OnDateSelect"
-CultureInfo="@CultureInfo.InvariantCulture" />
+<div class="events-calendar-page">
+    <Calendar   Value="currentDate"
+    DateCellRender="DateCellRender"
+    HeaderRender="CustomHead"
+    OnSelect="OnDateSelect"
+    CultureInfo="@CultureInfo.InvariantCulture" />
+</div>
+
+<CreateReportModal @bind-Visible="_createReportModalVisible"
+OnSuccess="OnModalSuccess"/>
 
 @inject NavigationManager navManager
 @inject EventService eventService
@@ -20,11 +26,25 @@ CultureInfo="@CultureInfo.InvariantCulture" />
     private List<EventGetModel> allEvents = new();
     private bool isLoading = false;
 
-    class ListData
+    private bool _createReportModalVisible = false;
+
+    private async Task OnModalSuccess()
+    {
+        StateHasChanged();
+    }
+
+    class DayData
+    {
+        public bool HasConflict = false;
+        public int EventsCount;
+        public List<EventData> Events = new();
+    }
+
+    class EventData
     {
         public string TimePeriod;
         public string EventType;
-        public string content;
+        public string Content;
         public bool IsCanceled;
     }
 
@@ -59,6 +79,7 @@ CultureInfo="@CultureInfo.InvariantCulture" />
             var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
             var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
 
+            // К временному промежутку добавлено по 2 недели с начала и конца для правильного отображения мероприятий
             var startDate = firstDayOfMonth.AddDays(-14);
             var endDate = lastDayOfMonth.AddDays(14);
 
@@ -75,32 +96,35 @@ CultureInfo="@CultureInfo.InvariantCulture" />
         }
     }
 
-    private List<ListData> GetListData(DateTime value)
+    private DayData GetDayData(DateTime date)
     {
-        var listData = new List<ListData>();
-
         var eventsOnDay = allEvents.Where(e =>
-        e.StartTime?.Date == value.Date ||
-        (e.StartTime?.Date <= value.Date && e.EndTime?.Date >= value.Date));
+        e.StartTime?.Date == date.Date ||
+        (e.StartTime?.Date <= date.Date && e.EndTime?.Date >= date.Date)).ToList();
 
-        foreach (var ev in eventsOnDay)
+        var dayData = new DayData
+                {
+                    EventsCount = eventsOnDay.Count,
+                    HasConflict = eventsOnDay.Any(e => e.HasConflict),
+                    Events = new List<EventData>()
+                };
+
+        foreach (var ev in eventsOnDay.Take(3))
         {
-            string content = "";
-            content += ev.Plays.Select(p => p.Name).First();
+            string content = ev.Plays.Select(p => p.Name).FirstOrDefault() ?? "Без названия";
+            string timePeriod = ev.Type == "stationar" ? ev.StationarTimePeriod :
+                            ev.Type == "tour" ? ev.TourTimePeriod : ev.VisitTimePeriod;
 
-            string timePeriod = ev.Type == "stationar" ? $"{ev.StationarTimePeriod}" :
-            ev.Type == "tour" ? $"{ev.TourTimePeriod}" : $"{ev.VisitTimePeriod}";
-
-            listData.Add(new ListData
+            dayData.Events.Add(new EventData
                     {
                         EventType = ev.Type,
                         IsCanceled = ev.IsCanceled,
-                        content = content,
+                        Content = content,
                         TimePeriod = timePeriod
                     });
         }
 
-        return listData;
+        return dayData;
     }
 
     private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
@@ -123,6 +147,12 @@ CultureInfo="@CultureInfo.InvariantCulture" />
                         <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
                     </Button>
                 </div>
+
+            <Button Type="ButtonType.Primary" OnClick="@(() => _createReportModalVisible = true)">
+                Отчет
+                <Icon Type="@IconType.Outline.Right" />
+            </Button>
+
             </div>
         </Template>;
     }
@@ -139,14 +169,14 @@ CultureInfo="@CultureInfo.InvariantCulture" />
         await LoadEventsForMonth(currentDate);
         StateHasChanged();
     }
-    
+
     private async Task NextMonth()
     {
         currentDate = currentDate.AddMonths(1);
         await LoadEventsForMonth(currentDate);
         StateHasChanged(); 
     }
-    
+
     private async Task PreviousMonth()
     {
         currentDate = currentDate.AddMonths(-1);
@@ -161,19 +191,42 @@ CultureInfo="@CultureInfo.InvariantCulture" />
 
     private RenderFragment DateCellRender(DateTime value)
     {
-        var listData = GetListData(value);
+        var dayData = GetDayData(value);
         return @<Template>
+        <div style="position: relative; min-height: 70px;">
+            @if(dayData.HasConflict) 
+            {
+            <Tooltip Title="Есть конфликты в расписании" style="position: absolute; top: 2px; right: 4px; z-index: 1;">
+                <div>
+                    <Icon Type="@IconType.TwoTone.Warning" 
+                          Theme="IconThemeType.TwoTone" 
+                          TwoToneColor="#faad14" 
+                          Style="font-size: 20px;" />
+                </div>
+                </Tooltip>
+            }
             <ul class="events" style="cursor: pointer; min-height: 60px;">
-                @foreach (var data in listData)
+                @foreach (var data in dayData.Events)
                 {
-                    <li key="@data.content">
+                    <li key="@data.Content">
                             <span style="font-weight:inherit;">@data.TimePeriod</span>
                             <span style="@GetEventStyleByType(data.EventType, data.IsCanceled)">
-                                @data.content
+                                @data.Content
                             </span>
                     </li>
                 }
             </ul>
-        </Template>;
+            @if( dayData.EventsCount > 3) {
+                <p> ...еще @(dayData.EventsCount - 3)</p>
+            }
+            </div>
+
+        </Template>
+    ;
+    }
+
+    private async Task CreateReport()
+    {
+        
     }
 }

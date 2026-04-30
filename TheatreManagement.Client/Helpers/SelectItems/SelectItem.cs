@@ -1,4 +1,4 @@
-﻿namespace TheatreManagement.Client.Helpers
+﻿namespace TheatreManagement.Client.Helpers.SelectItems
 {
     public class SelectItem<T>
     {

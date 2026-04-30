@@ -44,15 +44,19 @@ namespace TheatreManagement.Server.Controllers
             return plays;
         }
 
-
         [HttpGet]
         public async Task<ActionResult<PagedResult<PlayDto>>> GetPlays(
             [FromQuery] string searchText = null,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool isArchive = false)
         {
-            var query = _context.Plays
-                .Where(p => p.DeletionTime == null);
+            var query = _context.Plays.Include(p => p.User).AsQueryable();
+
+            if (isArchive == true)
+            {
+                query = query.IgnoreQueryFilters().Where(p => p.DeletionTime != null);
+            }
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
@@ -60,7 +64,6 @@ namespace TheatreManagement.Server.Controllers
 
                 query = query.Where(p =>
                     DataContext.CustomLike(p.Name, normalizeSearchText));
-            
             }
 
             var totalCount = await query.CountAsync();
@@ -76,7 +79,9 @@ namespace TheatreManagement.Server.Controllers
                     Duration = p.Duration,
                     AgeCategory = p.AgeCategory,
                     IsActive = p.IsActive,
-                    LastEditTime = p.LastEditTime
+                    LastEditTime = p.LastEditTime,
+                    UserFullName = (p.User != null ? p.User.Surname + " " + p.User.Name + " " + p.User.FatherName : ""),
+                    DeletionTime = p.DeletionTime
                 })
                 .ToListAsync();
 
@@ -263,6 +268,31 @@ namespace TheatreManagement.Server.Controllers
             play.IsActive = false;
             play.User = currentUser;
 
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPut("{playId}/restore")]
+        public async Task<IActionResult> RestorePlay(int playId)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
+            var play = await _context.Plays.Where(p => p.PlayId == playId)
+                                           .IgnoreQueryFilters()
+                                           .FirstOrDefaultAsync();
+
+            var errors = new List<string>();
+
+            play.DeletionTime = null;
+            play.IsActive = true;
+            play.LastEditTime = DateTime.Now;
+            play.User = currentUser;
 
             await _context.SaveChangesAsync();
 

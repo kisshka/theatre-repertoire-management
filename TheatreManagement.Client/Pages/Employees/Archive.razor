@@ -1,35 +1,22 @@
-﻿@page "/employees"
-@inject HttpClient Http
+﻿@page "/employees/archive"
 
-<PageTitle>Список сотрудников</PageTitle>
+<PageTitle>Список сотрудников(Архив)</PageTitle>
 
 <PageHeader>
-    <PageHeaderTitle>Список сотрудников</PageHeaderTitle>
-    <PageHeaderExtra>
-        <AuthorizeView Roles="MainAdmin">
-            <Authorized>
-                <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
-                    Архив
-                    <Icon Type="@IconType.Outline.Right" />
-                </Button>
-            </Authorized>
-        </AuthorizeView>
-    </PageHeaderExtra>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>Список сотрудников(Архив)</PageHeaderTitle>
 </PageHeader>
 
 <div class="table-page-header">
-    <AuthorizeView Roles="MainAdmin">
-        <Authorized>
-            <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
-                <Icon Type="@IconType.Outline.Plus" />
-            </Button>
-        </Authorized>
-    </AuthorizeView>
-
     <Search Placeholder="Введите ФИО сотрудника"
-    @bind-Value="@searchText"
-    EnterButton="true"
-    OnSearch="@OnSearchAsync" />
+            @bind-Value="@searchText"
+            EnterButton="true"
+            OnSearch="@OnSearchAsync" />
 
     <Button Type="ButtonType.Default">
         <Icon Type="@IconType.Fill.Filter" />
@@ -37,12 +24,12 @@
 </div>
 
 <Table TItem="EmployeeDto"
-DataSource="@employees"
-PageSize="@pageSize"
-Total="@total"
-@bind-PageIndex="currentPage"
-OnChange="@OnTableChange"
-OnRowClick="@OnRowClick">
+       DataSource="@employees"
+       PageSize="@pageSize"
+       Total="@total"
+       @bind-PageIndex="currentPage"
+       OnChange="@OnTableChange"
+       OnRowClick="@OnRowClick">
     <PropertyColumn Property="@(c => c.Surname)" Title="Фамилия" />
     <PropertyColumn Property="@(c => c.Name)" Title="Имя" />
     <PropertyColumn Property="@(c => c.FatherName)" Title="Отчество" />
@@ -57,6 +44,8 @@ OnRowClick="@OnRowClick">
             <Icon Type="@IconType.Outline.CloseSquare" Style="color:var(--danger-color); font-size:20px;" />
         }
     </PropertyColumn>
+    <PropertyColumn Property="@(c => c.UserFullName)" Title="Удалил" />
+    <PropertyColumn Property="@(c => c.DeletionTime)" Title="Время удаления" />
 </Table>
 
 <AddModal @bind-Visible="@addModalVisible"
@@ -64,7 +53,9 @@ OnRowClick="@OnRowClick">
 
 @inject EmployeeService employeeService
 @inject NavigationManager navManager
+@inject ModalService modalService
 @code {
+    [Inject] private IMessageService messageService { get; set; }
 
     private List<EmployeeDto> employees = new();
     private int total = 0;
@@ -81,7 +72,19 @@ OnRowClick="@OnRowClick">
     private async Task OnRowClick(RowData<EmployeeDto> row)
     {
         var employee = row.Data;
-        navManager.NavigateTo($"/employees/{employee.EmployeeId}");
+        var confirmed = await modalService.ConfirmAsync(new ConfirmOptions
+            {
+                Content = $"Вы уверены, что хотите восстановить запись {employee.Name}?",
+                OkText = "Да",
+                CancelText = "Нет"
+            });
+
+        if (confirmed)
+        {
+            await employeeService.RestoreEmployeeAsync(employee.EmployeeId);
+            messageService.Success("Данные успешно восстановлены");
+            await LoadDataAsync(1);
+        }
     }
 
     private async Task OnSearchAsync()
@@ -104,7 +107,7 @@ OnRowClick="@OnRowClick">
     {
         try
         {
-            var result = await employeeService.GetEmployeesPagedAsync(page, pageSize, searchText);
+            var result = await employeeService.GetEmployeesPagedAsync(page, pageSize, searchText, true);
             if (result != null)
             {
                 employees = result.Items ?? new List<EmployeeDto>();
@@ -116,11 +119,6 @@ OnRowClick="@OnRowClick">
         {
             Console.WriteLine($"Ошибка: {ex.Message}");
         }
-    }
-
-    private async Task GoToArchive()
-    {
-        navManager.NavigateTo("/employees/archive");
     }
 }
 

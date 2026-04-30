@@ -81,7 +81,6 @@ namespace TheatreManagement.Server.Controllers
         public async Task<ActionResult<List<CastDto>>> GetCasts(int playId)
         {
             var casts = await _context.Castes.Where(c => c.PlayId == playId)
-                                             .Where(c => c.DeletionTime == null)
                                              .Select(c => new CastDto
                                              {
                                                  CastId = c.CastId,

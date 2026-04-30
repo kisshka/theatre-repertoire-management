@@ -1,0 +1,40 @@
+﻿using System.Net.Http.Json;
+using TheatreManagement.Shared.DTOs;
+using TheatreManagement.Shared;
+using TheatreManagement.Shared.DTOs.Events;
+
+namespace TheatreManagement.Client.Services
+{
+    public class InstitutionService
+    {
+        private readonly HttpClient _httpClient;
+
+        public InstitutionService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+        public async Task<HttpResponseMessage> CreateInstitutionAsync(InstitutionDto institution)
+        {
+            return await _httpClient.PostAsJsonAsync("api/institutions", institution);
+        }
+
+        public async Task<HttpResponseMessage> UpdateInstitutionAsync(InstitutionDto institution)
+        {
+            return await _httpClient.PutAsJsonAsync("api/institutions", institution);
+        }
+
+        public async Task<PagedResult<InstitutionDto>> GetInstitutionsPagedAsync(int page = 1, int pageSize = 10, string? searchText = null)
+        {
+            return await _httpClient.GetFromJsonAsync<PagedResult<InstitutionDto>>(
+                $"api/institutions?page={page}&pageSize={pageSize}&searchText={searchText}");
+        }
+
+        public async Task<InstitutionDto> GetInstitutionAsync(int id)
+        {
+            return await _httpClient.GetFromJsonAsync<InstitutionDto>(
+                $"api/institutions/{id}");
+        }
+
+    }
+}

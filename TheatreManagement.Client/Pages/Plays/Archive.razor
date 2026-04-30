@@ -1,30 +1,20 @@
-﻿@page "/plays"
+﻿@page "/plays/archive"
 
-<PageTitle>Список спектаклей</PageTitle>
+<PageTitle>Список спектаклей(Архив)</PageTitle>
 
 <PageHeader>
-    <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
-    <PageHeaderExtra>
-            <AuthorizeView Roles="MainAdmin">
-                <Authorized>
-                    <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
-                        Архив
-                        <Icon Type="@IconType.Outline.Right" />
-                    </Button>
-                </Authorized>
-            </AuthorizeView>
-    </PageHeaderExtra>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>
+        Список спектаклей(Архив)
+    </PageHeaderTitle>
 </PageHeader>
 
 <div class="table-page-header">
-    <AuthorizeView Roles="MainAdmin">
-        <Authorized>
-            <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
-                <Icon Type="@IconType.Outline.Plus" />
-            </Button>
-        </Authorized>
-    </AuthorizeView>
-
     <Search Placeholder="Введите название представления"
     @bind-Value="@searchText"
     EnterButton="true"
@@ -56,6 +46,8 @@ OnRowClick="@OnRowClick">
             <Icon Type="@IconType.Outline.CloseSquare" Style="color:var(--danger-color); font-size:20px;" />
         }
     </PropertyColumn>
+    <PropertyColumn Property="@(c => c.UserFullName)" Title="Удалил" />
+    <PropertyColumn Property="@(c => c.DeletionTime)" Title="Время удаления" />
 
 </Table>
 
@@ -67,6 +59,7 @@ OnSuccess="@OnPlayAdded" />
 @inject ModalService modalService
 
 @code {
+    [Inject] private IMessageService messageService { get; set; }
     private List<PlayDto> plays = new();
     private int total = 0;
     private int pageSize = 10;
@@ -74,7 +67,6 @@ OnSuccess="@OnPlayAdded" />
     private string? searchText = null;
 
     private bool addModalVisible = false;
-    private bool _restoreModalVisible = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -84,7 +76,19 @@ OnSuccess="@OnPlayAdded" />
     private async Task OnRowClick(RowData<PlayDto> row)
     {
         var play = row.Data;
-        navManager.NavigateTo($"/plays/{play.PlayId}");
+        var confirmed = await modalService.ConfirmAsync(new ConfirmOptions
+                {
+                    Content = $"Вы уверены, что хотите восстановить запись {play.Name}?",
+                    OkText = "Да",
+                    CancelText = "Нет"
+                });
+
+        if (confirmed)
+        {
+            await playService.RestorePlayAsync(play.PlayId);
+            messageService.Success("Данные успешно восстановлены");
+            await LoadDataAsync(1);
+            }
     }
 
     private async Task OnSearchAsync()
@@ -107,7 +111,7 @@ OnSuccess="@OnPlayAdded" />
     {
         try
         {
-            var result = await playService.GetPlaysPagedAsync(page, pageSize, searchText);
+            var result = await playService.GetPlaysPagedAsync(page, pageSize, searchText, true);
 
             if (result != null)
             {
@@ -121,10 +125,4 @@ OnSuccess="@OnPlayAdded" />
             Console.WriteLine($"Ошибка: {ex.Message}");
         }
     }
-
-    private async Task GoToArchive()
-    {
-        navManager.NavigateTo("/plays/archive");
-    }
-
 }
