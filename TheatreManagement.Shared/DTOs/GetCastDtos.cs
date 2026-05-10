@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TheatreManagement.Shared.DTOs.Employees;
 
 namespace TheatreManagement.Shared.DTOs
 {

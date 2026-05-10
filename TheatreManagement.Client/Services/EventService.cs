@@ -62,7 +62,6 @@ namespace TheatreManagement.Client.Services
             }
         }
 
-        // В EventService.cs
         public async Task<List<EventGetModel>> GetEventsByDayAsync(DateTime date)
         {
             var dateString = date.ToString("yyyy-MM-dd");

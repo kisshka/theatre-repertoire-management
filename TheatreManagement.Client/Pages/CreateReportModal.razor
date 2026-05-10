@@ -2,40 +2,36 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using TheatreManagement.Client.Helpers.SelectItems
 @using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Shared.DTOs.Employees
 
 <Modal Visible="@Visible"
-OkButtonProps="@(new ButtonProps { Disabled = Submitting })"
-Title="Создание отчета"
-OnOk="HandleOk"
-OnCancel="HandleCancel"
-ConfirmLoading="Submitting"
-MaskClosable="@false">
+       Title="Создание отчета"
+       OnOk="HandleOk"
+       OnCancel="HandleCancel"
+       ConfirmLoading="@isDownloading"
+       MaskClosable="@false">
 
     <Form Model="@Model"
-    OnFinishFailed="@OnFinishFailed"
-    OnFinish="@OnFinish"
-    @ref="@FormRef">
+          OnFinishFailed="@OnFinishFailed"
+          @ref="@FormRef">
 
-
-        <p>Даты проведения</p>
-        <FormItem>
+        <FormItem Label="Даты проведения" Required>
             <RangePicker TValue="DateTime[]"
-            ShowTime="false"
-            AllowClear="false"
-            ChangeOnClose="true"
-            MinDate="@(new DateTime(2026, 1, 1))"
-            MaxDate="@(new DateTime(3000, 12, 31))"
-            @bind-Value="@dateRange" />
+                         ShowTime="false"
+                         AllowClear="false"
+                         ChangeOnClose="true"
+                         @bind-Value="@dateRange"
+                         Format="dd.MM.yyyy" />
         </FormItem>
 
-        <p>Даты проведения</p>
-        <FormItem>
+        <FormItem Label="Тип мероприятий">
             <Select Mode="SelectMode.Default"
-            DataSource="@postTypes"
-            @bind-Value="@selectedPost"
-            LabelName="Name"
-            ValueName="Value"
-            Placeholder="Выберите должность">
+                    DataSource="@eventTypes"
+                    @bind-Value="@selectedType"
+                    LabelName="Name"
+                    ValueName="Value"
+                    Placeholder="Выберите тип"
+                    AllowClear="true">
             </Select>
         </FormItem>
 
@@ -48,64 +44,92 @@ MaskClosable="@false">
     [Parameter] public EventCallback OnSuccess { get; set; }
     [Parameter] public int EmployeeId { get; set; } = -1;
 
-    [Inject] private EmployeeService employeeService { get; set; }
+    [Inject] private NavigationManager Navigation { get; set; }
+    [Inject] private MessageService Message { get; set; }
 
     private Form<EmployeeDto> FormRef { get; set; }
     private EmployeeDto Model { get; set; } = new();
 
-    private DateTime[] dateRange = new DateTime[2];
+    private DateTime[] dateRange = new DateTime[] { DateTime.Now, DateTime.Now.AddDays(7) };
+    private bool isDownloading = false;
+    private string? selectedType { get; set; } = null;
 
-    private bool Submitting { get; set; } = false;
-    private string selectedPost { get; set; } = "";
-
-
-    private List<SelectItem<string>> postTypes = new()
+    private List<SelectItem<string>> eventTypes = new()
     {
-        new SelectItem<string> { Name = "Актер", Value = "Актер" },
-        new SelectItem<string> { Name = "Технический сотрудник", Value = "Технический сотрудник" }
+        new SelectItem<string> { Name = "Стационар", Value = "stationar" },
+        new SelectItem<string> { Name = "Гастроли", Value = "tour" },
+        new SelectItem<string> { Name = "Выезд", Value = "visit" },
+        new SelectItem<string> { Name = "Все", Value = null }
     };
 
-
-    private async Task OnFinish(EditContext editContext)
+    private string GetReportUrl()
     {
-        if (Submitting) return;
+        if (dateRange == null || dateRange.Length < 2 || dateRange[0] == default || dateRange[1] == default)
+        {
+            return "#";
+        }
 
-        Submitting = true;
+        var apiBaseUrl = "https://localhost:7260";
+        var url = $"{apiBaseUrl}/api/Reports/events-report?start={dateRange[0]:yyyy-MM-dd}&end={dateRange[1]:yyyy-MM-dd}";
+
+        if (!string.IsNullOrWhiteSpace(selectedType) && selectedType != "Все")
+        {
+            url += $"&type={selectedType}";
+        }
+
+        if (EmployeeId > 0)
+        {
+            url += $"&employeeId={EmployeeId}";
+        }
+
+        return url;
+    }
+
+    private async Task HandleOk()
+    {
+        //Проверка дат
+        if (dateRange == null || dateRange.Length < 2 || dateRange[0] == default || dateRange[1] == default)
+        {
+            Message.Error("Выберите период дат");
+            return;
+        }
+
+        isDownloading = true;
         StateHasChanged();
 
         try
         {
-            Model.Post = selectedPost;
+            var url = GetReportUrl();
 
-            await employeeService.CreateEmployeeAsync(Model);
+            if (url != "#")
+            {
+                Navigation.NavigateTo(url, true);
+                await Task.Delay(200);
 
-            Visible = false;
-            await VisibleChanged.InvokeAsync(false);
-            await OnSuccess.InvokeAsync();
+                Visible = false;
+                await VisibleChanged.InvokeAsync(false);
+                await OnSuccess.InvokeAsync();
+                ResetForm();
 
-            ResetForm();
+                Message.Success("Отчет успешно сформирован");
+            }
         }
         catch (Exception ex)
         {
-            StateHasChanged();
+            Message.Error($"Ошибка: {ex.Message}");
         }
         finally
         {
-            Submitting = false;
+            isDownloading = false;
             StateHasChanged();
         }
     }
 
     private void OnFinishFailed(EditContext editContext)
     {
-        Console.WriteLine($"Failed");
-    }
-
-    private async Task HandleOk()
-    {
-        if (FormRef != null)
+        foreach (var error in editContext.GetValidationMessages())
         {
-            FormRef.Submit();
+            Message.Error(error);
         }
     }
 
@@ -116,9 +140,10 @@ MaskClosable="@false">
         ResetForm();
     }
 
-
     private void ResetForm()
     {
+        dateRange = new DateTime[] { DateTime.Now, DateTime.Now.AddDays(7) };
+        selectedType = null;
         Model = new EmployeeDto();
         FormRef?.Reset();
         StateHasChanged();

@@ -1,0 +1,100 @@
+﻿@page "/employees/{id:int}/partincasts"
+@using TheatreManagement.Shared.DTOs.Employees
+
+<PageTitle>Участие в составах</PageTitle>
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>@(employee.FullName)</PageHeaderTitle>
+</PageHeader>
+<h3>Участие в составах</h3>
+
+
+<Search Placeholder="Введите название спектакля, состава или роли"
+        @bind-Value="@searchText"
+        EnterButton="true"
+        OnSearch="@OnSearchAsync" />
+
+@foreach (var play in employeePlays)
+{
+    <Card Title="@play.PlayName">
+        @foreach( var cast in play.Casts)
+        {
+            <CardGrid Style="width:50%;text-align:center">
+                @cast.CastName
+            </CardGrid>
+            <CardGrid Style="width:50%;text-align:center">
+                @foreach (var role in cast.Roles)
+                {
+                    <p>@role</p>
+                }
+            </CardGrid>
+        }
+    </Card>
+}
+
+<Pagination PageSize="pageSize"
+            Current="currentPage"
+            Total="total">
+
+
+</Pagination>
+
+
+@inject EmployeeService employeeService
+@inject NavigationManager navManager
+@code {
+    [Parameter] public int Id { get; set; }
+    private int total = 0;
+    private int pageSize = 5;
+    private int currentPage = 1;
+    private string? searchText = null;
+    private bool addModalVisible = false;
+    private List<EmployeePlays> employeePlays = new();
+
+    private EmployeeDto employee = new();
+    private bool _createReportModalVisible = false;
+
+    private bool editModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        employee = await employeeService.GetEmployeeAsync(Id);
+
+        try
+        {
+            var result = await employeeService.GetEmployeeCastsAsync(Id, page, pageSize, searchText);
+            if (result != null)
+            {
+                employeePlays = result.Items ?? new List<EmployeePlays>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private void GoBack()
+    {
+        navManager.NavigateTo("/employees");
+    }
+}

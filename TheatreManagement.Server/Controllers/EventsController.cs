@@ -9,6 +9,7 @@ using TheatreManagement.Domain.Entities;
 using TheatreManagement.Shared.ConflictChecker;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Shared.DTOs.Employees;
 
 namespace TheatreManagement.Server.Controllers
 {

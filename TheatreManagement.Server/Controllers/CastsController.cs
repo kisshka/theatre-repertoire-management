@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
 using TheatreManagement.Shared.DTOs;
+using TheatreManagement.Shared.DTOs.Employees;
 
 namespace TheatreManagement.Server.Controllers
 {

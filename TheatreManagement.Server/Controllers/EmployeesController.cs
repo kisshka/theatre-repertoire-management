@@ -1,12 +1,16 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Domain.Entities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
-using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared;
-using Domain.Entities;
-using Microsoft.AspNetCore.Identity;
+using TheatreManagement.Shared.DTOs;
+using TheatreManagement.Shared.DTOs.Employees;
+using TheatreManagement.Shared.DTOs.Events;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -132,6 +136,121 @@ namespace TheatreManagement.Server.Controllers
             };
 
             return employeeDto;
+        }
+
+
+        [HttpGet("{employeeId}/casts")]
+        public async Task<ActionResult<PagedResult<EmployeePlays>>> GetEmployeeCasts(int employeeId,
+            [FromQuery] string searchText = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+
+            var allPlayIdsQuery = _context.EmployeeRoles
+                .Where(er => er.EmployeeId == employeeId && er.Cast != null && er.EventId == null)
+                .Select(er => er.RoleInPlay.PlayId)
+                .Distinct();
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                var normalizeSearchText = searchText.Trim().ToLower();
+                var matchingPlayIds = _context.EmployeeRoles
+                    .Where(er => er.EmployeeId == employeeId && er.Cast != null && er.EventId == null)
+                    .Where(er =>
+                        DataContext.CustomLike(er.Cast.Name, normalizeSearchText) ||
+                        DataContext.CustomLike(er.Cast.Play.Name, normalizeSearchText) ||
+                        DataContext.CustomLike(er.RoleInPlay.Name, normalizeSearchText))
+                    .Select(er => er.RoleInPlay.PlayId)
+                    .Distinct();
+
+                // Выбираются подходящие под поиск PlayId
+                allPlayIdsQuery = allPlayIdsQuery.Where(id => matchingPlayIds.Contains(id));
+            }
+
+            var totalCount = await allPlayIdsQuery.CountAsync();
+
+            var pagedPlayIds = await allPlayIdsQuery
+                .OrderBy(id => id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            if (!pagedPlayIds.Any())
+            {
+                return Ok(new PagedResult<EmployeePlays>
+                {
+                    Items = new List<EmployeePlays>(),
+                    TotalCount = totalCount
+                });
+            }
+
+            var allData = await _context.EmployeeRoles
+                .Where(er => er.EmployeeId == employeeId && er.Cast != null && er.EventId == null &&
+                             pagedPlayIds.Contains(er.RoleInPlay.PlayId))
+                .Select(er => new
+                {
+                    er.RoleInPlay.PlayId,
+                    PlayName = er.RoleInPlay.Play.Name,
+                    er.CastId,
+                    CastName = er.Cast.Name,
+                    RoleName = er.RoleInPlay.Name
+                })
+                .ToListAsync();
+
+            var result = allData
+                .GroupBy(x => x.PlayId)
+                .Select(g => new EmployeePlays
+                {
+                    PlayId = g.Key,
+                    PlayName = g.First().PlayName,
+                    Casts = g
+                        .GroupBy(x => new { x.CastId, x.CastName })
+                        .Select(cg => new EmployeeCasts
+                        {
+                            CastId = cg.Key.CastId,
+                            CastName = cg.Key.CastName,
+                            Roles = cg.Select(x => x.RoleName).Distinct().ToList()
+                        })
+                        .ToList()
+                })
+                .ToList();
+
+            return Ok(new PagedResult<EmployeePlays>
+            {
+                Items = result,
+                TotalCount = totalCount
+            });
+        }
+
+
+        [HttpGet("{employeeId}/events")]
+        public async Task<ActionResult<List<EventGetModel>>> GetEmployeeEvents(int employeeId, [FromQuery] string start, [FromQuery] string end)
+        {
+            if (!DateTime.TryParseExact(start, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var startDate) ||
+                !DateTime.TryParseExact(end, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var endDate))
+            {
+                return BadRequest("Неверный формат даты");
+            }
+
+            var employeeRoles = _context.EmployeeRoles
+                          .Where(er => er.EmployeeId == employeeId && er.EventId != null).AsQueryable();
+
+            var events = employeeRoles.Where(e => e.Event.StartTime < endDate.AddDays(1) && e.Event.EndTime > startDate)
+                                      .Select(e => new EventGetModel
+            {
+                EventId = e.Event.EventId,
+                StartTime = e.Event.StartTime,
+                EndTime = e.Event.EndTime,
+                Type = e.Event.Type,
+                LastEditTime = e.Event.LastEditTime,
+                IsCanceled = e.Event.IsCanceled,
+                Plays = e.Event.PlayEvents.Select(p => new PlayDto { Name = p.Play.Name }).ToList(),
+                Stationar = e.Event.Stationar != null ? new StationarDto { Hall = e.Event.Stationar.Hall } : null,
+
+            }).ToList();
+
+
+            return events;
         }
 
         [HttpPost]

@@ -1,27 +1,25 @@
-﻿@page "/events"
-@page "/"
+﻿@page "/employees/{id:int}/partinevents"
 @using System.Globalization
-@using AntDesign
-@using TheatreManagement.Shared.DTOs.Events
+@using TheatreManagement.Shared.DTOs.Employees
+
+<PageTitle>Участие в мероприятиях</PageTitle>
 
 
 <PageTitle>Мероприятия</PageTitle>
 
 <div class="events-calendar-page">
-    <Calendar   Value="currentDate"
-    DateCellRender="DateCellRender"
-    HeaderRender="CustomHead"
-    OnSelect="OnDateSelect"
-    CultureInfo="@CultureInfo.InvariantCulture" />
+    <Calendar Value="currentDate"
+              DateCellRender="DateCellRender"
+              HeaderRender="CustomHead"
+              OnSelect="OnDateSelect"
+              CultureInfo="@CultureInfo.InvariantCulture" />
 </div>
 
-<CreateReportModal @bind-Visible="_createReportModalVisible"
-OnSuccess="OnModalSuccess"/>
-
+@inject EmployeeService employeeService
 @inject NavigationManager navManager
-@inject EventService eventService
-
 @code {
+    [Parameter] public int Id { get; set; }
+
     private DateTime currentDate = DateTime.Now;
     private List<EventGetModel> allEvents = new();
     private bool isLoading = false;
@@ -74,6 +72,7 @@ OnSuccess="OnModalSuccess"/>
 
         try
         {
+            // Получаем первый и последний день месяца
             var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
             var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
 
@@ -81,7 +80,7 @@ OnSuccess="OnModalSuccess"/>
             var startDate = firstDayOfMonth.AddDays(-14);
             var endDate = lastDayOfMonth.AddDays(14);
 
-            allEvents = await eventService.GetEventsByDateRangeAsync(startDate, endDate);
+            allEvents = await employeeService.GetEmployeeEventsByDateRangeAsync(startDate, endDate, Id);
         }
         catch (Exception ex)
         {
@@ -101,11 +100,11 @@ OnSuccess="OnModalSuccess"/>
         (e.StartTime?.Date <= date.Date && e.EndTime?.Date >= date.Date)).ToList();
 
         var dayData = new DayData
-                {
-                    EventsCount = eventsOnDay.Count,
-                    HasConflict = eventsOnDay.Any(e => e.HasConflict),
-                    Events = new List<EventData>()
-                };
+        {
+            EventsCount = eventsOnDay.Count,
+            HasConflict = eventsOnDay.Any(e => e.HasConflict),
+            Events = new List<EventData>()
+        };
 
         foreach (var ev in eventsOnDay.Take(3))
         {
@@ -114,12 +113,12 @@ OnSuccess="OnModalSuccess"/>
                             ev.Type == "tour" ? ev.TourTimePeriod : ev.VisitTimePeriod;
 
             dayData.Events.Add(new EventData
-                    {
-                        EventType = ev.Type,
-                        IsCanceled = ev.IsCanceled,
-                        Content = content,
-                        TimePeriod = timePeriod
-                    });
+            {
+                EventType = ev.Type,
+                IsCanceled = ev.IsCanceled,
+                Content = content,
+                TimePeriod = timePeriod
+            });
         }
 
         return dayData;
@@ -135,7 +134,7 @@ OnSuccess="OnModalSuccess"/>
                     </Button>
 
                     <DatePicker ValueChanged="OnDatePickerChanged"
-                                AllowClear="false" 
+                                AllowClear="false"
                                 Value="currentDate"
                                 ShowToday="true"
                                 TValue="DateTime"
@@ -146,10 +145,10 @@ OnSuccess="OnModalSuccess"/>
                     </Button>
                 </div>
 
-            <Button Type="ButtonType.Primary" OnClick="@(() => _createReportModalVisible = true)">
-                Отчет
-                <Icon Type="@IconType.Outline.Right" />
-            </Button>
+                <Button Type="ButtonType.Primary" OnClick="@(() => _createReportModalVisible = true)">
+                    Отчет
+                    <Icon Type="@IconType.Outline.Right" />
+                </Button>
 
             </div>
         </Template>;
@@ -172,7 +171,7 @@ OnSuccess="OnModalSuccess"/>
     {
         currentDate = currentDate.AddMonths(1);
         await LoadEventsForMonth(currentDate);
-        StateHasChanged(); 
+        StateHasChanged();
     }
 
     private async Task PreviousMonth()
@@ -191,35 +190,42 @@ OnSuccess="OnModalSuccess"/>
     {
         var dayData = GetDayData(value);
         return @<Template>
-        <div style="position: relative; min-height: 70px;">
-            @if(dayData.HasConflict) 
-            {
-            <Tooltip Title="Есть конфликты в расписании" style="position: absolute; top: 2px; right: 4px; z-index: 1;">
-                <div>
-                    <Icon Type="@IconType.TwoTone.Warning" 
-                          Theme="IconThemeType.TwoTone" 
-                          TwoToneColor="#faad14" 
-                          Style="font-size: 20px;" />
-                </div>
-                </Tooltip>
-            }
-            <ul class="events" style="cursor: pointer; min-height: 60px;">
-                @foreach (var data in dayData.Events)
+            <div style="position: relative; min-height: 70px;">
+                @if (dayData.HasConflict)
                 {
-                    <li key="@data.Content">
+                    <Tooltip Title="Есть конфликты в расписании" style="position: absolute; top: 2px; right: 4px; z-index: 1;">
+                        <div>
+                            <Icon Type="@IconType.TwoTone.Warning"
+                                  Theme="IconThemeType.TwoTone"
+                                  TwoToneColor="#faad14"
+                                  Style="font-size: 20px;" />
+                        </div>
+                    </Tooltip>
+                }
+                <ul class="events" style="cursor: pointer; min-height: 60px;">
+                    @foreach (var data in dayData.Events)
+                    {
+                        <li key="@data.Content">
                             <span style="font-weight:inherit;">@data.TimePeriod</span>
                             <span style="@GetEventStyleByType(data.EventType, data.IsCanceled)">
                                 @data.Content
                             </span>
-                    </li>
+                        </li>
+                    }
+                </ul>
+                @if (dayData.EventsCount > 3)
+                {
+                    <p> ...еще @(dayData.EventsCount - 3)</p>
                 }
-            </ul>
-            @if( dayData.EventsCount > 3) {
-                <p> ...еще @(dayData.EventsCount - 3)</p>
-            }
             </div>
 
         </Template>
     ;
     }
+
+    private void GoBack()
+    {
+        navManager.NavigateTo($"/employees/{Id}");
+    }
 }
+

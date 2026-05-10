@@ -1,6 +1,8 @@
-﻿using System.Net.Http.Json;
-using TheatreManagement.Shared.DTOs;
+﻿using AntDesign;
+using System.Net.Http.Json;
 using TheatreManagement.Shared;
+using TheatreManagement.Shared.DTOs.Employees;
+using TheatreManagement.Shared.DTOs.Events;
 
 namespace TheatreManagement.Client.Services
 {
@@ -55,5 +57,15 @@ namespace TheatreManagement.Client.Services
                 $"api/employees/technics");
         }
 
+        public async Task<List<EventGetModel>> GetEmployeeEventsByDateRangeAsync(DateTime startDate, DateTime endDate, int employeeId)
+        {
+            var start = startDate.ToString("yyyy-MM-dd");
+            var end = endDate.ToString("yyyy-MM-dd");
+            return await _httpClient.GetFromJsonAsync<List<EventGetModel>>($"api/employees/{employeeId}/events?start={start}&end={end}");
+        }
+        public async Task<PagedResult<EmployeePlays>> GetEmployeeCastsAsync(int employeeId, int page = 1, int pageSize = 10, string? searchText = null)
+        {
+            return await _httpClient.GetFromJsonAsync<PagedResult<EmployeePlays>>($"api/employees/{employeeId}/casts?page={page}&pageSize={pageSize}&searchText={searchText}");
+        }
     }
 }

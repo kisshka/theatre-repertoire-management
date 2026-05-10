@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TheatreManagement.Shared.DTOs
+namespace TheatreManagement.Shared.DTOs.Employees
 {
     public class EmployeeRoleCreateDto
     {

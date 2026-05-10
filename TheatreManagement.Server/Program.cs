@@ -66,9 +66,13 @@ namespace TheatreManagement.Server
                 }
             }
 
-            app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
-            
-            
+            app.UseCors(policy => policy
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowAnyOrigin());
+
+            app.UseCors("BlazorClient");
+
             app.MapIdentityApi<User>();
 
             // Configure the HTTP request pipeline.
