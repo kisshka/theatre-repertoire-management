@@ -8,25 +8,24 @@ ConfirmLoading="Submitting"
 MaskClosable="@false">
 
     <Form Model="@Model" @ref="@FormRef"
-        OnFinishFailed="@OnFinishFailed"
-          OnFinish="@OnFinish">
+    OnFinishFailed="@OnFinishFailed"
+    OnFinish="@OnFinish">
 
         <FormItem Label="Тип мероприятия" Required>
             <Select Mode="SelectMode.Default"
-                    DataSource="@SelectItemValues.EventTypes"
+            DataSource="@SelectItemValues.EventTypes"
             @bind-Value="@selectedEventType"
             LabelName="Name"
             ValueName="Value"
             Placeholder="Выберите тип мероприятия"
-            Disabled="@isDisabled"
-            onchange="@((string value) => OnEventTypeChanged(value))">
+            Disabled="@isDisabled">
             </Select>
         </FormItem>
 
         <!-- Даты -->
         <p>Даты проведения</p>
-       <FormItem Required>
-        <RangePicker TValue="DateTime[]"
+        <FormItem Required>
+            <RangePicker TValue="DateTime[]"
             ShowTime='@("HH:mm")'
             MinDate="@(new DateTime(2026, 1, 1))"
             MaxDate="@(new DateTime(3000, 12, 31))"
@@ -41,19 +40,33 @@ MaskClosable="@false">
         {
             <Divider>Стационар</Divider>
 
-            <FormItem Label="Зал" Required>
-                <Select Mode="SelectMode.Default"
-                DataSource ="@SelectItemValues.HallTypes"
-                @bind-Value="@selectedHall"
-                LabelName="Name"
-                ValueName="Value"
-                Placeholder="Выберите зал">
-                </Select>
-            </FormItem>
+            <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
+                <FormItem Label="Зал" Required>
+                    <Select Mode="SelectMode.Default"
+                    DataSource ="@SelectItemValues.HallTypes"
+                    @bind-Value="@selectedHall"
+                    LabelName="Name"
+                    ValueName="Value"
+                    Placeholder="Выберите зал">
+                    </Select>
+                </FormItem>
+                @if (employeeConflicts.Where(ec => ec.Type == ConflictType.HallConflict).Any())
+                {
+                    var hallMessage = string.Join(Environment.NewLine, employeeConflicts.Where(ec => ec.Type == ConflictType.HallConflict)
+                    .Select(c => c.Message));
+
+                    <Tooltip Title="@hallMessage">
+                        <Icon Type="@IconType.TwoTone.Warning"
+                        Theme="IconThemeType.TwoTone"
+                        TwoToneColor="#faad14"
+                        Style="font-size: 20px; cursor: pointer;" />
+                    </Tooltip>
+                }
+            </div>
 
             <FormItem Label="Тип выступления" Required>
                 <Select Mode="SelectMode.Default"
-                        DataSource="@SelectItemValues.PerformanceTypes"
+                DataSource="@SelectItemValues.PerformanceTypes"
                 @bind-Value="@selectedPerformanceType"
                 LabelName="Name"
                 ValueName="Value"
@@ -100,9 +113,11 @@ MaskClosable="@false">
         @for (int i = 0; i < Model.PlayEvents.Count; i++)
         {
             var index = i;
+            var hasConflict = HasPlayConflict(index);
+
             <div style="border: 1px solid #d9d9d9; border-radius: 4px; padding: 12px; margin-bottom: 12px;">
                 <Button Danger Class="danger-button" OnClick="() => RemovePlayEvent(index)"
-                        Disabled="@(Model.PlayEvents.Count == 1)">
+                Disabled="@(Model.PlayEvents.Count == 1)">
                     <Icon Type="@IconType.Outline.Delete" />
                 </Button>
                 <Button Type="ButtonType.Primary"
@@ -119,6 +134,16 @@ MaskClosable="@false">
                     LabelName="@nameof(PlayDto.Name)"
                     ValueName="@nameof(PlayDto.PlayId)" />
                 </FormItem>
+
+                @if (hasConflict)
+                {
+                    <Tooltip Title="В составе спектакля есть конфликты">
+                        <Icon Type="@IconType.TwoTone.Warning"
+                        Theme="IconThemeType.TwoTone"
+                        TwoToneColor="#faad14"
+                        Style="font-size: 18px; cursor: pointer;" />
+                    </Tooltip>
+                }
 
                 @if (Model.PlayEvents[index].RoleDisplays.Any())
                 {
@@ -169,32 +194,46 @@ Title="Назначение ролей">
         @foreach (var role in play.RoleDtos.Where(r => r.RoleType == "Актерская"))
         {
             <div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
-                <b>@role.Name</b>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <b>@role.Name</b>
+                    <Button Type="ButtonType.Primary" OnClick="() => AddTempAssignment(role.RoleInPlayId)">
+                        <Icon Type="@IconType.Outline.Plus" />
+                    </Button>
+                </div>
 
                 @for (int i = 0; i < GetTempAssignmentsCount(role.RoleInPlayId); i++)
                 {
                     var roleId = role.RoleInPlayId;
                     var index = i;
+                    var selectedEmployeeId = GetTempAssignmentEmployeeId(roleId, index);
+                    var hasConflict = HasEmployeeConflict(selectedEmployeeId);
+
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <Select Mode="SelectMode.Default"
-                        DataSource="@actors"
-                        Value="@GetTempAssignmentEmployeeId(roleId, index)"
-                        ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
-                                LabelName="@nameof(EmployeeDto.FullName)"
-                        ValueName="@nameof(EmployeeDto.EmployeeId)"
-                        Style="flex: 1" />
+                        <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
+                            <Select Mode="SelectMode.Default"
+                            DataSource="@actors"
+                            Value="@GetTempAssignmentEmployeeId(roleId, index)"
+                            ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
+                            LabelName="@nameof(EmployeeDto.FullName)"
+                            ValueName="@nameof(EmployeeDto.EmployeeId)"
+                            Style="flex: 1" />
+
+                            @if (hasConflict && selectedEmployeeId > 0)
+                            {
+                                <Tooltip Title="@GetEmployeeConflictMessage(selectedEmployeeId)">
+                                    <Icon Type="@IconType.TwoTone.Warning"
+                                    Theme="IconThemeType.TwoTone"
+                                    TwoToneColor="#faad14"
+                                    Style="font-size: 20px; cursor: pointer;" />
+                                </Tooltip>
+                            }
+                        </div>
 
                         <Button Danger OnClick="() => RemoveTempAssignment(roleId, index)">
                             <Icon Type="@IconType.Outline.Delete" />
                         </Button>
                     </div>
                 }
-
-                <Button Type="ButtonType.Primary"
-                OnClick="() => AddTempAssignment(role.RoleInPlayId)"
-                Style="margin-top: 10px">
-                    + Добавить актера
-                </Button>
             </div>
         }
 
@@ -203,20 +242,42 @@ Title="Назначение ролей">
         @foreach (var role in play.RoleDtos.Where(r => r.RoleType == "Техническая"))
         {
             <div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
-                <b>@role.Name</b>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <b>@role.Name</b>
+                    <Button Type="ButtonType.Primary" OnClick="() => AddTempAssignment(role.RoleInPlayId)">
+                        <Icon Type="@IconType.Outline.Plus" />
+                    </Button>
+                </div>
 
                 @for (int i = 0; i < GetTempAssignmentsCount(role.RoleInPlayId); i++)
                 {
                     var roleId = role.RoleInPlayId;
                     var index = i;
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <Select Mode="SelectMode.Default"
-                        DataSource="@technics"
-                        Value="@GetTempAssignmentEmployeeId(roleId, index)"
-                        ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
-                                LabelName="@nameof(EmployeeDto.FullName)"
-                        ValueName="@nameof(EmployeeDto.EmployeeId)"
-                        Style="flex: 1" />
+                    var selectedEmployeeId = GetTempAssignmentEmployeeId(roleId, index);
+                    var hasConflict = HasEmployeeConflict(selectedEmployeeId);
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                        <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
+                            <Select Mode="SelectMode.Default"
+                            DataSource="@technics"
+                            Value="@selectedEmployeeId"
+                            ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
+                            LabelName="@nameof(EmployeeDto.FullName)"
+                            ValueName="@nameof(EmployeeDto.EmployeeId)"
+                            EnableSearch="true"
+                            Placeholder="Введите ФИО сотрудника"
+                            Style="width: 100%; max-width: 300px;" />
+
+                            @if (hasConflict && selectedEmployeeId > 0)
+                            {
+                                <Tooltip Title="@GetEmployeeConflictMessage(selectedEmployeeId)">
+                                    <Icon Type="@IconType.TwoTone.Warning"
+                                    Theme="IconThemeType.TwoTone"
+                                    TwoToneColor="#faad14"
+                                    Style="font-size: 20px; cursor: pointer;" />
+                                </Tooltip>
+                            }
+                        </div>
 
                         <Button Danger OnClick="() => RemoveTempAssignment(roleId, index)">
                             <Icon Type="@IconType.Outline.Delete" />
@@ -224,11 +285,6 @@ Title="Назначение ролей">
                     </div>
                 }
 
-                <Button Type="ButtonType.Primary"
-                OnClick="() => AddTempAssignment(role.RoleInPlayId)"
-                Style="margin-top: 10px">
-                    + Добавить сотрудника
-                </Button>
             </div>
         }
     </Form>
@@ -248,6 +304,7 @@ Title="Назначение ролей">
     [Inject] private EmployeeService employeeService { get; set; }
     [Inject] private EventService eventService { get; set; }
     [Inject] private IMessageService messageService { get; set; }
+    [Inject] private EventConflictCheckerService _conflictChecker { get; set; }
 
     private Form<EventPostModel> FormRef { get; set; }
     private EventPostModel Model { get; set; } = new();
@@ -262,8 +319,115 @@ Title="Назначение ролей">
     private DateTime[] dateRange = new DateTime[2];
 
     // Для стационара
-    private string selectedHall = "";
+    private string _selectedHall = "";
+    private string selectedHall
+    {
+        get => _selectedHall;
+        set
+        {
+            if (_selectedHall != value)
+            {
+                _selectedHall = value;
+                InvokeAsync(async () => await CheckConflicts());
+            }
+        }
+    }
+
     private string selectedPerformanceType = "";
+
+    //Проверка на наличие конфликтов
+    private List<Warning> employeeConflicts = new();
+
+    private async Task CheckConflicts()
+    {
+        if (dateRange == null || dateRange.Length < 2)
+            return;
+
+        var request = new ConflictCheckRequest
+            {
+                StartTime = dateRange[0],
+                EndTime = dateRange[1],
+                Type = selectedEventType,
+                Hall = selectedEventType == "stationar" ? selectedHall : null,
+                EmployeeIds = GetSelectedEmployeeIds(),
+                ExcludeEventId = Model.EventId
+            };
+
+        var response = await _conflictChecker.CheckConflictsAsync(request);
+
+        employeeConflicts = response.Warnings;
+        StateHasChanged();
+    }
+
+    // Конфликты у сотрудников
+    private bool HasEmployeeConflict(int employeeId)
+    {
+        return employeeConflicts.Any(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
+    }
+
+    private string GetEmployeeConflictMessage(int employeeId)
+    {
+        var conflict = employeeConflicts.FirstOrDefault(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
+        return conflict?.Message ?? "";
+    }
+
+    // Конфликты у сотрудников общее отображение для спектакля
+    private bool HasPlayConflict(int playIndex)
+    {
+        if (Model?.PlayEvents == null) return false;
+        if (playIndex < 0 || playIndex >= Model.PlayEvents.Count) return false;
+
+        var playEvent = Model.PlayEvents[playIndex];
+        if (playEvent?.SelectedEmployees == null) return false;
+        if (employeeConflicts == null) return false;
+
+        return playEvent.SelectedEmployees.Any(employee =>
+            employeeConflicts.Any(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employee.EmployeeId));
+    }
+
+
+    private List<int> GetSelectedEmployeeIds()
+    {
+        var employeeIds = new List<int>();
+
+        // Добавляем только что выбранных сотрудников
+        foreach (var selection in tempSelections)
+        {
+            if (selection.EmployeeId > 0 && !employeeIds.Contains(selection.EmployeeId))
+            {
+                employeeIds.Add(selection.EmployeeId);
+            }
+        }
+
+        // Загрузка остальных добавленных сотрудников
+        //Возможно потом нужно убрать
+        if (Model?.PlayEvents != null)
+        {
+            foreach (var playEvent in Model.PlayEvents)
+            {
+                // Текущий выбранный спектакль пропущен
+                if (currentPlayEventIndex >= 0 &&
+                    Model.PlayEvents.IndexOf(playEvent) == currentPlayEventIndex)
+                {
+                    continue;
+                }
+
+                if (playEvent.SelectedEmployees != null)
+                {
+                    foreach (var employee in playEvent.SelectedEmployees)
+                    {
+                        if (employee.EmployeeId > 0 && !employeeIds.Contains(employee.EmployeeId))
+                        {
+                            employeeIds.Add(employee.EmployeeId);
+                        }
+                    }
+                }
+            }
+        }
+
+        return employeeIds;
+    }
+
 
     protected override async Task OnParametersSetAsync()
     {
@@ -272,13 +436,8 @@ Title="Назначение ролей">
             await LoadData();
             await LoadUserData();
             await LoadPlays();
+            await CheckConflicts();
         }
-    }
-
-    private async Task OnEventTypeChanged(string selectedType)
-    {
-        selectedEventType = selectedType;
-        StateHasChanged();
     }
 
     // Подгрузка данных для редактирования

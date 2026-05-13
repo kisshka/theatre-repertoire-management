@@ -12,8 +12,21 @@
     <PageHeaderTitle>Информация о мероприятии</PageHeaderTitle>
 </PageHeader>
 
-<Card Title="@Model.StationarTimePeriod">
+<Card Title="@EventTitle">
     <Extra>
+        @if (conflicts.Where(ec => ec.Type == ConflictType.HallConflict).Any())
+        {
+            var hallMessage = string.Join(Environment.NewLine, conflicts.Where(ec => ec.Type == ConflictType.HallConflict)
+            .Select(c => c.Message));
+
+            <Tooltip Title="@hallMessage">
+                <Icon Type="@IconType.TwoTone.Warning"
+                      Theme="IconThemeType.TwoTone"
+                      TwoToneColor="#faad14"
+                      Style="font-size: 20px; cursor: pointer;" />
+            </Tooltip>
+        }
+
         @if (Model.IsCanceled)
         {
             <Tag Color="TagColor.Red">Отменено</Tag>
@@ -47,45 +60,6 @@
     </Extra>
     <Body>
 
-        @* СПЕЦИФИЧЕСКИЕ ЧАСТИ ДЛЯ КАЖДОГО ТИПА*@
-        @if(Model.Institution != null) {
-            <Space Size="@("10px")">
-            <SpaceItem>
-                Выезд
-            </SpaceItem>
-            <SpaceItem>
-                    <span>@Model.Institution.Name</span> |
-                    г. <span>@Model.Institution.Town</span>
-                    ул. <span>@Model.Institution.Street</span>
-                    дом <span>@Model.Institution.House</span>
-            </SpaceItem>
-        </Space>
-        }
-        @if (Model.Stationar != null)
-        {
-            <Space Size="@("10px")">
-                <SpaceItem>
-                    Стационар
-                </SpaceItem>
-                <SpaceItem>
-                    <span>@Model.Stationar.Hall</span> -
-                    <span>@Model.Stationar.Type</span>
-                </SpaceItem>
-            </Space>
-        }
-        @if (Model.Tour != null)
-        {
-            <Space Size="@("10px")">
-                <SpaceItem>
-                    Гастроли
-                </SpaceItem>
-                <SpaceItem>
-                    <span>@Model.Tour.Country</span>,
-                    <span>@Model.Tour.Area</span>
-                </SpaceItem>
-            </Space>
-        }
-
         @foreach(var play in Model.PlaysWithRoles)
         {
             <Card Title="@play.PlayName">
@@ -97,9 +71,30 @@
                             @role.RoleName
                         </CardGrid>
                         <CardGrid Style="width:50%">
-                            @foreach (var employee in role.Employees)
+                            @if (role.Employees != null && role.Employees.Any())
                             {
-                                <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                                @foreach (var employee in role.Employees)
+                                {
+                                    var hasConflict = HasEmployeeConflict(employee.EmployeeId);
+                                    var conflictMessage = GetEmployeeConflictMessage(employee.EmployeeId);
+
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <span>@($"{employee.Surname} {employee.Name} {employee.FatherName}")</span>
+                                        @if (hasConflict)
+                                        {
+                                            <Tooltip Title="@conflictMessage">
+                                                <Icon Type="@IconType.TwoTone.Warning"
+                                                Theme="IconThemeType.TwoTone"
+                                                TwoToneColor="#faad14"
+                                                Style="font-size: 16px; cursor: pointer;" />
+                                            </Tooltip>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p style="color: #999; font-style: italic;">Не назначен</p>
                             }
                         </CardGrid>
                     }
@@ -112,9 +107,30 @@
                             @role.RoleName
                         </CardGrid>
                         <CardGrid Style="width:50%">
-                            @foreach (var employee in role.Employees)
+                            @if (role.Employees != null && role.Employees.Any())
                             {
-                                <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                                @foreach (var employee in role.Employees)
+                                {
+                                    var hasConflict = HasEmployeeConflict(employee.EmployeeId);
+                                    var conflictMessage = GetEmployeeConflictMessage(employee.EmployeeId);
+
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <span>@($"{employee.Surname} {employee.Name} {employee.FatherName}")</span>
+                                        @if (hasConflict)
+                                        {
+                                            <Tooltip Title="@conflictMessage">
+                                                <Icon Type="@IconType.TwoTone.Warning"
+                                                Theme="IconThemeType.TwoTone"
+                                                TwoToneColor="#faad14"
+                                                Style="font-size: 16px; cursor: pointer;" />
+                                            </Tooltip>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p style="color: #999; font-style: italic;">Не назначен</p>
                             }
                         </CardGrid>
                     }
@@ -129,8 +145,7 @@
 
 <EditModal @bind-Visible="editModalVisible"
 OnSuccess="OnModalSuccess"
-EventId="@EventId"
-EventDate="@Date" />
+EventId="@EventId"/>
 
 @code {
     [Parameter] public int EventId { get; set; }
@@ -139,20 +154,44 @@ EventDate="@Date" />
     [Inject] private AuthenticationStateProvider provider { get; set; }
     [Inject] private EventService eventService { get; set; }
     [Inject] private NavigationManager navManager { get; set; }
-    private DateTime Date { get; set; }
+    [Inject] private EventConflictCheckerService _conflictChecker { get; set; }
+
+    private string EventTitle { get; set; } = "";
     private bool IsAllow { get; set; } = false;
 
     private EventGetModel Model = new();
-
-
     private bool editModalVisible = false;
+    private List<Warning> conflicts = new();
 
     protected override async Task OnInitializedAsync()
     {
-        Date = DateTime.ParseExact(DateString, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
         await LoadData();
+        EventTitle = GetEventTitle();
+        await CheckConflicts();
         await GiveAccess();
     }
+
+    private string GetEventTitle()
+    {
+        var timeRange = $"{Model.StartTime:dd.MM.yyyy HH:mm} - {Model.EndTime:dd.MM.yyyy HH:mm}";
+
+        if (Model.Type == "stationar" && Model.Stationar != null)
+        {
+            return $"{timeRange} | {Model.Stationar.Hall} | {Model.Stationar.Type}";
+        }
+        else if (Model.Type == "tour" && Model.Tour != null)
+        {
+            return $"{timeRange} | Гастроли: {Model.Tour.Country}, {Model.Tour.Area}";
+        }
+        else if (Model.Type == "visit" && Model.Institution != null)
+        {
+            return $"{timeRange} | Выезд: {Model.Institution.Name}";
+        }
+
+        return timeRange;
+    }
+
     private async Task OnModalSuccess()
     {   
         await LoadData();
@@ -162,6 +201,61 @@ EventDate="@Date" />
     private async Task LoadData()
     {
         Model = await eventService.GetEventDetailsAsync(EventId);
+    }
+
+    //Проверка на наличие конфликтов
+    private async Task CheckConflicts()
+    {
+
+        var request = new ConflictCheckRequest
+            {
+                StartTime = Model.StartTime.Value,
+                EndTime = Model.EndTime.Value,
+                Type = Model.Type,
+                Hall = Model.Type == "stationar" ? Model.Stationar.Hall : null,
+                EmployeeIds = GetEmployeeIdsFromEvent(),
+                ExcludeEventId = Model.EventId
+            };
+
+        var response = await _conflictChecker.CheckConflictsAsync(request);
+
+        conflicts = response.Warnings;
+        StateHasChanged();
+    }
+
+    private List<int> GetEmployeeIdsFromEvent()
+    {
+        var ids = new List<int>();
+
+        if (Model.PlaysWithRoles != null)
+        {
+            foreach (var play in Model.PlaysWithRoles)
+            {
+                foreach (var role in play.RoleGroups)
+                {
+                    foreach (var employee in role.Employees)
+                    {
+                        if (employee.EmployeeId > 0 && !ids.Contains(employee.EmployeeId))
+                        {
+                            ids.Add(employee.EmployeeId);
+                        }
+                    }
+                }
+            }
+        }
+
+        return ids;
+    }
+
+    private bool HasEmployeeConflict(int employeeId)
+    {
+        return conflicts.Any(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
+    }
+
+    private string GetEmployeeConflictMessage(int employeeId)
+    {
+        var conflict = conflicts.FirstOrDefault(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
+        return conflict?.Message ?? "";
     }
 
     private async Task GiveAccess()

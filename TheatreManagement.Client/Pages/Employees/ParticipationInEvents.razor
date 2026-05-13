@@ -5,14 +5,25 @@
 <PageTitle>Участие в мероприятиях</PageTitle>
 
 
-<PageTitle>Мероприятия</PageTitle>
+<PageTitle>"Мероприятия"</PageTitle>
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>@pageTitle</PageHeaderTitle>
+</PageHeader>
+
 
 <div class="events-calendar-page">
     <Calendar Value="currentDate"
-              DateCellRender="DateCellRender"
-              HeaderRender="CustomHead"
-              OnSelect="OnDateSelect"
-              CultureInfo="@CultureInfo.InvariantCulture" />
+    DateCellRender="DateCellRender"
+    HeaderRender="CustomHead"
+    OnSelect="OnDateSelect"
+    CultureInfo="@CultureInfo.InvariantCulture" />
 </div>
 
 @inject EmployeeService employeeService
@@ -23,8 +34,7 @@
     private DateTime currentDate = DateTime.Now;
     private List<EventGetModel> allEvents = new();
     private bool isLoading = false;
-
-    private bool _createReportModalVisible = false;
+    private string pageTitle = "";
 
     private async Task OnModalSuccess()
     {
@@ -144,14 +154,9 @@
                         <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
                     </Button>
                 </div>
-
-                <Button Type="ButtonType.Primary" OnClick="@(() => _createReportModalVisible = true)">
-                    Отчет
-                    <Icon Type="@IconType.Outline.Right" />
-                </Button>
-
             </div>
-        </Template>;
+        </Template>
+    ;
     }
 
     private void OnDateSelect(DateTime date)
@@ -184,6 +189,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadEventsForMonth(currentDate);
+        await LoadEmployeeName();
     }
 
     private RenderFragment DateCellRender(DateTime value)
@@ -222,6 +228,21 @@
         </Template>
     ;
     }
+
+    private async Task LoadEmployeeName()
+    {
+        try
+        {
+            var employee = await employeeService.GetEmployeeAsync(Id);
+            pageTitle = $"Расписание сотрудника {employee.FullName}";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки сотрудника: {ex.Message}");
+            pageTitle = "Мероприятия сотрудника";
+        }
+    }
+
 
     private void GoBack()
     {

@@ -19,6 +19,21 @@ namespace TheatreManagement.Shared.ConflictChecker
     public class ConflictCheckResponse
     {
         public bool HasConflicts { get; set; }
-        public List<string> Warnings { get; set; } = new();
+        public List<Warning> Warnings { get; set; } = new();
+    }
+
+    public class Warning
+    {
+        public ConflictType Type { get; set; }
+        public string Message { get; set; }
+        public int EmployeeId { get; set; }
+    }
+
+    public enum ConflictType
+    {
+        HallConflict,
+        EmployeeConflict,
+        InvalidTime,
+        TooLong,
     }
 }

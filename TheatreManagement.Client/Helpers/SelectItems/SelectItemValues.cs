@@ -21,5 +21,14 @@
             new SelectItem<string> { Name = "Гастроли", Value = "tour" },
             new SelectItem<string> { Name = "Выезд", Value = "visit" }
         };
+
+        //Для отчетов
+        static public List<SelectItem<string>> ReportEventTypes = new()
+        {
+            new SelectItem<string> { Name = "Все", Value = "all" },
+            new SelectItem<string> { Name = "Стационар", Value = "stationar" },
+            new SelectItem<string> { Name = "Гастроли", Value = "tour" },
+            new SelectItem<string> { Name = "Выезд", Value = "visit" },
+        };
     }
 }

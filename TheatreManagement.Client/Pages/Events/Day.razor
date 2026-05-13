@@ -8,7 +8,7 @@
 <PageHeader>
     <PageHeaderTitle>@pageHeader</PageHeaderTitle>
     <BackIconTemplate>
-        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+        <Button Type="ButtonType.Primary">
             <Icon Type="@IconType.Outline.Left" />
             Назад
         </Button>
@@ -29,6 +29,20 @@
                     Bordered="true">
                     <Extra>
                         @e.Stationar?.Type
+                    </Extra>
+                    <Extra>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>@e.Stationar?.Type</span>
+                                @if (e.HasConflict)
+                                {
+                                <Tooltip Title="Есть конфликты в расписании">
+                                    <Icon Type="@IconType.TwoTone.Warning"
+                                          Theme="IconThemeType.TwoTone"
+                                          TwoToneColor="#faad14"
+                                          Style="font-size: 18px; cursor: pointer;" />
+                                </Tooltip>
+                                }
+                        </div>
                     </Extra>
                     <Body>
                     @if (e.Plays != null && e.Plays.Any())
@@ -59,26 +73,40 @@
                 <Card class="@(e.IsCanceled ? "card-cancelled" : "card-visit")"
                     Bordered="true"
                     Title="@e.StationarTimePeriod">
-
-                        @if (e.Plays != null && e.Plays.Any())
-                        {
-                            @foreach (var p in e.Plays)
+                    <Extra>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                                @if (e.HasConflict)
+                                {
+                                <Tooltip Title="Есть конфликты в расписании">
+                                    <Icon Type="@IconType.TwoTone.Warning"
+                                          Theme="IconThemeType.TwoTone"
+                                          TwoToneColor="#faad14"
+                                          Style="font-size: 18px; cursor: pointer;" />
+                                </Tooltip>
+                                }
+                        </div>
+                    </Extra>
+                    <Body>
+                            @if (e.Plays != null && e.Plays.Any())
                             {
-                            <div>
-                                <strong>@p.Name</strong>
-                            </div>
+                                @foreach (var p in e.Plays)
+                                {
+                                <div>
+                                    <strong>@p.Name</strong>
+                                </div>
+                                }
                             }
-                        }
                         <div>
-                            @e.Institution?.Name
+                                @e.Institution?.Name
                         </div>
                         <div>
                             <span>
-                               г.@(e.Institution?.Town ?? "")
-                               ул.@(e.Institution?.Street ?? "")
-                               дом @(e.Institution?.House ?? "")
+                                г.@(e.Institution?.Town ?? "")
+                                ул.@(e.Institution?.Street ?? "")
+                                дом @(e.Institution?.House ?? "")
                             </span>
                         </div>
+                    </Body>
                 </Card>
             </div>
             }
@@ -94,17 +122,32 @@
                 <Card class="@(e.IsCanceled ? "card-cancelled" : "card-tour")"
                   Bordered="true"
                   Title="@e.StationarTimePeriod">
-                        @if (e.Plays != null && e.Plays.Any())
-                        {
-                            @foreach (var p in e.Plays)
+                    <Extra>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                                @if (e.HasConflict)
+                                {
+                                <Tooltip Title="Есть конфликты в расписании">
+                                    <Icon Type="@IconType.TwoTone.Warning"
+                                          Theme="IconThemeType.TwoTone"
+                                          TwoToneColor="#faad14"
+                                          Style="font-size: 18px; cursor: pointer;" />
+                                </Tooltip>
+                                }
+                        </div>
+                    </Extra>
+                    <Body>
+                            @if (e.Plays != null && e.Plays.Any())
                             {
-                            <div>
-                                <strong>@p.Name</strong>
-                            </div>
+                                @foreach (var p in e.Plays)
+                                {
+                                <div>
+                                    <strong>@p.Name</strong>
+                                </div>
+                                }
                             }
-                        }
-                            <div>@(e.Tour?.Country ?? "")</div>
-                            <div>@(e.Tour?.Area ?? "")</div>
+                        <div>@(e.Tour?.Country ?? "")</div>
+                        <div>@(e.Tour?.Area ?? "")</div>
+                    </Body>
                 </Card>
             </div>
             }
@@ -167,8 +210,4 @@
         navManager.NavigateTo($"/events/{DateString}/details/{eventId}");
     }
 
-    private void GoBack()
-    {
-        navManager.NavigateTo("/events");
-    }
 }

@@ -19,9 +19,7 @@
     </PageHeaderExtra>
 </PageHeader>
 
-
-
-<Card Title=@fullName>
+<Card Title=@employee.FullName>
     <Extra>
         <AuthorizeView Roles="MainAdmin">
             <Authorized>
@@ -50,22 +48,61 @@
             }
         </CardGrid>
 
+        @* Участие *@
+
         <CardGrid Style="width:50%;text-align:center">
             <Button Type="ButtonType.Link"
-                    OnClick="@(() => navManager.NavigateTo($"/employees/{Id}/partincasts"))">
-                Участие в составах
+            OnClick="@(() => navManager.NavigateTo($"/employees/{Id}/partincasts"))">
+                Участие в составах (@castsCount)
                 <Icon Type="@IconType.Outline.Right" />
             </Button>
-        </CardGrid>
-        <CardGrid Style="width:50%;text-align:center">
-            <Button Type="ButtonType.Link"
-                    OnClick="@(() => navManager.NavigateTo($"/employees/{Id}/partinevents"))">
-                Участие в мероприятиях
-                <Icon Type="@IconType.Outline.Right" />
-            </Button>
+
+            @foreach( var part in previewCasts)
+            {
+                <Card BodyStyle="padding: 0px;" Title="@part.PlayName">
+                    @foreach (var cast in part.Casts)
+                    {
+                        <CardGrid Style="width:50%;text-align:center;padding: 3px;">
+                            @cast.CastName
+                        </CardGrid>
+                        <CardGrid Style="width:50%;text-align:center;padding: 3px;">
+                            @foreach (var role in cast.Roles)
+                            {
+                                <p>@role</p>
+                            }
+                        </CardGrid>
+                    }
+                </Card>
+            }
         </CardGrid>
 
-    <p>Последнее изменение: @employee.LastEditTime.ToString() - @employee.UserFullName.ToString()</p>
+        <CardGrid Style="width:50%;text-align:center">
+            <Button Type="ButtonType.Link"
+            OnClick="@(() => navManager.NavigateTo($"/employees/{Id}/partinevents"))">
+                Участие в мероприятиях (@eventsCount)
+                <Icon Type="@IconType.Outline.Right" />
+            </Button>
+            @foreach (var ev in previewEvents)
+            {
+                <Card BodyStyle="padding: 0px;" Title="@GetEventTitle(ev)">
+                    @if (ev.Plays != null && ev.Plays.Any())
+                    {
+                        <CardGrid Style="width:50%;text-align:center;padding: 3px;">
+                        @foreach (var play in ev.Plays.Take(2))
+                        {
+                                <p>@play.Name</p>
+                        }
+                        </CardGrid>
+                        <CardGrid Style="width:50%;text-align:center;padding: 3px;">
+                            <span>@GetEventLocation(ev)</span>
+                        </CardGrid>
+                    }
+                </Card>
+            }
+
+        </CardGrid>
+
+        <p>Последнее изменение: @employee.LastEditTime.ToString() - @employee.UserFullName.ToString()</p>
     </Body>
 </Card>
 
@@ -74,18 +111,57 @@ EmployeeId="@Id"
 OnSuccess="@OnEmployeeEdit" />
 
 <CreateReportModal @bind-Visible="_createReportModalVisible"
-                   EmployeeId="@Id" />
+EmployeeId="@Id"
+Title="@_reportModalTitle"/>
+
 
 @inject EmployeeService employeeService
 @inject NavigationManager navManager
 @code {
     [Parameter] public int Id { get; set; }
+    private string _reportModalTitle = "";
 
     private EmployeeDto employee = new();
-    private string fullName = "";
+
+    private List<EmployeePlays> previewCasts = new();
+    private int castsCount = new();
+
+    private List<EventGetModel> previewEvents = new();
+    private int eventsCount = new();
+
+
     private bool _createReportModalVisible = false;
 
     private bool editModalVisible = false;
+
+    private string GetEventTitle(EventGetModel ev)
+    {
+        var timeRange = $"{ev.StartTime:dd.MM.yyyy HH:mm} - {ev.EndTime:dd.MM.yyyy HH:mm}";
+        return $"{timeRange} | {GetEventTypeName(ev.Type)}";
+    }
+
+    private string GetEventLocation(EventGetModel ev)
+    {
+        if (ev.Type == "stationar" && ev.Stationar != null)
+            return ev.Stationar.Hall;
+        else if (ev.Type == "tour" && ev.Tour != null)
+            return $"{ev.Tour.Country}, {ev.Tour.Area}";
+        else if (ev.Type == "visit" && ev.Institution != null)
+            return ev.Institution.Name;
+        return "";
+    }
+
+    private string GetEventTypeName(string type)
+    {
+        return type switch
+        {
+            "stationar" => "Стационар",
+            "tour" => "Гастроли",
+            "visit" => "Выезд",
+            _ => type
+        };
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,17 +171,29 @@ OnSuccess="@OnEmployeeEdit" />
     private async Task LoadData()
     {
         employee = await employeeService.GetEmployeeAsync(Id);
-        fullName = $"{employee.Surname} {employee.Name} {employee.FatherName}";
+
+        var castResult = await employeeService.GetEmployeeCastsAsync(Id, 1, 5);
+        if (castResult != null)
+        {
+            previewCasts = castResult.Items ?? new List<EmployeePlays>();
+            castsCount = castResult.TotalCount;
+            StateHasChanged();
+        }
+
+        var eventResult = await employeeService.GetEmployeeEventsPreviewAsync(Id, 1, 5);
+        if (eventResult != null)
+        {
+            previewEvents = eventResult.Items ?? new List<EventGetModel>();
+            eventsCount = eventResult.TotalCount;
+            StateHasChanged();
+        }
+
+        _reportModalTitle = $"Создание отчета {employee.FullName}";
     }
 
     private async Task OnEmployeeEdit()
     {
         await LoadData();
-    }
-
-    private async Task CreateReport()
-    {
-
     }
 
     private async Task SoftDelete()

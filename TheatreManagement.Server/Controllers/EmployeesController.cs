@@ -249,9 +249,58 @@ namespace TheatreManagement.Server.Controllers
 
             }).ToList();
 
-
             return events;
         }
+
+        [HttpGet("{employeeId}/events/preview")]
+        public async Task<ActionResult<PagedResult<EventGetModel>>> GetEmployeeEventsPreview(
+            int employeeId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 3)
+        {
+            var query = _context.EmployeeRoles
+                .Where(er => er.EmployeeId == employeeId && er.EventId != null)
+                .Select(er => er.Event)
+                .Where(e => e != null)
+                .OrderByDescending(e => e.LastEditTime);
+
+            var totalCount = await query.CountAsync();
+
+            var events = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(e => new EventGetModel
+                {
+                    EventId = e.EventId,
+                    StartTime = e.StartTime,
+                    EndTime = e.EndTime,
+                    Type = e.Type,
+                    LastEditTime = e.LastEditTime,
+                    IsCanceled = e.IsCanceled,
+                    Plays = e.PlayEvents.Select(p => new PlayDto { Name = p.Play.Name }).ToList(),
+                    Stationar = e.Stationar != null ? new StationarDto { Hall = e.Stationar.Hall } : null,
+                    Tour = e.Tour != null ? new TourDto
+                    {
+                        Country = e.Tour.Country,
+                        Area = e.Tour.Area
+                    } : null,
+                    Institution = e.Institution != null ? new InstitutionDto
+                    {
+                        Name = e.Institution.Name,
+                        Town = e.Institution.Town,
+                        Street = e.Institution.Street,
+                        House = e.Institution.House
+                    } : null
+                })
+                .ToListAsync();
+
+            return Ok(new PagedResult<EventGetModel>
+            {
+                Items = events,
+                TotalCount = totalCount
+            });
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> PostEmployee(EmployeeDto employeeDto)

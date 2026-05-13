@@ -57,6 +57,13 @@ namespace TheatreManagement.Client.Services
                 $"api/employees/technics");
         }
 
+        // Участие сотрудников
+        public async Task<PagedResult<EventGetModel>> GetEmployeeEventsPreviewAsync(int employeeId, int page = 1, int pageSize = 3)
+        {
+            return await _httpClient.GetFromJsonAsync<PagedResult<EventGetModel>>(
+                $"api/employees/{employeeId}/events/preview?page={page}&pageSize={pageSize}");
+        }
+
         public async Task<List<EventGetModel>> GetEmployeeEventsByDateRangeAsync(DateTime startDate, DateTime endDate, int employeeId)
         {
             var start = startDate.ToString("yyyy-MM-dd");

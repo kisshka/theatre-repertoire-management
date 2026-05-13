@@ -26,7 +26,7 @@ namespace TheatreManagement.Server.Controllers
         [HttpGet("events-report")]
         public async Task<IActionResult> ExportEventsToExcel([FromQuery] string start,
                                                             [FromQuery] string end,
-                                                            [FromQuery] string? type,
+                                                            [FromQuery] string? type = null,
                                                             [FromQuery] bool includeCast = false,
                                                             [FromQuery] int? employeeId = null)
         {

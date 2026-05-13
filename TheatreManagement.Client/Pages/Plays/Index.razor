@@ -44,7 +44,7 @@ OnChange="@OnTableChange"
 OnRowClick="@OnRowClick">
 
     <PropertyColumn Property="@(c => c.Name)" Title="Название" />
-    <PropertyColumn Property="@(c => c.Duration)" Title="Длительность" />
+    <PropertyColumn Property="@(c => c.Duration)" Title="Длительность"/>
     <PropertyColumn Property="@(c => c.AgeCategory)" Title="Возрастная категория" />
     <PropertyColumn Property="c =>c.IsActive" Title="Активен">
         @if (context.IsActive)

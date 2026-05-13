@@ -5,7 +5,7 @@
 
 <PageHeader>
     <BackIconTemplate>
-        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+        <Button Type="ButtonType.Primary">
             <Icon Type="@IconType.Outline.Left" />
             Назад
         </Button>
@@ -93,8 +93,4 @@
         await LoadDataAsync(1);
     }
 
-    private void GoBack()
-    {
-        navManager.NavigateTo("/employees");
-    }
 }

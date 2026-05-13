@@ -10,6 +10,7 @@ using TheatreManagement.Shared.ConflictChecker;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Events;
 using TheatreManagement.Shared.DTOs.Employees;
+using DocumentFormat.OpenXml.InkML;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -153,12 +154,11 @@ namespace TheatreManagement.Server.Controllers
             var startTime = date.Date;
             var nextDay = startTime.AddDays(1);
 
-            // Ищем мероприятия, диапазон которых пересекается с выбранным днем
             var events = await _context.Events
-                .Where(e => e.StartTime < nextDay && e.EndTime > startTime
-                )
+                .Where(e => e.StartTime < nextDay && e.EndTime > startTime)
                 .OrderBy(e => e.StartTime)
                 .Include(e => e.PlayEvents)
+                .Include(e => e.EmployeeRoles) // Добавили Include
                 .Select(e => new EventGetModel
                 {
                     EventId = e.EventId,
@@ -167,11 +167,7 @@ namespace TheatreManagement.Server.Controllers
                     Type = e.Type,
                     LastEditTime = e.LastEditTime,
                     IsCanceled = e.IsCanceled,
-                    Plays = e.PlayEvents.Where(p => p.EventId == e.EventId )
-                                        .Select(p => new PlayDto
-                                        {
-                                           Name = p.Play.Name
-                                        }).ToList(),
+                    Plays = e.PlayEvents.Select(p => new PlayDto { Name = p.Play.Name }).ToList(),
                     Stationar = e.Stationar != null ? new StationarDto
                     {
                         StationarId = e.Stationar.StationarId,
@@ -191,11 +187,13 @@ namespace TheatreManagement.Server.Controllers
                         Town = e.Institution.Town,
                         Street = e.Institution.Street,
                         House = e.Institution.House
-                    } : null
+                    } : null,
+                    EmployeeRoles = e.EmployeeRoles.Select(er => er.EmployeeId).ToList()
                 })
                 .ToListAsync();
 
-
+            // Просто проверяем и отмечаем HasConflict
+            SimpleCheckConflicts(events);
 
             return Ok(events);
         }
@@ -229,6 +227,13 @@ namespace TheatreManagement.Server.Controllers
                 })
                 .ToListAsync();
 
+            SimpleCheckConflicts(events);
+
+            return Ok(events);
+        }
+
+        private void SimpleCheckConflicts(List<EventGetModel> events)
+        {
             // Проверка конфликтов в зале
             var hallEvents = events.Where(e => e.Type == "stationar" && e.Stationar != null).ToList();
             for (int i = 0; i < hallEvents.Count; i++)
@@ -247,7 +252,7 @@ namespace TheatreManagement.Server.Controllers
 
             // Проверка конфликтов сотрудников
             var employeeGroups = events
-                .SelectMany(e => e.EmployeeRoles.Select(empId => new { e.EventId, e.StartTime, e.EndTime, EmployeeId = empId }))
+                .SelectMany(e => e.EmployeeRoles.Select(empId => new { e, EmployeeId = empId }))
                 .GroupBy(x => x.EmployeeId);
 
             foreach (var group in employeeGroups)
@@ -257,27 +262,22 @@ namespace TheatreManagement.Server.Controllers
                 {
                     for (int j = i + 1; j < empEvents.Count; j++)
                     {
-                        if (empEvents[i].StartTime < empEvents[j].EndTime &&
-                            empEvents[j].StartTime < empEvents[i].EndTime)
+                        if (empEvents[i].e.StartTime < empEvents[j].e.EndTime &&
+                            empEvents[j].e.StartTime < empEvents[i].e.EndTime)
                         {
-                            var event1 = events.First(e => e.EventId == empEvents[i].EventId);
-                            var event2 = events.First(e => e.EventId == empEvents[j].EventId);
-
-                            event1.HasConflict = true;
-                            event2.HasConflict = true;
+                            empEvents[i].e.HasConflict = true;
+                            empEvents[j].e.HasConflict = true;
                         }
                     }
                 }
             }
-
-            return Ok(events);
         }
 
 
         [HttpPost("check-conflicts")]
         public async Task<ActionResult<ConflictCheckResponse>> CheckConflicts([FromBody] ConflictCheckRequest request)
         {
-            var warnings = new List<string>();
+            var warnings = new List<Warning>();
 
             var existingEvents = await _context.Events
                 .Where(e => e.StartTime < request.EndTime && e.EndTime > request.StartTime)
@@ -304,22 +304,38 @@ namespace TheatreManagement.Server.Controllers
                 var hallConflicts = existingEvents
                     .Where(e => e.Type == "stationar" && e.Hall == request.Hall &&
                                 IsConflicting(request.StartTime, request.EndTime, e.StartTime, e.EndTime))
-                    .Select(e => $"Зал '{request.Hall}' уже занят {e.StartTime:dd.MM HH:mm} - {e.EndTime:HH:mm}")
+                    .Select(e => $"{request.Hall} уже занят {e.StartTime:dd.MM HH:mm} - {e.EndTime:HH:mm}")
                     .ToList();
 
-                warnings.AddRange(hallConflicts);
+                foreach (var conflict in hallConflicts)
+                {
+                    warnings.Add(new Warning { Message = conflict, Type = ConflictType.HallConflict });
+                }
             }
 
-            // Проверка сотрудников
             if (request.EmployeeIds.Any())
             {
+
+                var employees = await _context.Employees
+                    .Where(e => request.EmployeeIds.Contains(e.EmployeeId))
+                    .ToDictionaryAsync(e => e.EmployeeId, e => $"{e.Surname} {e.Name} {e.FatherName}");
+
                 var employeeConflicts = existingEvents
                     .Where(e => e.EmployeeIds.Intersect(request.EmployeeIds).Any() &&
                                 IsConflicting(request.StartTime, request.EndTime, e.StartTime, e.EndTime))
-                    .Select(e => $"Сотрудник уже занят на мероприятии {e.StartTime:dd.MM HH:mm} - {e.EndTime:HH:mm}")
+                    .SelectMany(e => e.EmployeeIds.Intersect(request.EmployeeIds).Select(empId => new { e, empId }))
                     .ToList();
 
-                warnings.AddRange(employeeConflicts);
+                foreach (var conflict in employeeConflicts)
+                {
+                    var employeeName = employees.GetValueOrDefault(conflict.empId);
+                    warnings.Add(new Warning
+                    {
+                        Message = $"{employeeName} уже занят {conflict.e.StartTime:dd.MM HH:mm} - {conflict.e.EndTime:HH:mm}",
+                        Type = ConflictType.EmployeeConflict,
+                        EmployeeId = conflict.empId
+                    });
+                }
             }
 
             return Ok(new ConflictCheckResponse
@@ -385,45 +401,31 @@ namespace TheatreManagement.Server.Controllers
                 return NotFound($"Мероприятие с ID {eventId} не найдено");
             }
 
-            // Получаем EmployeeRoles со связанными данными
-            var employeeRoles = await _context.EmployeeRoles
-                .Where(er => er.EventId == eventId)
-                .Include(er => er.Employee)
-                .Include(er => er.RoleInPlay)
-                            .ThenInclude(c => c.Play)
-                .Include(er => er.Cast)
-                .ToListAsync();
-
-            var playsWithRoles = employeeRoles
-                //Группировка по спектаклю
-                .GroupBy(er => new { er.RoleInPlay.Play.PlayId, er.RoleInPlay.Play.Name })
-                .Select(playGroup => new PlayWithRolesDto
-                {
-                    PlayId = playGroup.Key.PlayId,
-                    PlayName = playGroup.Key.Name,
-
-                    //Группировка по ролям
-                    RoleGroups = playGroup
-                        .GroupBy(er => er.RoleInPlayId)
-                        .Select(roleGroup => new RoleGroupDto
-                        {
-                            RoleInPlayId = roleGroup.Key,
-                            RoleName = roleGroup.First().RoleInPlay?.Name,
-                            RoleType = roleGroup.First().RoleInPlay?.Type,
-                            Employees = roleGroup
-                                .Select(er => new EmployeeDto
-                                {
-                                    EmployeeId = er.EmployeeId,
-                                    Surname = er.Employee?.Surname,
-                                    Name = er.Employee?.Name,
-                                    FatherName = er.Employee?.FatherName,
-                                    Post = er.Employee?.Post
-                                })
-                                //.DistinctBy(e => e.EmployeeId)
-                                .ToList()
-                        }).ToList()
-                })
-                .ToList();
+            var playsWithRoles = await _context.PlayEvents
+               .Where(pe => pe.EventId == eventId)
+               .Select(pe => new PlayWithRolesDto
+               {
+                   PlayId = pe.Play.PlayId,
+                   PlayName = pe.Play.Name,
+                   RoleGroups = pe.Play.RoleInPlays.Select(role => new RoleGroupDto
+                   {
+                       RoleInPlayId = role.RoleInPlayId,
+                       RoleName = role.Name,
+                       RoleType = role.Type,
+                       Employees = _context.EmployeeRoles
+                           .Where(er => er.EventId == eventId && er.RoleInPlayId == role.RoleInPlayId)
+                           .Select(er => new EmployeeDto
+                           {
+                               EmployeeId = er.EmployeeId,
+                               Surname = er.Employee.Surname,
+                               Name = er.Employee.Name,
+                               FatherName = er.Employee.FatherName,
+                               Post = er.Employee.Post
+                           })
+                           .ToList()
+                   }).ToList()
+               })
+               .ToListAsync();
 
             eventEntity.PlaysWithRoles = playsWithRoles;
 

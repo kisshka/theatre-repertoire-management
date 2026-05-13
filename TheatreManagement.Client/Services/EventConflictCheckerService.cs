@@ -23,7 +23,7 @@ namespace TheatreManagement.Client.Services
                 return await response.Content.ReadFromJsonAsync<ConflictCheckResponse>();
             }
 
-            return new ConflictCheckResponse { HasConflicts = false, Warnings = new List<string>() };
+            return new ConflictCheckResponse { HasConflicts = false, Warnings = new List<Warning>() };
         }
 
     }

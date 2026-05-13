@@ -1,9 +1,4 @@
-﻿@using AntDesign
-@using Microsoft.AspNetCore.Components.Forms
-@using TheatreManagement.Shared.DTOs
-@using TheatreManagement.Shared.DTOs.Users
-
-<Modal Visible="@Visible"
+﻿<Modal Visible="@Visible"
        OkButtonProps="@(new ButtonProps { Disabled = Submitting })"
        Title="Добавление пользователя"
        OnOk="HandleOk"
@@ -137,7 +132,6 @@
             error = "Что-то пошло не так";
         }
     }
-
 
     private void ResetForm()
     {

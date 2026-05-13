@@ -6,68 +6,40 @@ namespace TheatreManagement.Client.Services
     {
         private readonly HttpClient _httpClient;
         private readonly NavigationManager _navManager;
+        private readonly IConfiguration _configuration;
 
-        public ReportService(HttpClient httpClient)
+        public ReportService(HttpClient httpClient, NavigationManager navManager, IConfiguration configuration)
         {
             _httpClient = httpClient;
+            _navManager = navManager;
+            _configuration = configuration;
         }
 
-        public async Task<ReportResult> ExportEventsToExcelAsync(
-                    DateTime startDate,
-                    DateTime endDate,
-                    string? type = null,
-                    int? employeeId = null)
+        public string GetReportUrl(DateTime startDate, DateTime endDate, string? type = null, bool includeCast = false, int? employeeId = null)
         {
-            try
-            {
-                var url = $"api/Reports/events-report?start={startDate:yyyy-MM-dd}&end={endDate:yyyy-MM-dd}";
 
-                if (!string.IsNullOrWhiteSpace(type))
-                {
-                    url += $"&type={Uri.EscapeDataString(type)}";
-                }
+            var apiBaseUrl = _configuration["WebApiAdress"];
 
-                if (employeeId.HasValue && employeeId.Value > 0)
-                {
-                    url += $"&employeeId={employeeId.Value}";
-                }
-
-                var response = await _httpClient.GetAsync(url);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    return ReportResult.Fail($"Ошибка сервера: {error}");
-                }
-
-                var fileBytes = await response.Content.ReadAsByteArrayAsync();
-                var fileName = $"Events_Report_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-
-                _navManager.NavigateTo(url, true);
-
-                return ReportResult.Success(fileName);
-            }
-            catch (Exception ex)
-            {
-                return ReportResult.Fail($"Ошибка при экспорте: {ex.Message}");
-            }
-        }
-
-
-        // В ReportService.cs
-        public string GetReportUrl(DateTime startDate, DateTime endDate, string? type = null)
-        {
-            var url = $"api/Reports/events-report?start={startDate:yyyy-MM-dd}&end={endDate:yyyy-MM-dd}";
+            var url = $"{apiBaseUrl}/api/Reports/events-report?start={startDate:yyyy-MM-dd}&end={endDate:yyyy-MM-dd}";
 
             if (!string.IsNullOrWhiteSpace(type))
             {
-                url += $"&type={Uri.EscapeDataString(type)}";
+                url += $"&type={type}";
+            }
+
+            if (includeCast)
+            {
+                url += $"&includeCast=true";
+            }
+
+            if (employeeId.HasValue && employeeId > 0)
+            {
+                url += $"&employeeId={employeeId}";
             }
 
             return url;
         }
     }
-
 
     public class ReportResult
     {
@@ -87,6 +59,5 @@ namespace TheatreManagement.Client.Services
             ErrorMessage = errorMessage
         };
     }
-
 
 }
