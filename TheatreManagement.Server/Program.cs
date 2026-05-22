@@ -50,6 +50,11 @@ namespace TheatreManagement.Server
 
             var app = builder.Build();
 
+            app.UseCors(policy => policy
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowAnyOrigin());
+
             //Создание ролей
             using (var scope = app.Services.CreateScope())
             {
@@ -66,15 +71,6 @@ namespace TheatreManagement.Server
                 }
             }
 
-            app.UseCors(policy => policy
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowAnyOrigin());
-
-            app.UseCors("BlazorClient");
-
-            app.MapIdentityApi<User>();
-
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -84,11 +80,17 @@ namespace TheatreManagement.Server
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
 
 
             app.MapControllers();
+            app.MapIdentityApi<User>();
 
+            app.MapFallbackToFile("index.html");
             app.Run();
         }
     }

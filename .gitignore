@@ -34,8 +34,8 @@ ScaffoldingReadMe.txt
 # NuGet Packages
 *.nupkg
 *.db
-.db-shm
-.db-wal
+*.db-shm
+*.db-wal
 # NuGet Symbol Packages
 *.snupkg
 

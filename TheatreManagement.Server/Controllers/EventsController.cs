@@ -87,13 +87,24 @@ namespace TheatreManagement.Server.Controllers
                         break;
 
                     case "visit":
-                        newEvent.Institution = new Institution
+                        // Выбирается существующее или создается новое
+                        if (model.Institution.InstitutionId > 0)
                         {
-                            Name = model.Institution.Name,
-                            Town = model.Institution.Town,
-                            Street = model.Institution.Street,
-                            House = model.Institution.House
-                        };
+                            var existingInstitution = await _context.Institutions
+                                .FindAsync(model.Institution.InstitutionId);
+
+                            newEvent.Institution = existingInstitution;
+                        }
+                        else
+                        {
+                            newEvent.Institution = new Institution
+                            {
+                                Name = model.Institution.Name,
+                                Town = model.Institution.Town ?? "",
+                                Street = model.Institution.Street ?? "",
+                                House = model.Institution.House ?? ""
+                            };
+                        }
                         break;
                 }
 
@@ -234,13 +245,18 @@ namespace TheatreManagement.Server.Controllers
 
         private void SimpleCheckConflicts(List<EventGetModel> events)
         {
-            // Проверка конфликтов в зале
+            foreach (var ev in events)
+            {
+                ev.HasConflict = false;
+            }
+
             var hallEvents = events.Where(e => e.Type == "stationar" && e.Stationar != null).ToList();
             for (int i = 0; i < hallEvents.Count; i++)
             {
                 for (int j = i + 1; j < hallEvents.Count; j++)
                 {
-                    if (hallEvents[i].Stationar.Hall == hallEvents[j].Stationar.Hall &&
+                    if (hallEvents[i].EventId != hallEvents[j].EventId &&
+                        hallEvents[i].Stationar?.Hall == hallEvents[j].Stationar?.Hall &&
                         hallEvents[i].StartTime < hallEvents[j].EndTime &&
                         hallEvents[j].StartTime < hallEvents[i].EndTime)
                     {
@@ -250,9 +266,9 @@ namespace TheatreManagement.Server.Controllers
                 }
             }
 
-            // Проверка конфликтов сотрудников
             var employeeGroups = events
-                .SelectMany(e => e.EmployeeRoles.Select(empId => new { e, EmployeeId = empId }))
+                .SelectMany(e => e.EmployeeRoles.Select(empId => new { Event = e, EmployeeId = empId }))
+                .Where(x => x.EmployeeId > 0)
                 .GroupBy(x => x.EmployeeId);
 
             foreach (var group in employeeGroups)
@@ -262,11 +278,12 @@ namespace TheatreManagement.Server.Controllers
                 {
                     for (int j = i + 1; j < empEvents.Count; j++)
                     {
-                        if (empEvents[i].e.StartTime < empEvents[j].e.EndTime &&
-                            empEvents[j].e.StartTime < empEvents[i].e.EndTime)
+                        if (empEvents[i].Event.EventId != empEvents[j].Event.EventId &&
+                            empEvents[i].Event.StartTime < empEvents[j].Event.EndTime &&
+                            empEvents[j].Event.StartTime < empEvents[i].Event.EndTime)
                         {
-                            empEvents[i].e.HasConflict = true;
-                            empEvents[j].e.HasConflict = true;
+                            empEvents[i].Event.HasConflict = true;
+                            empEvents[j].Event.HasConflict = true;
                         }
                     }
                 }

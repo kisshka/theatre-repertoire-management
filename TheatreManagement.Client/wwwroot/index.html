@@ -10,15 +10,15 @@
 
     <!-- Переопределение стилей AntDesign -->
     <link href="_content/AntDesign/css/ant-design-blazor.variable.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/css/card-pages.css?v=@(DateTime.Now.Ticks)" />
-    <link rel="stylesheet" href="/css/custom-antd.css?v=@(DateTime.Now.Ticks)" />
-    <link rel="stylesheet" href="/css/calendar.css?v=@(DateTime.Now.Ticks)" />
-    <link rel="stylesheet" href="/css/table-page.css?v=@(DateTime.Now.Ticks)" />
-    <link rel="stylesheet" href="/css/login-page.css?v=@(DateTime.Now.Ticks)" />
+    <link rel="stylesheet" href="/css/card-pages.css" />
+    <link rel="stylesheet" href="/css/custom-antd.css" />
+    <link rel="stylesheet" href="/css/calendar.css" />
+    <link rel="stylesheet" href="/css/table-page.css" />
+    <link rel="stylesheet" href="/css/login-page.css" />
 
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
 
-    <link rel="stylesheet" href="/css/app.css?v=@(DateTime.Now.Ticks)" />
+    <link rel="stylesheet" href="/css/app.css" />
 
     <link rel="icon" type="image/png" href="favicon.png" />
 </head>
@@ -37,7 +37,21 @@
         <a href="." class="reload">Перезагрузить</a>
         <span class="dismiss">🗙</span>
     </div>
-    <script src="_framework/blazor.webassembly.js"></script>
+
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    <script>
+        Blazor.start({
+            webAssembly: {
+                loadBootResource: function (type, name, defaultUri, integrity) {
+                    return fetch(defaultUri, {
+                        cache: 'no-cache'
+                    });
+                }
+            }
+        }).catch(error => {
+            console.error("Ошибка загрузки Blazor:", error);
+        });
+    </script>
 
 </body>
 

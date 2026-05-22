@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
@@ -24,9 +25,16 @@ namespace TheatreManagement.Shared.DTOs.Events
     public class InstitutionDto
     {
         public int InstitutionId { get; set; }
+        [DisplayName("Название")]
         public string? Name { get; set; }
+
+        [DisplayName("Город")]
         public string? Town { get; set; }
+
+        [DisplayName("Улица")]
         public string? Street { get; set; }
+
+        [DisplayName("Дом")]
         public string? House { get; set; }
     }
 }

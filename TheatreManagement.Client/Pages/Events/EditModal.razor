@@ -565,14 +565,13 @@ Title="Назначение ролей">
     private List<EmployeeDto> actors = new();
     private List<EmployeeDto> technics = new();
 
-    // Новая структура - список назначений вместо словаря
     private List<EmployeeRoleSelectDto> tempSelections = new();
 
     private int currentPlayEventIndex = -1;
     private int currentPlayId = 0;
     private string currentPlayName = "";
 
-    // Переменные для подгрузки сотрудников из каста
+    // Переменные для подгрузки сотрудников из состава
     private List<CastDto> currentPlayCasts = new();
     private int selectedCastId;
     private CastWithRolesDto selectedCast = new();
@@ -602,7 +601,7 @@ Title="Назначение ролей">
 
             currentPlayCasts = await playService.GetCastsAsync(playId);
 
-            // Загружаем сохраненные роли
+            //Загрузка сохраненных ролей
             LoadSavedRolesIntoTempAssignments();
 
             StateHasChanged();
@@ -713,7 +712,7 @@ Title="Назначение ролей">
         return play.RoleDtos.FirstOrDefault(r => r.RoleInPlayId == roleId)?.Name ?? "";
     }
 
-    // Вспомогательные методы для tempAssignments
+    // Вспомогательные методы для назначения состава
 
     private int GetTempAssignmentsCount(int roleId)
     {

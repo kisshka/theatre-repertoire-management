@@ -119,8 +119,7 @@
         foreach (var ev in eventsOnDay.Take(3))
         {
             string content = ev.Plays.Select(p => p.Name).FirstOrDefault() ?? "Без названия";
-            string timePeriod = ev.Type == "stationar" ? ev.StationarTimePeriod :
-                            ev.Type == "tour" ? ev.TourTimePeriod : ev.VisitTimePeriod;
+            string timePeriod = ev.GetTimePeriodForDate(date);
 
             dayData.Events.Add(new EventData
             {

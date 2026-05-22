@@ -136,7 +136,6 @@
                     }
                 </Card>
 
-
             </Card>
         }
         <p>Последнее изменение: @Model.LastEditTime.ToString() - @Model.UserFullName.ToString()</p>
@@ -174,22 +173,17 @@ EventId="@EventId"/>
 
     private string GetEventTitle()
     {
-        var timeRange = $"{Model.StartTime:dd.MM.yyyy HH:mm} - {Model.EndTime:dd.MM.yyyy HH:mm}";
+        var dateInfo = Model.GetDetailsDate();
 
-        if (Model.Type == "stationar" && Model.Stationar != null)
+        var location = Model.Type switch
         {
-            return $"{timeRange} | {Model.Stationar.Hall} | {Model.Stationar.Type}";
-        }
-        else if (Model.Type == "tour" && Model.Tour != null)
-        {
-            return $"{timeRange} | Гастроли: {Model.Tour.Country}, {Model.Tour.Area}";
-        }
-        else if (Model.Type == "visit" && Model.Institution != null)
-        {
-            return $"{timeRange} | Выезд: {Model.Institution.Name}";
-        }
+            "stationar" => $"{Model.Stationar?.Hall}, {Model.Stationar?.Type}",
+            "tour" => $"{Model.Tour?.Country}, {Model.Tour?.Area}",
+            "visit" =>  $"{Model.Institution?.Name} ({Model.Institution?.Town})",
+            _ => null
+        };
 
-        return timeRange;
+        return $"{dateInfo} | {location}";
     }
 
     private async Task OnModalSuccess()

@@ -48,22 +48,8 @@ OnSuccess="OnModalSuccess"/>
         public bool IsCanceled;
     }
 
-    private string GetEventStyleByType(string eventType, bool isCanceled)
+    protected override async Task OnInitializedAsync()
     {
-        if (isCanceled) return "color: var(--canceled-text); text-decoration: line-through;";
-
-        return eventType switch
-        {
-            "stationar" => "color: var(--stationar-text);",
-            "tour" => "color: var(--tour-text);",
-            "visit" => "color: var(--visit-text);",
-            _ => "color: #000000;"
-        };
-    }
-
-    private async Task OnValueChanged(DateTime newDate)
-    {
-        currentDate = newDate;
         await LoadEventsForMonth(currentDate);
     }
 
@@ -94,6 +80,26 @@ OnSuccess="OnModalSuccess"/>
         }
     }
 
+    private string GetEventStyleByType(string eventType, bool isCanceled)
+    {
+        if (isCanceled) return "color: var(--canceled-text); text-decoration: line-through;";
+
+        return eventType switch
+        {
+            "stationar" => "color: var(--stationar-text);",
+            "tour" => "color: var(--tour-text);",
+            "visit" => "color: var(--visit-text);",
+            _ => "color: #000000;"
+        };
+    }
+
+    private async Task OnValueChanged(DateTime newDate)
+    {
+        currentDate = newDate;
+        await LoadEventsForMonth(currentDate);
+    }
+
+
     private DayData GetDayData(DateTime date)
     {
         var eventsOnDay = allEvents.Where(e =>
@@ -110,8 +116,8 @@ OnSuccess="OnModalSuccess"/>
         foreach (var ev in eventsOnDay.Take(3))
         {
             string content = ev.Plays.Select(p => p.Name).FirstOrDefault() ?? "Без названия";
-            string timePeriod = ev.Type == "stationar" ? ev.StationarTimePeriod :
-                            ev.Type == "tour" ? ev.TourTimePeriod : ev.VisitTimePeriod;
+
+            string timePeriod = ev.GetTimePeriodForDate(date);
 
             dayData.Events.Add(new EventData
                     {
@@ -180,11 +186,6 @@ OnSuccess="OnModalSuccess"/>
         currentDate = currentDate.AddMonths(-1);
         await LoadEventsForMonth(currentDate);
         StateHasChanged();
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadEventsForMonth(currentDate);
     }
 
     private RenderFragment DateCellRender(DateTime value)

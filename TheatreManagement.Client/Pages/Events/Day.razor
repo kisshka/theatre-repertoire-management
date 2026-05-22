@@ -23,8 +23,10 @@
     <Card class="events-card" Title="Стационар" Bordered="false">
             @foreach (var e in events.Where(e => e.Type == "stationar"))
             {
+            var timePeriod = e.GetTimePeriodForDate(Date);
+
             <div @onclick="() => GoToDetails(e.EventId)">
-                <Card Title="@e.StationarTimePeriod"
+                <Card Title="@timePeriod"
                     class="@(e.IsCanceled ? "card-cancelled" : "card-stationar")"
                     Bordered="true">
                     <Extra>
@@ -69,10 +71,12 @@
     <Card class="events-card" Title="Выезды" Bordered="false">
             @foreach (var e in events.Where(e => e.Type == "visit"))
             {
+                var timePeriod = e.GetTimePeriodForDate(Date);
+
             <div @onclick="() => GoToDetails(e.EventId)">
                 <Card class="@(e.IsCanceled ? "card-cancelled" : "card-visit")"
                     Bordered="true"
-                    Title="@e.StationarTimePeriod">
+                      Title="@timePeriod">
                     <Extra>
                         <div style="display: flex; align-items: center; gap: 8px;">
                                 @if (e.HasConflict)
@@ -118,10 +122,12 @@
     <Card class="events-card" Title="Гастроли" Bordered="false">
             @foreach (var e in events.Where(e => e.Type == "tour"))
             {
+                var timePeriod = e.GetTimePeriodForDate(Date);
+
             <div @onclick="() => GoToDetails(e.EventId)">
                 <Card class="@(e.IsCanceled ? "card-cancelled" : "card-tour")"
                   Bordered="true"
-                  Title="@e.StationarTimePeriod">
+                      Title="@timePeriod">
                     <Extra>
                         <div style="display: flex; align-items: center; gap: 8px;">
                                 @if (e.HasConflict)

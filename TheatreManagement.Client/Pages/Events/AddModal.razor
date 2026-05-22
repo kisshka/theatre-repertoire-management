@@ -41,16 +41,16 @@ MaskClosable="@false">
             <Divider>Стационар</Divider>
 
             <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
-            <FormItem Label="Зал" Required 
+                <FormItem Label="Зал" Required 
                 Style="width: 100%; max-width: 300px;">
-                <Select Mode="SelectMode.Default"
-                DataSource="@SelectItemValues.HallTypes"
-                @bind-Value="@selectedHall"
-                LabelName="Name"
-                ValueName="Value"
-                Placeholder="Выберите зал">
-                </Select> 
-            </FormItem>
+                    <Select Mode="SelectMode.Default"
+                    DataSource="@SelectItemValues.HallTypes"
+                    @bind-Value="@selectedHall"
+                    LabelName="Name"
+                    ValueName="Value"
+                    Placeholder="Выберите зал">
+                    </Select> 
+                </FormItem>
 
                 @if (employeeConflicts.Where(ec => ec.Type == ConflictType.HallConflict).Any())
                 {
@@ -59,14 +59,12 @@ MaskClosable="@false">
 
                     <Tooltip Title="@hallMessage">
                         <Icon Type="@IconType.TwoTone.Warning"
-                              Theme="IconThemeType.TwoTone"
-                              TwoToneColor="#faad14"
-                              Style="font-size: 20px; cursor: pointer;" />
+                        Theme="IconThemeType.TwoTone"
+                        TwoToneColor="#faad14"
+                        Style="font-size: 20px; cursor: pointer;" />
                     </Tooltip>
                 }
             </div>
-
-
 
             <FormItem Label="Тип выступления" Required>
                 <Select Mode="SelectMode.Default"
@@ -97,22 +95,27 @@ MaskClosable="@false">
         @if (selectedEventType == "visit")
         {
             <Divider>Учреждение</Divider>
+
             <FormItem Label="Название" Required>
-                <Input @bind-Value="@Model.Institution.Name" />
+                <AutoComplete @bind-Value="@Model.Institution.Name"
+                OnInput="OnSearch"
+                Options="@institutionOptions"
+                OnSelectionChange="OnInstitutionChange"
+                OnActiveChange="OnInstitutionSelect"
+                Placeholder="Введите название нового учреждения или выберите из списка" />
             </FormItem>
             <FormItem Label="Город" Required>
-                <Input @bind-Value="@Model.Institution.Town" />
+                <Input @bind-Value="@Model.Institution.Town" Disabled="@isInstitutionSelected"/>
             </FormItem>
             <FormItem Label="Улица" Required>
-                <Input @bind-Value="@Model.Institution.Street" />
+                <Input @bind-Value="@Model.Institution.Street" Disabled="@isInstitutionSelected" />
             </FormItem>
             <FormItem Label="Дом" Required>
-                <Input @bind-Value="@Model.Institution.House" />
+                <Input @bind-Value="@Model.Institution.House" Disabled="@isInstitutionSelected" />
             </FormItem>
         }
 
         <!-- Сообщение об ошибке -->
-
         @if (error.Length > 0)
         {
             <Alert Type="AlertType.Error"
@@ -314,12 +317,15 @@ Title="Назначение ролей">
     [Parameter] public EventCallback OnSuccess { get; set; }
     [Parameter] public DateTime EventDate { get; set; }
 
+    // Мои сервисы
     [Inject] private AuthenticationStateProvider provider { get; set; }
     [Inject] private PlayService playService { get; set; }
     [Inject] private EmployeeService employeeService { get; set; }
     [Inject] private EventService eventService { get; set; }
-    [Inject] private IMessageService messageService { get; set; }
+    [Inject] private InstitutionService institutionService { get; set; }
     [Inject] private EventConflictCheckerService _conflictChecker { get; set; }
+
+    [Inject] private IMessageService messageService { get; set; }
 
     private Form<EventPostModel> FormRef { get; set; }
     private EventPostModel Model { get; set; } = new();
@@ -330,6 +336,75 @@ Title="Назначение ролей">
 
     private DateTime[] dateRange = new DateTime[2];
     private string userRole;
+
+    // Для выезда
+    private string institutionSearchText = "";
+    private List<string> institutionOptions = new();
+    private List<InstitutionDto> institutions = new();
+    private AutoCompleteOption selectInstitutionItem;
+    private AutoCompleteOption activeInstitutionItem;
+    private bool isInstitutionSelected = false;
+
+    private async Task OnSearch(ChangeEventArgs e)
+    {
+        var searchText = e.Value?.ToString() ?? "";
+        institutionSearchText = searchText;
+
+        isInstitutionSelected = false;
+
+        institutions = await institutionService.SearchInstitutionsAsync(searchText);
+        institutionOptions = institutions.Select(i => i.Name).ToList();
+        StateHasChanged();
+    }
+
+    private void OnInstitutionChange(AutoCompleteOption item)
+    {
+        if (item != null)
+        {
+            var selectedInstitution = institutions.FirstOrDefault(i => i.Name == item.Value);
+            if (selectedInstitution != null)
+            {
+                Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
+                Model.Institution.Name = selectedInstitution.Name;
+                Model.Institution.Town = selectedInstitution.Town;
+                Model.Institution.Street = selectedInstitution.Street;
+                Model.Institution.House = selectedInstitution.House;
+                Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
+                isInstitutionSelected = true;
+            }
+        }
+    }
+
+    private void OnInstitutionSelect(AutoCompleteOption item)
+    {
+        if (item == null) return;
+
+        var selectedInstitution = institutions.FirstOrDefault(i => i.Name == item.Value);
+
+        if (selectedInstitution != null)
+        {
+            Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
+            Model.Institution.Name = selectedInstitution.Name;
+            Model.Institution.Town = selectedInstitution.Town;
+            Model.Institution.Street = selectedInstitution.Street;
+            Model.Institution.House = selectedInstitution.House;
+            Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
+
+            isInstitutionSelected = true;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task<bool> IsInstitutionNameUnique(string name, int? currentId = null)
+    {
+        var existing = await institutionService.GetInstitutionByNameAsync(name);
+
+        if (currentId.HasValue && existing?.InstitutionId == currentId.Value)
+            return true;
+
+        return existing == null;
+    }
 
     // Для стационара
     private string _selectedHall = "";
@@ -414,7 +489,6 @@ Title="Назначение ролей">
         }
 
         // Загрузка остальных добавленных сотрудников
-        //Возможно потом нужно убрать
         if (Model?.PlayEvents != null)
         {
             foreach (var playEvent in Model.PlayEvents)
@@ -457,6 +531,9 @@ Title="Назначение ролей">
         dateRange[0] = EventDate;
         dateRange[1] = EventDate.AddHours(23);
         availablePlays = await playService.GetPlaysAsync();
+        institutions = await institutionService.SearchInstitutionsAsync(institutionSearchText);
+        institutionOptions = institutions.Select(i => i.Name).ToList();
+
     }
 
     private void AddPlayEvent()
@@ -569,7 +646,7 @@ Title="Назначение ролей">
     private int currentPlayId = 0;
     private string currentPlayName = "";
 
-    // Переменные для подгрузки сотрудников из каста
+    // Переменные для подгрузки сотрудников из состава
     private List<CastDto> currentPlayCasts = new();
     private int selectedCastId;
     private CastWithRolesDto selectedCast = new();
@@ -632,7 +709,6 @@ Title="Назначение ролей">
 
     private async Task OnSelectedItemChangedHandler()
     {
-        // Проверяем, что выбран реальный каст
         if (selectedCastId <= 0)
         {
             // tempSelections.Clear();
@@ -641,11 +717,9 @@ Title="Назначение ролей">
             return;
         }
 
-        // Получаем каст
         selectedCast = await playService.GetCastAsync(selectedCastId);
         tempSelections.Clear();
 
-        // Проверяем, что каст не null и содержит роли
         if (selectedCast == null || selectedCast.Roles == null)
         {
             // tempSelections.Clear();

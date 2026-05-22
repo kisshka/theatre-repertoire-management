@@ -41,23 +41,4 @@ namespace TheatreManagement.Client.Services
         }
     }
 
-    public class ReportResult
-    {
-        public bool IsSuccess { get; set; }
-        public string? FileName { get; set; }
-        public string? ErrorMessage { get; set; }
-
-        public static ReportResult Success(string fileName) => new()
-        {
-            IsSuccess = true,
-            FileName = fileName
-        };
-
-        public static ReportResult Fail(string errorMessage) => new()
-        {
-            IsSuccess = false,
-            ErrorMessage = errorMessage
-        };
-    }
-
 }

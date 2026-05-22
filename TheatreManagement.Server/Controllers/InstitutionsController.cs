@@ -134,26 +134,49 @@ namespace TheatreManagement.Server.Controllers
             return Ok();
         }
 
-        //[HttpPut("{employeeId}/soft-delete")]
-        //public async Task<IActionResult> SoftDeleteEmployee(int employeeId)
-        //{
-        //    var currentUser = await _userManager.GetUserAsync(User);
+        [HttpGet("search")]
+        public async Task<ActionResult<List<InstitutionDto>>> SearchInstitutions([FromQuery] string searchText = null)
+        {
 
-        //    if (currentUser == null)
-        //    {
-        //        return Unauthorized("Пользователь не авторизован");
-        //    }
-        //    var employee = await _context.Employees.Where(e => e.EmployeeId == employeeId)
-        //                                     .FirstOrDefaultAsync();
+            var query = _context.Institutions.AsQueryable();
 
-        //    employee.IsActive = false;
-        //    employee.User = currentUser;
-        //    employee.DeletionTime = DateTime.Now;
+            if (!string.IsNullOrWhiteSpace(searchText) && searchText!= string.Empty)
+            {
+                query = query.Where(i =>
+                    DataContext.CustomLike(i.Name, searchText));
+            }
 
+            var institutions = await query
+                .Select(i => new InstitutionDto
+                {
+                    InstitutionId = i.InstitutionId,
+                    Name = i.Name,
+                    Town = i.Town,
+                    Street = i.Street,
+                    House = i.House
+                })
+                .ToListAsync();
 
-        //    await _context.SaveChangesAsync();
+            return Ok(institutions);
+        }
 
-        //    return Ok();
-        //}
+        [HttpGet("by-name")]
+        public async Task<ActionResult<InstitutionDto>> GetInstitutionByName([FromQuery] string name)
+        {
+            var institution = await _context.Institutions
+                .Where(i => i.Name == name)
+                .Select(i => new InstitutionDto
+                {
+                    InstitutionId = i.InstitutionId,
+                    Name = i.Name,
+                    Town = i.Town,
+                    Street = i.Street,
+                    House = i.House
+                })
+                .FirstOrDefaultAsync();
+
+            return Ok(institution);
+        }
+
     }
 }
