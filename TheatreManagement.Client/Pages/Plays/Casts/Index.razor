@@ -12,6 +12,9 @@
     <PageHeaderTitle>Список составов</PageHeaderTitle>
 </PageHeader>
 
+<div class="casts-container">
+
+    <div class="add-cast-container">
 <AuthorizeView Roles="MainAdmin">
      <Authorized>
         <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
@@ -19,63 +22,63 @@
         </Button>
     </Authorized>
 </AuthorizeView>
-
+    </div>
 
 @if (castes != null && castes.Any())
 {
-    <p>Выберите состав, информацию о котором хотите увидеть</p>
+        <p style="font-size:18px;">Выберите состав, информацию о котором хотите увидеть</p>
+    <div class="cast-control-panel">
+        <InputGroup Compact>
 
-    <InputGroup Compact>
+                <Select TItem="CastDto"
+                        TItemValue="int"
+                        DataSource="@castes"
+                        @bind-Value="@selectedCastId" 
+                        LabelName="@nameof(CastDto.Name)"
+                        ValueName="@nameof(CastDto.CastId)"
+                        OnSelectedItemChanged="@OnSelectedItemChangedHandler">
+                </Select>
 
-            <Select TItem="CastDto"
-                    TItemValue="int"
-                    DataSource="@castes"
-                    @bind-Value="@selectedCastId"
-                    LabelName="@nameof(CastDto.Name)"
-                    ValueName="@nameof(CastDto.CastId)"
-                    OnSelectedItemChanged="@OnSelectedItemChangedHandler">
-            </Select>
+                <AuthorizeView Roles="MainAdmin">
+                    <Authorized>
+                        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+                            <Icon Type="@IconType.Outline.Edit" />
+                        </Button>
 
-            <AuthorizeView Roles="MainAdmin">
-                <Authorized>
-                    <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
-                        <Icon Type="@IconType.Outline.Edit" />
-                    </Button>
+                        <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                        </DeleteButtonWithConfirm>
+                    </Authorized>
+                </AuthorizeView>
 
-                    <DeleteButtonWithConfirm OnConfirm="SoftDelete">
-                    </DeleteButtonWithConfirm>
-                </Authorized>
-            </AuthorizeView>
+        </InputGroup>
+    </div>
+        <Card Class="cast-card">
 
-    </InputGroup>
-
-    <Card>
-
-        <Card Title="Актеры">
+            <Card Title="Актеры" Class="cast-column">
             @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Актерская"))
             {
-                <CardGrid Style="width:50%">
-                    @role.RoleName
+                    <CardGrid Class="cast-column-card-grid">
+                        <p class="rolename-text">@role.RoleName</p>
                 </CardGrid>
-                <CardGrid Style="width:50%">
+                    <CardGrid Class="cast-column-card-grid">
                     @foreach (var employee in role.Employees)
                     {
-                        <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                            <p class="employee-text">@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
                     }
                 </CardGrid>
             }
         </Card>
 
-        <Card Title="Технический состав">
+        <Card Title="Технический состав" Class="cast-column">
             @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Техническая"))
             {
-                <CardGrid Style="width:50%">
-                    @role.RoleName
+                    <CardGrid Class="cast-column-card-grid">
+                        <p class="rolename-text">@role.RoleName</p>
                 </CardGrid>
-                <CardGrid Style="width:50%">
+                    <CardGrid Class="cast-column-card-grid">
                     @foreach (var employee in role.Employees)
                     {
-                        <p>@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
+                            <p class="employee-text">@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
                     }
                 </CardGrid>
             }
@@ -89,6 +92,8 @@ else
         <p>Отсутствуют готовые составы</p>
     </Card>
 }
+
+</div>
 
 <EditCastModal @bind-Visible="@editModalVisible"
 CastId="@selectedCastId"

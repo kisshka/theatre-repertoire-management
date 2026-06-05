@@ -1,10 +1,12 @@
 ﻿@page "/events/{datestring}/details/{eventid:int}"
+@using AntDesign
+@using TheatreManagement.Shared.ConflictChecker
 @using TheatreManagement.Shared.DTOs.Events
 @using System.Globalization
 
 <PageHeader>
     <BackIconTemplate>
-        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+        <Button Type="ButtonType.Primary">
             <Icon Type="@IconType.Outline.Left" />
             Назад
         </Button>
@@ -20,10 +22,7 @@
             .Select(c => c.Message));
 
             <Tooltip Title="@hallMessage">
-                <Icon Type="@IconType.TwoTone.Warning"
-                      Theme="IconThemeType.TwoTone"
-                      TwoToneColor="#faad14"
-                      Style="font-size: 20px; cursor: pointer;" />
+                <WarningIcon />
             </Tooltip>
         }
 
@@ -83,10 +82,7 @@
                                         @if (hasConflict)
                                         {
                                             <Tooltip Title="@conflictMessage">
-                                                <Icon Type="@IconType.TwoTone.Warning"
-                                                Theme="IconThemeType.TwoTone"
-                                                TwoToneColor="#faad14"
-                                                Style="font-size: 16px; cursor: pointer;" />
+                                                <WarningIcon />
                                             </Tooltip>
                                         }
                                     </div>
@@ -119,10 +115,7 @@
                                         @if (hasConflict)
                                         {
                                             <Tooltip Title="@conflictMessage">
-                                                <Icon Type="@IconType.TwoTone.Warning"
-                                                Theme="IconThemeType.TwoTone"
-                                                TwoToneColor="#faad14"
-                                                Style="font-size: 16px; cursor: pointer;" />
+                                                <WarningIcon />
                                             </Tooltip>
                                         }
                                     </div>
@@ -187,9 +180,10 @@ EventId="@EventId"/>
     }
 
     private async Task OnModalSuccess()
-    {   
+    {
         await LoadData();
-        StateHasChanged();
+        EventTitle = GetEventTitle();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadData()
@@ -286,10 +280,5 @@ EventId="@EventId"/>
         await eventService.CancelEventAsync(EventId);
         await LoadData();
         StateHasChanged();
-    }
-
-    private void GoBack()
-    {
-        navManager.NavigateTo($"/events/{DateString}");
     }
 }

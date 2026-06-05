@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using TheatreManagement.Client.Helpers;
 
 namespace TheatreManagement.Client.Services
 {
@@ -6,19 +7,19 @@ namespace TheatreManagement.Client.Services
     {
         private readonly HttpClient _httpClient;
         private readonly NavigationManager _navManager;
-        private readonly IConfiguration _configuration;
+        private readonly ApiSettings _apiSettings;
 
-        public ReportService(HttpClient httpClient, NavigationManager navManager, IConfiguration configuration)
+        public ReportService(HttpClient httpClient, NavigationManager navManager, ApiSettings apiSettings)
         {
             _httpClient = httpClient;
             _navManager = navManager;
-            _configuration = configuration;
+            _apiSettings = apiSettings;
         }
 
         public string GetReportUrl(DateTime startDate, DateTime endDate, string? type = null, bool includeCast = false, int? employeeId = null)
         {
 
-            var apiBaseUrl = _configuration["WebApiAdress"];
+            var apiBaseUrl = _apiSettings.BaseUrl;
 
             var url = $"{apiBaseUrl}/api/Reports/events-report?start={startDate:yyyy-MM-dd}&end={endDate:yyyy-MM-dd}";
 

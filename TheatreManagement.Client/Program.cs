@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using TheatreManagement.Client;
+using TheatreManagement.Client.Helpers;
 using TheatreManagement.Client.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -17,7 +18,18 @@ builder.Services.AddScoped<InstitutionService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<EventConflictCheckerService>();
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.Configuration["WebApiAdress"]!) });
+string apiUrl;
+if (builder.HostEnvironment.IsDevelopment())
+{
+    apiUrl = builder.Configuration["WebApiAdress"]!;
+}
+else
+{
+    apiUrl = builder.Configuration["WebApiAdressRelease"]!;
+}
+ // Сохраняется для скачивания отчетов
+builder.Services.AddSingleton(new ApiSettings { BaseUrl = apiUrl });
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiUrl) });
 
 builder.Services.AddAntDesign();
 builder.Services.AddCascadingAuthenticationState();

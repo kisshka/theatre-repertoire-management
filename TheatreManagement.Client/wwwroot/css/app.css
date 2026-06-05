@@ -23,17 +23,18 @@ html, body {
     --visit-text: #0f00b3;
     --tour-text: #997a00;
     --canceled-text: #7a4033;
-    /*Переопределение*/
-
-    --ant-primary-color: #708D81;
+    /*Переопределение переменных AntDesign*/
+    --ant-primary-color: var(--primary-color);
+    --ant-primary-color-hover: var(--secondary-color);
+    --ant-primary-color-active: var(--primary-color);
+    --ant-primary-color-outline: var(--light-gray);
+    --ant-border-color-base: var(--light-gray);
     --ant-primary-1: #def2dc;
     --ant-primary-5: #309127;
-
-    --ant-primary-color-active: #D4B655;
-    --ant-primary-color-hover: #708D81;
-    --ant-primary-color-outline: #def2dc;
-
-    --ant-success-color: #52c41a;
+    /*Теги и алерты*/
+/*    --ant-success-color: #18850f;
+    --ant-success-color-deprecated-border: #36b92b;
+    --ant-success-color-deprecated-bg: #c5fcc0;*/
     --ant-warning-color: #faad14;
     --ant-error-color: #bd4a4a;
     --ant-font-size-base: 14px;
@@ -42,7 +43,6 @@ html, body {
     --ant-text-color-secondary: rgba(0, 0, 0, 0.45);
     --ant-disabled-color: rgba(0, 0, 0, 0.25);
     --ant-border-radius-base: 2px;
-    --ant-border-color-base: #d9d9d9;
 }
 
 h1 {
@@ -71,15 +71,13 @@ justify-content: space-between;
 
 .ant-btn-primary {
     color: var(--light);
-    border-color:  var(--primary-color);
-    background:  var(--primary-color);
+    border-color: var(--primary-color);
     text-shadow: none;
     box-shadow: none;
     border-radius: 5px;
 }
 .ant-btn-primary:hover, .ant-btn-primary:focus {
     border-color:   var(--secondary-color);
-    background:   var(--secondary-color);
     box-shadow: none;
 }
 
@@ -165,19 +163,19 @@ justify-content: space-between;
     margin: 20vh auto 1rem auto;
 }
 
-.loading-progress circle {
-    fill: none;
-    stroke: #e0e0e0;
-    stroke-width: 0.6rem;
-    transform-origin: 50% 50%;
-    transform: rotate(-90deg);
-}
+    .loading-progress circle {
+        fill: none;
+        stroke: var(--primary-color);
+        stroke-width: 0.6rem;
+        transform-origin: 50% 50%;
+        transform: rotate(-90deg);
+    }
 
-.loading-progress circle:last-child {
-    stroke: #1b6ec2;
-    stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
-    transition: stroke-dasharray 0.05s ease-in-out;
-}
+    .loading-progress circle:last-child {
+        stroke: var(--primary-color);
+        stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+        transition: stroke-dasharray 0.05s ease-in-out;
+    }
 
 .loading-progress-text {
     position: absolute;

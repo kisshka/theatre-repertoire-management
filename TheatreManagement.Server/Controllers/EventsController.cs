@@ -169,7 +169,7 @@ namespace TheatreManagement.Server.Controllers
                 .Where(e => e.StartTime < nextDay && e.EndTime > startTime)
                 .OrderBy(e => e.StartTime)
                 .Include(e => e.PlayEvents)
-                .Include(e => e.EmployeeRoles) // Добавили Include
+                .Include(e => e.EmployeeRoles)
                 .Select(e => new EventGetModel
                 {
                     EventId = e.EventId,
@@ -203,7 +203,7 @@ namespace TheatreManagement.Server.Controllers
                 })
                 .ToListAsync();
 
-            // Просто проверяем и отмечаем HasConflict
+            // БЫстрая проверка на наличие хотя бы одного конфликта
             SimpleCheckConflicts(events);
 
             return Ok(events);
@@ -309,7 +309,7 @@ namespace TheatreManagement.Server.Controllers
                 })
                 .ToListAsync();
 
-            // Исключаем текущее мероприятие при редактировании
+            // Исключить текущее мероприятие при редактировании
             if (request.ExcludeEventId.HasValue)
             {
                 existingEvents = existingEvents.Where(e => e.EventId != request.ExcludeEventId.Value).ToList();
@@ -330,6 +330,7 @@ namespace TheatreManagement.Server.Controllers
                 }
             }
 
+            // Проверка сотрудников
             if (request.EmployeeIds.Any())
             {
 
@@ -519,31 +520,26 @@ namespace TheatreManagement.Server.Controllers
             if (currentUser == null)
                 return Unauthorized();
 
-            // Валидация
             var validPlayEvents = model.PlayEvents.Where(pe => pe.PlayId > 0).ToList();
 
             if (!validPlayEvents.Any())
-            {
                 return BadRequest("Добавьте хотя бы один спектакль");
-            }
 
             foreach (var playEvent in validPlayEvents)
             {
                 if (playEvent.SelectedEmployees == null || !playEvent.SelectedEmployees.Any())
-                {
                     return BadRequest($"Для спектакля выберите состав");
-                }
             }
 
             try
             {
                 var editedEvent = await _context.Events
-                .Include(e => e.Stationar)
-                .Include(e => e.Tour)
-                .Include(e => e.Institution)
-                .Include(e => e.EmployeeRoles)
-                .Include(e => e.PlayEvents)
-                .FirstOrDefaultAsync(e => e.EventId == model.EventId);
+                    .Include(e => e.Stationar)
+                    .Include(e => e.Tour)
+                    .Include(e => e.Institution)
+                    .Include(e => e.EmployeeRoles)
+                    .Include(e => e.PlayEvents)
+                    .FirstOrDefaultAsync(e => e.EventId == model.EventId);
 
                 if (editedEvent == null)
                     return NotFound();
@@ -594,81 +590,89 @@ namespace TheatreManagement.Server.Controllers
                         break;
 
                     case "visit":
-                        if (editedEvent.Institution == null)
-                            editedEvent.Institution = new Institution();
-                        editedEvent.Institution.Name = model.Institution?.Name;
-                        editedEvent.Institution.Town = model.Institution?.Town;
-                        editedEvent.Institution.Street = model.Institution?.Street;
-                        editedEvent.Institution.House = model.Institution?.House;
+                        // Выбирается существующее или создается новое
+                        if (model.Institution.InstitutionId > 0)
+                        {
+                            var existingInstitution = await _context.Institutions
+                                .FindAsync(model.Institution.InstitutionId);
 
-                        if (editedEvent.Stationar != null)
-                        {
-                            _context.Stationars.Remove(editedEvent.Stationar);
-                            editedEvent.Stationar = null;
+                            editedEvent.Institution = existingInstitution;
                         }
-                        if (editedEvent.Tour != null)
+                        else
                         {
-                            _context.Tours.Remove(editedEvent.Tour);
-                            editedEvent.Tour = null;
+                            editedEvent.Institution = new Institution
+                            {
+                                Name = model.Institution.Name,
+                                Town = model.Institution.Town ?? "",
+                                Street = model.Institution.Street ?? "",
+                                House = model.Institution.House ?? ""
+                            };
                         }
                         break;
                 }
 
-                // Удаление старых связей
                 _context.EmployeeRoles.RemoveRange(editedEvent.EmployeeRoles);
-                await _context.SaveChangesAsync();
                 editedEvent.EmployeeRoles.Clear();
 
-                // Создание новых связей
+                _context.PlayEvents.RemoveRange(editedEvent.PlayEvents);
+                editedEvent.PlayEvents.Clear();
+
+                await _context.SaveChangesAsync();
+
                 foreach (var playEventDto in model.PlayEvents)
                 {
+                    if (playEventDto.PlayId > 0)
+                    {
+                        var newPlayEvent = new PlayEvent
+                        {
+                            PlayId = playEventDto.PlayId,
+                            StartTime = playEventDto.StartTime,
+                            EndTime = playEventDto.EndTime,
+                            EventId = editedEvent.EventId
+                        };
+
+                        editedEvent.PlayEvents.Add(newPlayEvent);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                var allRoleInPlays = await _context.RoleInPlays.ToListAsync();
+
+                foreach (var playEventDto in model.PlayEvents)
+                {
+                    var playEvent = editedEvent.PlayEvents
+                        .FirstOrDefault(pe => pe.PlayId == playEventDto.PlayId);
+
+                    if (playEvent == null) continue;
+
                     foreach (var assignment in playEventDto.SelectedEmployees)
                     {
-                        var roleInPlay = await _context.RoleInPlays
-                            .FirstOrDefaultAsync(r => r.RoleInPlayId == assignment.RoleInPlayId && r.PlayId == playEventDto.PlayId);
+                        var roleInPlay = allRoleInPlays
+                            .FirstOrDefault(r => r.RoleInPlayId == assignment.RoleInPlayId && r.PlayId == playEventDto.PlayId);
+
+                        if (roleInPlay == null) continue;
 
                         var employeeRole = new EmployeeRole
                         {
                             EmployeeId = assignment.EmployeeId,
                             RoleInPlayId = assignment.RoleInPlayId,
-                            Event = editedEvent
+                            EventId = editedEvent.EventId
                         };
 
-                        editedEvent.EmployeeRoles.Add(employeeRole);
-                    }
-                }
-
-                // Обновление связанных спектаклей
-                foreach (var playEventDto in model.PlayEvents)
-                {
-                    var existingPlayEvent = editedEvent.PlayEvents
-                        .FirstOrDefault(pe => pe.PlayEventId == playEventDto.PlayEventId);
-
-                    if (existingPlayEvent != null)
-                    {
-                        existingPlayEvent.StartTime = playEventDto.StartTime;
-                        existingPlayEvent.EndTime = playEventDto.EndTime;
-                    }
-                    else if (playEventDto.PlayEventId == 0 && playEventDto.PlayId > 0)
-                    {
-                        editedEvent.PlayEvents.Add(new PlayEvent
-                        {
-                            PlayId = playEventDto.PlayId,
-                            StartTime = playEventDto.StartTime,
-                            EndTime = playEventDto.EndTime
-                        });
+                        _context.EmployeeRoles.Add(employeeRole);
                     }
                 }
 
                 await _context.SaveChangesAsync();
+
+                return Ok();
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-            return Ok();
         }
-
 
         [HttpPut("{eventId}/cancel")]
         public async Task<IActionResult> CancelEvent(int eventId)

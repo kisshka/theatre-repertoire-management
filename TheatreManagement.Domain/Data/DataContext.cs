@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
 using TheatreManagement.Domain.Entities;
+using System.Runtime.CompilerServices;
 
 namespace TheatreManagement.Domain.Data
 {
@@ -22,17 +23,17 @@ namespace TheatreManagement.Domain.Data
         public virtual DbSet<Tour> Tours { get; set; }
         public override DbSet<User> Users { get; set; }
 
-        
-        [DbFunction("CustomLike")]
+        [DbFunction("CustomLike", IsBuiltIn = false)]
+        [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
         public static bool CustomLike(string text, string pattern)
         {
-            throw new NotSupportedException("This method is for EF Core only");
+            if (text == null || pattern == null) return false;
+            return text.Contains(pattern, StringComparison.OrdinalIgnoreCase);
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
 
             builder.Entity<Cast>().HasQueryFilter(i => i.DeletionTime == null);
             builder.Entity<Employee>().HasQueryFilter(i => i.DeletionTime == null);

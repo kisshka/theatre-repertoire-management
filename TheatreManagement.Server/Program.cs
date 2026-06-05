@@ -11,6 +11,7 @@ namespace TheatreManagement.Server
     {
         public static async Task Main(string[] args)
         {
+            Func<string, string, bool> customLike = DataContext.CustomLike;
             var builder = WebApplication.CreateBuilder(args);
 
             //Services
@@ -25,20 +26,18 @@ namespace TheatreManagement.Server
             // Подключение к БД
             builder.Services.AddDbContext<TheatreManagement.Domain.Data.DataContext>(options =>
             {
+                
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
                 var connection = new SqliteConnection(connectionString);
                 connection.Open();
 
                 // Кастомная функция Like
-                connection.CreateFunction("CustomLike",
-                    (string text, string pattern) =>
-                        text != null && pattern != null &&
-                        text.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0);
+                connection.CreateFunction<string, string, bool>("CustomLike",
+                    customLike);
 
                 options.UseSqlite(connection);
             });
-
 
 
             //Авторизация
@@ -47,6 +46,8 @@ namespace TheatreManagement.Server
                     .AddRoles<IdentityRole>()
                     .AddEntityFrameworkStores<DataContext>();
 
+            //Почтовый сервис
+            builder.Services.AddTransient<IEmailSender<User>, MyEmailSender>();
 
             var app = builder.Build();
 
@@ -83,14 +84,15 @@ namespace TheatreManagement.Server
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
-
+            //app.UseDefaultFiles();
 
             app.MapControllers();
             app.MapIdentityApi<User>();
 
+            app.UseBlazorFrameworkFiles();
+            app.UseStaticFiles();
             app.MapFallbackToFile("index.html");
+
             app.Run();
         }
     }

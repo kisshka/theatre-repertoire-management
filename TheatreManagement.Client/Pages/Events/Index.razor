@@ -80,18 +80,18 @@ OnSuccess="OnModalSuccess"/>
         }
     }
 
-    private string GetEventStyleByType(string eventType, bool isCanceled)
-    {
-        if (isCanceled) return "color: var(--canceled-text); text-decoration: line-through;";
+private string GetEventClassByType(string eventType, bool isCanceled)
+{
+    if (isCanceled) return "event-canceled";
 
-        return eventType switch
-        {
-            "stationar" => "color: var(--stationar-text);",
-            "tour" => "color: var(--tour-text);",
-            "visit" => "color: var(--visit-text);",
-            _ => "color: #000000;"
-        };
-    }
+    return eventType switch
+    {
+        "stationar" => "event-stationar",
+        "tour" => "event-tour",
+        "visit" => "event-visit",
+        _ => "event-default"
+    };
+}
 
     private async Task OnValueChanged(DateTime newDate)
     {
@@ -115,7 +115,7 @@ OnSuccess="OnModalSuccess"/>
 
         foreach (var ev in eventsOnDay.Take(3))
         {
-            string content = ev.Plays.Select(p => p.Name).FirstOrDefault() ?? "Без названия";
+            string content = ev.Plays.Select(p => p.Name).FirstOrDefault() ?? "";
 
             string timePeriod = ev.GetTimePeriodForDate(date);
 
@@ -188,39 +188,33 @@ OnSuccess="OnModalSuccess"/>
         StateHasChanged();
     }
 
-    private RenderFragment DateCellRender(DateTime value)
-    {
+    private RenderFragment DateCellRender(DateTime value) {
         var dayData = GetDayData(value);
         return @<Template>
-        <div style="position: relative; min-height: 70px;">
-            @if(dayData.HasConflict) 
+        <div class="calendar-cell">
+            @if(dayData.HasConflict)
             {
-            <Tooltip Title="Есть конфликты в расписании" style="position: absolute; top: 2px; right: 4px; z-index: 1;">
-                <div>
-                    <Icon Type="@IconType.TwoTone.Warning" 
-                          Theme="IconThemeType.TwoTone" 
-                          TwoToneColor="#faad14" 
-                          Style="font-size: 20px;" />
-                </div>
+                <Tooltip Title="Есть конфликты в расписании" class="conflict-tooltip">
+                    <div>
+                    <WarningIcon/>
+                    </div>
                 </Tooltip>
             }
-            <ul class="events" style="cursor: pointer; min-height: 60px;">
+            <ul class="events">
                 @foreach (var data in dayData.Events)
-                {
-                    <li key="@data.Content">
-                            <span style="font-weight:inherit;">@data.TimePeriod</span>
-                            <span style="@GetEventStyleByType(data.EventType, data.IsCanceled)">
-                                @data.Content
-                            </span>
-                    </li>
-                }
+            {
+                <li key="@data.Content" class="event-item">
+                    <span class="event-time">@data.TimePeriod</span>
+                    <span class="@GetEventClassByType(data.EventType, data.IsCanceled)">
+                        @data.Content
+                    </span>
+                </li>
+            }
             </ul>
             @if( dayData.EventsCount > 3) {
-                <p> ...еще @(dayData.EventsCount - 3)</p>
-            }
-            </div>
+            <p> ...еще @(dayData.EventsCount - 3)</p>
+        }
+        </div>
+    </Template>;}
 
-        </Template>
-    ;
-    }
 }

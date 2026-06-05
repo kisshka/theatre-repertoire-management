@@ -42,11 +42,6 @@
     text-align: center;
 }
 
-/* Выбранный день */
-.events-calendar-page .ant-picker-calendar-full .ant-picker-panel .ant-picker-cell-selected {
-    background: var(--light);
-}
-
 /* Текущий день */
 .events-calendar-page .ant-picker-calendar-full .ant-picker-panel .ant-picker-calendar-date-today {
     background: var(--light);
@@ -62,6 +57,9 @@
 .ant-picker-cell-selected
 .ant-picker-calendar-date {
     background-color: var(--light);
+}
+.events-calendar-page .ant-picker-calendar-full .ant-picker-panel .ant-picker-cell-selected {
+    background: var(--light);
 }
 
 /* Цифра выбранного дня должна остаться черной*/
@@ -132,13 +130,13 @@
     padding: 0;
 }
 
-.events-calendar-page .events .ant-badge-status {
+/*.events-calendar-page .events .ant-badge-status {
     overflow: hidden;
     white-space: nowrap;
     width: 100%;
     text-overflow: ellipsis;
     font-size: 12px;
-}
+}*/
 
 .events-calendar-page .notes-month {
     text-align: center;
@@ -217,7 +215,6 @@
 
 /*ОТОБРАЖЕНИЕ КАРТОЧЕК МЕРОПРИЯТИЙ*/
 
-
 .card-stationar {
     background: var(--stationar);
     margin: 2px 0px;
@@ -257,4 +254,50 @@
 .events-card {
     padding: 0;
     margin: 0;
+}
+
+/*Ячейка календаря*/
+.calendar-cell {
+    position: relative;
+    min-height: 70px;
+}
+
+.conflict-tooltip {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    z-index: 1;
+}
+
+.events-list {
+    cursor: pointer;
+    min-height: 60px;
+    text-decoration:none;
+    list-style:none;
+}
+
+.event-time {
+    font-weight: inherit;
+}
+/*Цвета мероприятий на календаре*/
+
+.event-canceled {
+    text-decoration: line-through;
+    color: var(--canceled-text);
+}
+
+.event-stationar {
+    color: var(--stationar-text);
+}
+
+.event-tour {
+    color: var(--tour-text);
+}
+
+.event-visit {
+    color: var(--visit-text);
+}
+
+.warning-icon {
+    font-size: 20px;
 }

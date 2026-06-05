@@ -56,10 +56,7 @@ MaskClosable="@false">
                     .Select(c => c.Message));
 
                     <Tooltip Title="@hallMessage">
-                        <Icon Type="@IconType.TwoTone.Warning"
-                        Theme="IconThemeType.TwoTone"
-                        TwoToneColor="#faad14"
-                        Style="font-size: 20px; cursor: pointer;" />
+                        <WarningIcon />
                     </Tooltip>
                 }
             </div>
@@ -93,19 +90,26 @@ MaskClosable="@false">
         @if (selectedEventType == "visit")
         {
             <Divider>Учреждение</Divider>
+
             <FormItem Label="Название" Required>
-                <Input @bind-Value="@Model.Institution.Name" />
+                <AutoComplete @bind-Value="@Model.Institution.Name"
+                              OnInput="OnSearch"
+                              Options="@institutionOptions"
+                              OnSelectionChange="OnInstitutionChange"
+                              OnActiveChange="OnInstitutionSelect"
+                              Placeholder="Введите название нового учреждения или выберите из списка" />
             </FormItem>
             <FormItem Label="Город" Required>
-                <Input @bind-Value="@Model.Institution.Town" />
+                <Input @bind-Value="@Model.Institution.Town" @oninput="@(e => OnInstitutionFieldChanged())" Disabled="@isInstitutionSelected" />
             </FormItem>
             <FormItem Label="Улица" Required>
-                <Input @bind-Value="@Model.Institution.Street" />
+                <Input @bind-Value="@Model.Institution.Street" @oninput="@(e => OnInstitutionFieldChanged())" Disabled="@isInstitutionSelected" />
             </FormItem>
             <FormItem Label="Дом" Required>
-                <Input @bind-Value="@Model.Institution.House" />
+                <Input @bind-Value="@Model.Institution.House" @oninput="@(e => OnInstitutionFieldChanged())" Disabled="@isInstitutionSelected" />
             </FormItem>
         }
+
 
         <!-- Спектакли -->
         <Divider>Спектакли</Divider>
@@ -138,10 +142,7 @@ MaskClosable="@false">
                 @if (hasConflict)
                 {
                     <Tooltip Title="В составе спектакля есть конфликты">
-                        <Icon Type="@IconType.TwoTone.Warning"
-                        Theme="IconThemeType.TwoTone"
-                        TwoToneColor="#faad14"
-                        Style="font-size: 18px; cursor: pointer;" />
+                        <WarningIcon />
                     </Tooltip>
                 }
 
@@ -221,10 +222,7 @@ Title="Назначение ролей">
                             @if (hasConflict && selectedEmployeeId > 0)
                             {
                                 <Tooltip Title="@GetEmployeeConflictMessage(selectedEmployeeId)">
-                                    <Icon Type="@IconType.TwoTone.Warning"
-                                    Theme="IconThemeType.TwoTone"
-                                    TwoToneColor="#faad14"
-                                    Style="font-size: 20px; cursor: pointer;" />
+                                    <WarningIcon />
                                 </Tooltip>
                             }
                         </div>
@@ -271,10 +269,7 @@ Title="Назначение ролей">
                             @if (hasConflict && selectedEmployeeId > 0)
                             {
                                 <Tooltip Title="@GetEmployeeConflictMessage(selectedEmployeeId)">
-                                    <Icon Type="@IconType.TwoTone.Warning"
-                                    Theme="IconThemeType.TwoTone"
-                                    TwoToneColor="#faad14"
-                                    Style="font-size: 20px; cursor: pointer;" />
+                                    <WarningIcon />
                                 </Tooltip>
                             }
                         </div>
@@ -303,8 +298,10 @@ Title="Назначение ролей">
     [Inject] private PlayService playService { get; set; }
     [Inject] private EmployeeService employeeService { get; set; }
     [Inject] private EventService eventService { get; set; }
-    [Inject] private IMessageService messageService { get; set; }
+    [Inject] private InstitutionService institutionService { get; set; }
     [Inject] private EventConflictCheckerService _conflictChecker { get; set; }
+
+    [Inject] private IMessageService messageService { get; set; }
 
     private Form<EventPostModel> FormRef { get; set; }
     private EventPostModel Model { get; set; } = new();
@@ -317,6 +314,89 @@ Title="Назначение ролей">
     public string error = "";
 
     private DateTime[] dateRange = new DateTime[2];
+
+    // Для выезда
+    private string institutionSearchText = "";
+    private List<string> institutionOptions = new();
+    private List<InstitutionDto> institutions = new();
+    private AutoCompleteOption selectInstitutionItem;
+    private AutoCompleteOption activeInstitutionItem;
+    private bool isInstitutionSelected = true;
+
+    private async Task OnSearch(ChangeEventArgs e)
+    {
+        var searchText = e.Value?.ToString() ?? "";
+        institutionSearchText = searchText;
+
+        isInstitutionSelected = false;
+
+        institutions = await institutionService.SearchInstitutionsAsync(searchText);
+        institutionOptions = institutions.Select(i => i.Name).ToList();
+        StateHasChanged();
+    }
+
+    private void OnInstitutionChange(AutoCompleteOption item)
+    {
+        if (item != null)
+        {
+            Model.Institution.InstitutionId = 0;
+
+            var selectedInstitution = institutions.FirstOrDefault(i => i.Name == item.Value);
+            if (selectedInstitution != null)
+            {
+                Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
+                Model.Institution.Name = selectedInstitution.Name;
+                Model.Institution.Town = selectedInstitution.Town;
+                Model.Institution.Street = selectedInstitution.Street;
+                Model.Institution.House = selectedInstitution.House;
+                Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
+                isInstitutionSelected = true;
+            }
+        }
+    }
+
+    private void OnInstitutionFieldChanged()
+    {
+        if (Model.Institution.InstitutionId > 0)
+        {
+            Model.Institution.InstitutionId = 0;
+            isInstitutionSelected = false;
+        }
+    }
+
+    private void OnInstitutionSelect(AutoCompleteOption item)
+    {
+        if (item == null) return;
+
+        Model.Institution.InstitutionId = 0;
+
+        var selectedInstitution = institutions.FirstOrDefault(i => i.Name == item.Value);
+
+        if (selectedInstitution != null)
+        {
+            Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
+            Model.Institution.Name = selectedInstitution.Name;
+            Model.Institution.Town = selectedInstitution.Town;
+            Model.Institution.Street = selectedInstitution.Street;
+            Model.Institution.House = selectedInstitution.House;
+            Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
+
+            isInstitutionSelected = true;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task<bool> IsInstitutionNameUnique(string name, int? currentId = null)
+    {
+        var existing = await institutionService.GetInstitutionByNameAsync(name);
+
+        if (currentId.HasValue && existing?.InstitutionId == currentId.Value)
+            return true;
+
+        return existing == null;
+    }
+
 
     // Для стационара
     private string _selectedHall = "";
