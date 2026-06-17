@@ -227,6 +227,53 @@ public override async Task<AuthenticationState> GetAuthenticationStateAsync()
             }
         }
 
+        public async Task<FormResult> ForgotPasswordAsync(string email)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Account/forgot", new { email });
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return new FormResult { Succeeded = true };
+                }
+
+                var error = await response.Content.ReadAsStringAsync();
+                return new FormResult { Succeeded = false, Errors = [error] };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ForgotPasswordAsync error: {ex.Message}");
+                return new FormResult { Succeeded = false, Errors = [$"Ошибка: {ex.Message}"] };
+            }
+        }
+
+        public async Task<FormResult> ResetPasswordAsync(string email, string token, string newPassword)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Account/reset", new
+                {
+                    email,
+                    token,
+                    newPassword
+                });
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return new FormResult { Succeeded = true };
+                }
+
+                var error = await response.Content.ReadAsStringAsync();
+                return new FormResult { Succeeded = false, Errors = [error] };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ResetPasswordAsync error: {ex.Message}");
+                return new FormResult { Succeeded = false, Errors = [$"Ошибка: {ex.Message}"] };
+            }
+        }
+
         //Таймер для обновления токена
         private void StartRefreshTimer()
         {
@@ -237,4 +284,3 @@ public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     }
 
 }
-

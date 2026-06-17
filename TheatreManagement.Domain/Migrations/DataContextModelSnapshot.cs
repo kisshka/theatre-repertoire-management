@@ -15,7 +15,7 @@ namespace TheatreManagement.Domain.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.23");
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
@@ -325,6 +325,9 @@ namespace TheatreManagement.Domain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("DeletionTime")
                         .HasColumnType("TEXT");
 
@@ -332,9 +335,6 @@ namespace TheatreManagement.Domain.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("InstitutionId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsCanceled")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("LastEditTime")
@@ -369,16 +369,40 @@ namespace TheatreManagement.Domain.Migrations
                     b.ToTable("Events");
                 });
 
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.HallType", b =>
+                {
+                    b.Property<int>("HallTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("HallTypeId");
+
+                    b.ToTable("HallTypes");
+                });
+
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Institution", b =>
                 {
                     b.Property<int>("InstitutionId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Comment")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("House")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("InstitutionTypeId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PhoneNumber")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Street")
@@ -389,7 +413,24 @@ namespace TheatreManagement.Domain.Migrations
 
                     b.HasKey("InstitutionId");
 
+                    b.HasIndex("InstitutionTypeId");
+
                     b.ToTable("Institutions");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.InstitutionType", b =>
+                {
+                    b.Property<int>("InstitutionTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("InstitutionTypeId");
+
+                    b.ToTable("InstitutionTypes");
                 });
 
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Play", b =>
@@ -404,8 +445,8 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<DateTime?>("DeletionTime")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Duration")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Duration")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
@@ -416,10 +457,15 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("SceneTypeId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("UserId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("PlayId");
+
+                    b.HasIndex("SceneTypeId");
 
                     b.HasIndex("UserId");
 
@@ -475,18 +521,36 @@ namespace TheatreManagement.Domain.Migrations
                     b.ToTable("RoleInPlays");
                 });
 
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.SceneType", b =>
+                {
+                    b.Property<int>("SceneTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("SceneTypeId");
+
+                    b.ToTable("SceneTypes");
+                });
+
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Stationar", b =>
                 {
                     b.Property<int>("StationarId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Hall")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("HallTypeId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Type")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("StationarId");
+
+                    b.HasIndex("HallTypeId");
 
                     b.ToTable("Stationars");
                 });
@@ -634,11 +698,30 @@ namespace TheatreManagement.Domain.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Institution", b =>
+                {
+                    b.HasOne("TheatreManagement.Domain.Entities.InstitutionType", "Type")
+                        .WithMany("Institutions")
+                        .HasForeignKey("InstitutionTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Type");
+                });
+
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Play", b =>
                 {
+                    b.HasOne("TheatreManagement.Domain.Entities.SceneType", "SceneType")
+                        .WithMany("Plays")
+                        .HasForeignKey("SceneTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Plays")
                         .HasForeignKey("UserId");
+
+                    b.Navigation("SceneType");
 
                     b.Navigation("User");
                 });
@@ -675,11 +758,19 @@ namespace TheatreManagement.Domain.Migrations
 
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Stationar", b =>
                 {
+                    b.HasOne("TheatreManagement.Domain.Entities.HallType", "HallType")
+                        .WithMany("Stationars")
+                        .HasForeignKey("HallTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("TheatreManagement.Domain.Entities.Event", "Event")
                         .WithOne("Stationar")
                         .HasForeignKey("TheatreManagement.Domain.Entities.Stationar", "StationarId");
 
                     b.Navigation("Event");
+
+                    b.Navigation("HallType");
                 });
 
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Tour", b =>
@@ -723,9 +814,19 @@ namespace TheatreManagement.Domain.Migrations
                     b.Navigation("Tour");
                 });
 
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.HallType", b =>
+                {
+                    b.Navigation("Stationars");
+                });
+
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Institution", b =>
                 {
                     b.Navigation("Events");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.InstitutionType", b =>
+                {
+                    b.Navigation("Institutions");
                 });
 
             modelBuilder.Entity("TheatreManagement.Domain.Entities.Play", b =>
@@ -742,6 +843,11 @@ namespace TheatreManagement.Domain.Migrations
             modelBuilder.Entity("TheatreManagement.Domain.Entities.RoleInPlay", b =>
                 {
                     b.Navigation("EmployeeRoles");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.SceneType", b =>
+                {
+                    b.Navigation("Plays");
                 });
 #pragma warning restore 612, 618
         }

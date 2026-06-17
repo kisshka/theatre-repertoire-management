@@ -14,7 +14,7 @@ namespace TheatreManagement.Shared.DTOs.Events
         public DateTime StartTime { get; set; }
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
         public DateTime EndTime { get; set; }
-        public bool IsCanceled { get; set; }
+        public string? CancellationReason { get; set; }
 
         public string Type { get; set; }
 

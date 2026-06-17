@@ -49,8 +49,8 @@
     <PropertyColumn Property="@(c => c.DeletionTime)" Title="Время удаления" />
 </Table>
 
-<AddModal @bind-Visible="@addModalVisible"
-          OnSuccess="@OnPlayAdded" />
+@* <AddModal @bind-Visible="@addModalVisible"
+          OnSuccess="@OnPlayAdded" /> *@
 
 @inject EmployeeService employeeService
 @inject NavigationManager navManager
@@ -99,10 +99,10 @@
         await LoadDataAsync(queryModel.PageIndex);
     }
 
-    private async Task OnPlayAdded()
-    {
-        await LoadDataAsync(currentPage);
-    }
+    // private async Task OnPlayAdded()
+    // {
+    //     await LoadDataAsync(currentPage);
+    // }
 
     private async Task LoadDataAsync(int page)
     {

@@ -21,7 +21,13 @@ namespace TheatreManagement.Domain.Data
         public virtual DbSet<RoleInPlay> RoleInPlays { get; set; }
         public virtual DbSet<Stationar> Stationars { get; set; }
         public virtual DbSet<Tour> Tours { get; set; }
+
+        public virtual DbSet<HallType> HallTypes { get; set; }
+        public virtual DbSet<InstitutionType> InstitutionTypes { get; set; }
+        public virtual DbSet<SceneType> SceneTypes { get; set; }
+
         public override DbSet<User> Users { get; set; }
+
 
         [DbFunction("CustomLike", IsBuiltIn = false)]
         [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
@@ -39,7 +45,8 @@ namespace TheatreManagement.Domain.Data
             builder.Entity<Employee>().HasQueryFilter(i => i.DeletionTime == null);
             builder.Entity<Play>().HasQueryFilter(i => i.DeletionTime == null);
             builder.Entity<Event>().HasQueryFilter(i => i.DeletionTime == null);
-            builder.Entity<User>().HasQueryFilter(i => i.DeletionTime == null);
+            // Удаленные юзеры еще нужны
+            //builder.Entity<User>().HasQueryFilter(i => i.DeletionTime == null);
 
             builder.Entity<Event>()
               .HasOne(e => e.Stationar)

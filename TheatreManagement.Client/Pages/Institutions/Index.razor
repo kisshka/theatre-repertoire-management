@@ -8,9 +8,13 @@
 
 @* Добавление учреждения *@
 <div class="table-page-header">
-    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
-        <Icon Type="@IconType.Outline.Plus" />
-    </Button>
+    <AuthorizeView Roles="MainAdmin,SystemAdmin,VisitAdmin">
+        <Authorized>
+            <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+                <Icon Type="@IconType.Outline.Plus" />
+            </Button>
+        </Authorized>
+    </AuthorizeView>
 
     <Search Placeholder="Введите название учреждения, город или улицу"
             @bind-Value="@searchText"
@@ -26,10 +30,21 @@
        @bind-PageIndex="currentPage"
        OnChange="@OnTableChange"
        OnRowClick="@OnRowClick">
-    @foreach (var column in columns)
-    {
-        <Column TData="object" DataIndex="@column"></Column>
-    }
+    
+    <PropertyColumn Property="@(c => c.Name)" Title="Название" />
+    <PropertyColumn Property="@(c => c.InstitutionTypeName)" Title="Тип учреждения" />
+    <PropertyColumn Property="@(c => c.FullAdress)" Title="Адрес" />
+    <PropertyColumn Property="@(c => c.PhoneNumber)" Title="Телефон" />
+    <Column Title="Примечание" TData="string">
+        <Template>
+            <Tooltip Title="@context.Comment" Placement="Placement.TopLeft" OverlayStyle="max-width: 250px;word-break: break-word;">
+                <div style="max-width: 250px; overflow:hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @context.Comment
+                </div>
+            </Tooltip>
+        </Template>
+    </Column>
+    
 </Table>
 
 <AddModal @bind-Visible="@addModalVisible"
@@ -39,34 +54,29 @@
            InstitutionId="@editId"
            OnSuccess="@OnInstitutionAdded" />
 
-
-@inject InstitutionService institutionService
-@inject ModalService ModalService
-@inject NavigationManager navManager
 @code {
     private bool addModalVisible = false;
     private bool editModalVisible = false;
     private int editId;
 
-    private List<InstitutionDto> institutions;
-
+    private List<InstitutionDto> institutions = new();
     private int total = 0;
     private int pageSize = 10;
     private int currentPage = 1;
     private string? searchText = null;
 
-    private async Task OnInstitutionAdded()
-    {
-        await LoadDataAsync(currentPage);
-        StateHasChanged();
-    }
-
-    // Данные для заполнения таблиц
-    string[] columns = { "Name", "Town", "Street", "House" };
+    [Inject] private InstitutionService institutionService { get; set; }
+    [Inject] private IMessageService messageService { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync(1);
+    }
+
+    private async Task OnInstitutionAdded()
+    {
+        await LoadDataAsync(currentPage);
+        StateHasChanged();
     }
 
     private async Task OnTableChange(QueryModel<InstitutionDto> queryModel)
@@ -105,5 +115,3 @@
     }
 
 }
-
-

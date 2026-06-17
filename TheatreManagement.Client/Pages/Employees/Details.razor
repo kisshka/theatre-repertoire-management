@@ -19,25 +19,37 @@
     </PageHeaderExtra>
 </PageHeader>
 
-<Card Title=@employee.FullName>
+<div class="employees-details-container">
+    <Card Title=@employee.FullName Class="employee-details-card">
     <Extra>
-        <AuthorizeView Roles="MainAdmin">
+            <AuthorizeView Roles="MainAdmin,SystemAdmin">
             <Authorized>
                 <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
                     <Icon Type="@IconType.Outline.Edit" />
                 </Button>
 
-                <DeleteButtonWithConfirm OnConfirm="SoftDelete">
-                </DeleteButtonWithConfirm>
+                    @if (employee.IsUsed)
+                    {
+                        <Tooltip Title="Сотрудник используется в мероприятиях или составах, удаление невозможно">
+                            <Button Danger Disabled="true">
+                                <Icon Type="@IconType.Outline.Delete" />
+                            </Button>
+                        </Tooltip>
+                    }
+                    else
+                    {
+                        <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                        </DeleteButtonWithConfirm>
+                    }
             </Authorized>
         </AuthorizeView>
     </Extra>
     <Body>
 
-        <CardGrid Style="width:50%;text-align:center" Hoverable="false">
+        <CardGrid Class="employee-main-info" Hoverable="false">
             Должность: @employee.Post
         </CardGrid>
-        <CardGrid Style="width:50%;text-align:center" Hoverable="false">
+            <CardGrid Class="employee-main-info" Hoverable="false">
             @if (employee.IsActive)
             {
                 <Tag Color="TagColor.Success">Присутствует</Tag>
@@ -50,8 +62,8 @@
 
         @* Участие *@
 
-        <CardGrid Style="width:50%;text-align:center">
-            <Button Type="ButtonType.Link"
+            <CardGrid Class="employee-column-card-grid">
+                <Button Style="width:100%" Type="ButtonType.Primary"
             OnClick="@(() => navManager.NavigateTo($"/employees/{Id}/partincasts"))">
                 Участие в составах (@castsCount)
                 <Icon Type="@IconType.Outline.Right" />
@@ -59,13 +71,13 @@
 
             @foreach( var part in previewCasts)
             {
-                <Card BodyStyle="padding: 0px;" Title="@part.PlayName">
+                    <Card Class="employee-prewiew-card" Title="@part.PlayName">
                     @foreach (var cast in part.Casts)
                     {
-                        <CardGrid Style="width:50%;text-align:center;padding: 3px;">
-                            @cast.CastName
+                            <CardGrid Class="employee-inner-column">
+                                <p>@cast.CastName</p>
                         </CardGrid>
-                        <CardGrid Style="width:50%;text-align:center;padding: 3px;">
+                            <CardGrid Class="employee-inner-column">
                             @foreach (var role in cast.Roles)
                             {
                                 <p>@role</p>
@@ -76,25 +88,25 @@
             }
         </CardGrid>
 
-        <CardGrid Style="width:50%;text-align:center">
-            <Button Type="ButtonType.Link"
+            <CardGrid Class="employee-column-card-grid">
+            <Button Style="width:100%" Type="ButtonType.Primary"
             OnClick="@(() => navManager.NavigateTo($"/employees/{Id}/partinevents"))">
                 Участие в мероприятиях (@eventsCount)
                 <Icon Type="@IconType.Outline.Right" />
             </Button>
             @foreach (var ev in previewEvents)
             {
-                <Card BodyStyle="padding: 0px;" Title="@GetEventTitle(ev)">
+                    <Card Class="employee-prewiew-card" Title="@GetEventTitle(ev)">
                     @if (ev.Plays != null && ev.Plays.Any())
                     {
-                        <CardGrid Style="width:50%;text-align:center;padding: 3px;">
+                            <CardGrid Class="employee-inner-column">
                         @foreach (var play in ev.Plays.Take(2))
                         {
                                 <p>@play.Name</p>
                         }
                         </CardGrid>
-                        <CardGrid Style="width:50%;text-align:center;padding: 3px;">
-                            <span>@GetEventLocation(ev)</span>
+                            <CardGrid Class="employee-inner-column">
+                            <p>@GetEventLocation(ev)</p>
                         </CardGrid>
                     }
                 </Card>
@@ -105,6 +117,7 @@
         <p>Последнее изменение: @employee.LastEditTime.ToString() - @employee.UserFullName.ToString()</p>
     </Body>
 </Card>
+</div>
 
 <EditModal @bind-Visible="@editModalVisible"
 EmployeeId="@Id"
@@ -143,7 +156,7 @@ Title="@_reportModalTitle"/>
     private string GetEventLocation(EventGetModel ev)
     {
         if (ev.Type == "stationar" && ev.Stationar != null)
-            return ev.Stationar.Hall;
+            return ev.Stationar.HallTypeName;
         else if (ev.Type == "tour" && ev.Tour != null)
             return $"{ev.Tour.Country}, {ev.Tour.Area}";
         else if (ev.Type == "visit" && ev.Institution != null)

@@ -26,9 +26,10 @@
             </Tooltip>
         }
 
-        @if (Model.IsCanceled)
+        @if (Model.CancellationReason != null)
         {
             <Tag Color="TagColor.Red">Отменено</Tag>
+            <span style="color: var(--canceled-text)">@Model.CancellationReason</span>
         }
 
         @if(IsAllow)
@@ -36,7 +37,7 @@
             <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
                 <Icon Type="@IconType.Outline.Edit" />
             </Button>
-            @if (Model.IsCanceled)
+            @if (Model.CancellationReason != null)
             {
                 <Button Type="ButtonType.Default" OnClick="@RestoreCancelEventAsync">
                     <Icon Type="@IconType.Outline.Undo" />
@@ -44,13 +45,30 @@
             }
             else
             {
-                <Button Danger OnClick="@CancelEvent" Class="danger-button">
-                    <Icon Type="@IconType.Outline.Stop" />
-                </Button>
+                <Popconfirm Title="Отмена мероприятия"
+                            OnConfirm="CancelEvent"
+                            Placement="Placement.TopRight">
+                    <TitleTemplate>
+                        <div style="min-width: 250px;">
+                                <TextArea @bind-Value="@cancellationReason"
+                                          MaxLength=55
+                                          Rows="2"
+                                          ShowCount
+                                          Placeholder="Укажите причину отмены мероприятия..." />
+                        </div>
+                    </TitleTemplate>
+                    <IconTemplate></IconTemplate>
+                    <ChildContent>
+                        <Button Danger Class="danger-button">
+                            <Icon Type="@IconType.Outline.Stop" />
+                            Отменить
+                        </Button>
+                    </ChildContent>
+                </Popconfirm>
             }
         }
 
-        <AuthorizeView Roles="MainAdmin">
+        <AuthorizeView Roles="MainAdmin, SystemAdmin">
             <Authorized>
                 <DeleteButtonWithConfirm OnConfirm="SoftDelete">
                 </DeleteButtonWithConfirm>
@@ -90,7 +108,7 @@
                             }
                             else
                             {
-                                <p style="color: #999; font-style: italic;">Не назначен</p>
+                                <p class="empty-role">Не назначен</p>
                             }
                         </CardGrid>
                     }
@@ -123,7 +141,7 @@
                             }
                             else
                             {
-                                <p style="color: #999; font-style: italic;">Не назначен</p>
+                                <p class="empty-role">Не назначен</p>
                             }
                         </CardGrid>
                     }
@@ -150,6 +168,7 @@ EventId="@EventId"/>
 
     private string EventTitle { get; set; } = "";
     private bool IsAllow { get; set; } = false;
+    private string cancellationReason = "";
 
     private EventGetModel Model = new();
     private bool editModalVisible = false;
@@ -170,10 +189,10 @@ EventId="@EventId"/>
 
         var location = Model.Type switch
         {
-            "stationar" => $"{Model.Stationar?.Hall}, {Model.Stationar?.Type}",
+            "stationar" => $"{Model.Stationar?.HallTypeName}, {Model.Stationar?.Type}",
             "tour" => $"{Model.Tour?.Country}, {Model.Tour?.Area}",
             "visit" =>  $"{Model.Institution?.Name} ({Model.Institution?.Town})",
-            _ => null
+            _ => ""
         };
 
         return $"{dateInfo} | {location}";
@@ -200,7 +219,8 @@ EventId="@EventId"/>
                 StartTime = Model.StartTime.Value,
                 EndTime = Model.EndTime.Value,
                 Type = Model.Type,
-                Hall = Model.Type == "stationar" ? Model.Stationar.Hall : null,
+                HallTypeName = Model.Type == "stationar" ? Model.Stationar.HallTypeName : "",
+                HallTypeId = Model.Type == "stationar" ? Model.Stationar.HallTypeId : -1,
                 EmployeeIds = GetEmployeeIdsFromEvent(),
                 ExcludeEventId = Model.EventId
             };
@@ -252,6 +272,7 @@ EventId="@EventId"/>
         string userRole = await authStateProvider.GetCurrentUserRoleAsync();
 
         IsAllow = userRole == "MainAdmin" ||
+                  userRole == "SystemAdmin" ||
                   (userRole == "StationarAdmin" && Model.Type == "stationar") ||
                   (userRole == "TourAdmin" && Model.Type == "tour") ||
                   (userRole == "VisitAdmin" && Model.Type == "visit");
@@ -277,7 +298,7 @@ EventId="@EventId"/>
 
     private async Task CancelEvent()
     {
-        await eventService.CancelEventAsync(EventId);
+        await eventService.CancelEventAsync(EventId, cancellationReason);
         await LoadData();
         StateHasChanged();
     }

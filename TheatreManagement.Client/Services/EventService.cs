@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using TheatreManagement.Client.Helpers;
+using TheatreManagement.Shared;
 using TheatreManagement.Shared.ConflictChecker;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Events;
@@ -86,9 +87,9 @@ namespace TheatreManagement.Client.Services
             return await _httpClient.GetFromJsonAsync<EventPostModel>($"api/events/{eventId}/for-edit");
         }
 
-        public async Task CancelEventAsync(int eventId)
+        public async Task CancelEventAsync(int eventId, string cancellationReason)
         {
-            await _httpClient.PutAsJsonAsync($"api/events/{eventId}/cancel", new { });
+            await _httpClient.PutAsJsonAsync($"api/events/{eventId}/cancel", new { cancellationReason } );
         }
         public async Task RestoreCancelEventAsync(int eventId)
         {
@@ -100,5 +101,29 @@ namespace TheatreManagement.Client.Services
             await _httpClient.PutAsJsonAsync($"api/events/{eventId}/soft-delete", new {});
         }
 
+
+        public async Task<List<HallTypeDto>> GetAllStationarTypesAsync()
+        {
+           return await _httpClient.GetFromJsonAsync<List<HallTypeDto>>($"api/events/hall-types");
+        }
+
+        public async Task<PagedResult<EventGetModel>> GetEventsPagedAsync(
+            int page = 1,
+            int pageSize = 10,
+            string? searchText = null,
+            bool isArchive = false)
+        {
+            var url = $"api/events/paged?page={page}&pageSize={pageSize}&isArchive={isArchive}";
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                url += $"&searchText={Uri.EscapeDataString(searchText)}";
+            }
+            return await _httpClient.GetFromJsonAsync<PagedResult<EventGetModel>>(url) ?? new PagedResult<EventGetModel>();
+        }
+
+        public async Task RestoreEventAsync(int eventId)
+        {
+            await _httpClient.PutAsJsonAsync($"api/events/{eventId}/restore", new { });
+        }
     }
 }

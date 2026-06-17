@@ -7,10 +7,11 @@ using System.Globalization;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
 using TheatreManagement.Shared.ConflictChecker;
-using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Server.Mappings;
 using TheatreManagement.Shared.DTOs.Employees;
-using DocumentFormat.OpenXml.InkML;
+using TheatreManagement.Shared.DTOs;
+using TheatreManagement.Shared;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -21,11 +22,25 @@ namespace TheatreManagement.Server.Controllers
         private readonly UserManager<User> _userManager;
         private readonly DataContext _context;
 
-
         public EventsController(UserManager<User> userManager, DataContext context)
         {
             _userManager = userManager;
             _context = context;
+        }
+
+        [HttpGet("hall-types")]
+        public async Task<ActionResult<List<HallTypeDto>>> GetHallTypes()
+        {
+            var hallTypes = await _context.HallTypes
+                .OrderBy(h => h.Name)
+                .Select(h => new HallTypeDto
+                {
+                    Id = h.HallTypeId,
+                    Name = h.Name
+                })
+                .ToListAsync();
+
+            return Ok(hallTypes);
         }
 
         [HttpPost]
@@ -61,7 +76,7 @@ namespace TheatreManagement.Server.Controllers
                     StartTime = model.StartTime,
                     EndTime = model.EndTime,
                     LastEditTime = DateTime.Now,
-                    IsCanceled = model.IsCanceled,
+                    CancellationReason = null,
                     User = currentUser,
                     DeletionTime = null,
                     Type = model.Type
@@ -73,7 +88,8 @@ namespace TheatreManagement.Server.Controllers
                     case "stationar":
                         newEvent.Stationar = new Stationar
                         {
-                            Hall = model.Stationar.Hall,
+                            HallType = await _context.HallTypes
+                                .FirstOrDefaultAsync(ht => ht.HallTypeId == model.Stationar.HallTypeId),
                             Type = model.Stationar.Type
                         };
                         break;
@@ -141,7 +157,7 @@ namespace TheatreManagement.Server.Controllers
                             EmployeeId = selectedEmployee.EmployeeId,
                             RoleInPlayId = selectedEmployee.RoleInPlayId,
                             Event = newEvent,
-                            CastId = playEventDto.CastId > 0 ? playEventDto.CastId : null
+                            CastId = null
                         };
 
                         _context.EmployeeRoles.Add(employeeRole);
@@ -170,37 +186,7 @@ namespace TheatreManagement.Server.Controllers
                 .OrderBy(e => e.StartTime)
                 .Include(e => e.PlayEvents)
                 .Include(e => e.EmployeeRoles)
-                .Select(e => new EventGetModel
-                {
-                    EventId = e.EventId,
-                    StartTime = e.StartTime,
-                    EndTime = e.EndTime,
-                    Type = e.Type,
-                    LastEditTime = e.LastEditTime,
-                    IsCanceled = e.IsCanceled,
-                    Plays = e.PlayEvents.Select(p => new PlayDto { Name = p.Play.Name }).ToList(),
-                    Stationar = e.Stationar != null ? new StationarDto
-                    {
-                        StationarId = e.Stationar.StationarId,
-                        Hall = e.Stationar.Hall,
-                        Type = e.Stationar.Type
-                    } : null,
-                    Tour = e.Tour != null ? new TourDto
-                    {
-                        TourId = e.Tour.TourId,
-                        Country = e.Tour.Country,
-                        Area = e.Tour.Area
-                    } : null,
-                    Institution = e.Institution != null ? new InstitutionDto
-                    {
-                        InstitutionId = e.Institution.InstitutionId,
-                        Name = e.Institution.Name,
-                        Town = e.Institution.Town,
-                        Street = e.Institution.Street,
-                        House = e.Institution.House
-                    } : null,
-                    EmployeeRoles = e.EmployeeRoles.Select(er => er.EmployeeId).ToList()
-                })
+                .Select(EventMappings.ToEventGetModelBasic)
                 .ToListAsync();
 
             // БЫстрая проверка на наличие хотя бы одного конфликта
@@ -209,6 +195,53 @@ namespace TheatreManagement.Server.Controllers
             return Ok(events);
         }
 
+        [HttpGet("paged")]
+        public async Task<ActionResult<PagedResult<EventGetModel>>> GetAllEvents([FromQuery] string? searchText = null,
+                                                                                 [FromQuery] int page = 1,
+                                                                                 [FromQuery] int pageSize = 10,
+                                                                                 [FromQuery] bool isArchive = false)
+        {
+            var query = _context.Events
+                .Include(e => e.User)
+                .Include(e => e.PlayEvents)
+                .Include(e => e.EmployeeRoles)
+                .Include(e => e.Stationar)
+                    .ThenInclude(s => s.HallType)
+                .Include(e => e.Tour)
+                .Include(e => e.Institution)
+                .AsQueryable();
+
+            if (isArchive)
+            {
+                query = query.IgnoreQueryFilters().Where(e => e.DeletionTime != null);
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                var normalizedSearch = searchText.Trim().ToLower();
+                query = query.Where(e =>
+                    DataContext.CustomLike(e.Type, normalizedSearch) ||
+                    e.PlayEvents.Any(pe => DataContext.CustomLike(pe.Play.Name, normalizedSearch)) ||
+                    (e.Stationar != null && DataContext.CustomLike(e.Stationar.Type, normalizedSearch)) ||
+                    (e.Tour != null && (DataContext.CustomLike(e.Tour.Country, normalizedSearch) || DataContext.CustomLike(e.Tour.Area, normalizedSearch))) ||
+                    (e.Institution != null && DataContext.CustomLike(e.Institution.Name, normalizedSearch)));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var events = await query
+                .OrderByDescending(e => e.LastEditTime)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(EventMappings.ToEventGetModelBasic)
+                .ToListAsync();
+
+            return Ok(new PagedResult<EventGetModel>
+            {
+                Items = events,
+                TotalCount = totalCount
+            });
+        }
 
         [HttpGet("range")]
         public async Task<ActionResult<List<EventGetModel>>> GetEventsByDateRange([FromQuery] string start, [FromQuery] string end)
@@ -224,18 +257,7 @@ namespace TheatreManagement.Server.Controllers
                 .Include(e => e.PlayEvents)
                 .Include(e => e.EmployeeRoles)
                 .OrderBy(e => e.StartTime)
-                .Select(e => new EventGetModel
-                {
-                    EventId = e.EventId,
-                    StartTime = e.StartTime,
-                    EndTime = e.EndTime,
-                    Type = e.Type,
-                    LastEditTime = e.LastEditTime,
-                    IsCanceled = e.IsCanceled,
-                    Plays = e.PlayEvents.Select(p => new PlayDto { Name = p.Play.Name }).ToList(),
-                    Stationar = e.Stationar != null ? new StationarDto { Hall = e.Stationar.Hall } : null,
-                    EmployeeRoles = e.EmployeeRoles.Select(er => er.EmployeeId).ToList()
-                })
+                .Select(EventMappings.ToEventGetModelBasic)
                 .ToListAsync();
 
             SimpleCheckConflicts(events);
@@ -256,7 +278,7 @@ namespace TheatreManagement.Server.Controllers
                 for (int j = i + 1; j < hallEvents.Count; j++)
                 {
                     if (hallEvents[i].EventId != hallEvents[j].EventId &&
-                        hallEvents[i].Stationar?.Hall == hallEvents[j].Stationar?.Hall &&
+                        hallEvents[i].Stationar?.HallTypeId == hallEvents[j].Stationar?.HallTypeId &&
                         hallEvents[i].StartTime < hallEvents[j].EndTime &&
                         hallEvents[j].StartTime < hallEvents[i].EndTime)
                     {
@@ -298,15 +320,7 @@ namespace TheatreManagement.Server.Controllers
 
             var existingEvents = await _context.Events
                 .Where(e => e.StartTime < request.EndTime && e.EndTime > request.StartTime)
-                .Select(e => new EventConflictPreview
-                {
-                    EventId = e.EventId,
-                    StartTime = e.StartTime,
-                    EndTime = e.EndTime,
-                    Type = e.Type,
-                    Hall = e.Stationar != null ? e.Stationar.Hall : null,
-                    EmployeeIds = e.EmployeeRoles.Select(er => er.EmployeeId).ToList()
-                })
+                .Select(EventMappings.ToEventConflictPreview)
                 .ToListAsync();
 
             // Исключить текущее мероприятие при редактировании
@@ -316,12 +330,12 @@ namespace TheatreManagement.Server.Controllers
             }
 
             // Проверка залов
-            if (request.Type == "stationar" && !string.IsNullOrEmpty(request.Hall))
+            if (request.Type == "stationar" && !string.IsNullOrEmpty(request.HallTypeName))
             {
                 var hallConflicts = existingEvents
-                    .Where(e => e.Type == "stationar" && e.Hall == request.Hall &&
+                    .Where(e => e.Type == "stationar" && e.HallTypeId == request.HallTypeId &&
                                 IsConflicting(request.StartTime, request.EndTime, e.StartTime, e.EndTime))
-                    .Select(e => $"{request.Hall} уже занят {e.StartTime:dd.MM HH:mm} - {e.EndTime:HH:mm}")
+                    .Select(e => $"{request.HallTypeName} уже занят {e.StartTime:dd.MM HH:mm} - {e.EndTime:HH:mm}")
                     .ToList();
 
                 foreach (var conflict in hallConflicts)
@@ -374,44 +388,7 @@ namespace TheatreManagement.Server.Controllers
             var eventEntity = await _context.Events
                 .Where(e => e.EventId == eventId)
                 .Include(e => e.User)
-                .Select(e => new EventGetModel
-                {
-                    EventId = e.EventId,
-                    StartTime = e.StartTime,
-                    EndTime = e.EndTime,
-                    Type = e.Type,
-                    LastEditTime = e.LastEditTime,
-                    IsCanceled = e.IsCanceled,
-                    UserFullName = (e.User != null ? e.User.Surname + " " + e.User.Name + " " + e.User.FatherName : ""),
-                    Stationar = e.Stationar != null ? new StationarDto
-                    {
-                        StationarId = e.Stationar.StationarId,
-                        Hall = e.Stationar.Hall,
-                        Type = e.Stationar.Type
-                    } : null,
-                    Tour = e.Tour != null ? new TourDto
-                    {
-                        TourId = e.Tour.TourId,
-                        Country = e.Tour.Country,
-                        Area = e.Tour.Area
-                    } : null,
-                    Institution = e.Institution != null ? new InstitutionDto
-                    {
-                        InstitutionId = e.Institution.InstitutionId,
-                        Name = e.Institution.Name,
-                        Town = e.Institution.Town,
-                        Street = e.Institution.Street,
-                        House = e.Institution.House
-                    } : null,
-                    
-                    Plays = e.PlayEvents.Select(pe => new PlayDto
-                    {
-                        PlayId = pe.Play.PlayId,
-                        Name = pe.Play.Name,
-                        Duration = pe.Play.Duration,
-                        AgeCategory = pe.Play.AgeCategory
-                    }).ToList()
-                })
+                .Select(EventMappings.ToEventGetModelDetails)
                 .FirstOrDefaultAsync();
 
             if (eventEntity == null)
@@ -420,30 +397,30 @@ namespace TheatreManagement.Server.Controllers
             }
 
             var playsWithRoles = await _context.PlayEvents
-               .Where(pe => pe.EventId == eventId)
-               .Select(pe => new PlayWithRolesDto
-               {
-                   PlayId = pe.Play.PlayId,
-                   PlayName = pe.Play.Name,
-                   RoleGroups = pe.Play.RoleInPlays.Select(role => new RoleGroupDto
-                   {
-                       RoleInPlayId = role.RoleInPlayId,
-                       RoleName = role.Name,
-                       RoleType = role.Type,
-                       Employees = _context.EmployeeRoles
-                           .Where(er => er.EventId == eventId && er.RoleInPlayId == role.RoleInPlayId)
-                           .Select(er => new EmployeeDto
-                           {
-                               EmployeeId = er.EmployeeId,
-                               Surname = er.Employee.Surname,
-                               Name = er.Employee.Name,
-                               FatherName = er.Employee.FatherName,
-                               Post = er.Employee.Post
-                           })
-                           .ToList()
-                   }).ToList()
-               })
-               .ToListAsync();
+                          .Where(pe => pe.EventId == eventId)
+                          .Select(pe => new PlayWithRolesDto
+                          {
+                              PlayId = pe.Play.PlayId,
+                              PlayName = pe.Play.Name,
+                              RoleGroups = pe.Play.RoleInPlays.Select(role => new RoleGroupDto
+                              {
+                                  RoleInPlayId = role.RoleInPlayId,
+                                  RoleName = role.Name,
+                                  RoleType = role.Type,
+                                  Employees = _context.EmployeeRoles
+                                      .Where(er => er.EventId == eventId && er.RoleInPlayId == role.RoleInPlayId)
+                                      .Select(er => new EmployeeDto
+                                      {
+                                          EmployeeId = er.EmployeeId,
+                                          Surname = er.Employee.Surname,
+                                          Name = er.Employee.Name,
+                                          FatherName = er.Employee.FatherName,
+                                          Post = er.Employee.Post
+                                      })
+                                      .ToList()
+                              }).ToList()
+                          })
+                          .ToListAsync();
 
             eventEntity.PlaysWithRoles = playsWithRoles;
 
@@ -461,11 +438,12 @@ namespace TheatreManagement.Server.Controllers
                     StartTime = e.StartTime,
                     EndTime = e.EndTime,
                     Type = e.Type,
-                    IsCanceled = e.IsCanceled,
+                    CancellationReason = e.CancellationReason,
                     Stationar = e.Stationar != null ? new StationarDto
                     {
                         StationarId = e.Stationar.StationarId,
-                        Hall = e.Stationar.Hall,
+                        HallTypeId = e.Stationar.HallTypeId,
+                        HallTypeName = e.Stationar.HallType.Name ?? "",
                         Type = e.Stationar.Type
                     } : null,
                     Tour = e.Tour != null ? new TourDto
@@ -512,7 +490,6 @@ namespace TheatreManagement.Server.Controllers
             return Ok(eventEntity);
         }
 
-
         [HttpPut]
         public async Task<IActionResult> UpdateEvent(EventPostModel model)
         {
@@ -546,7 +523,7 @@ namespace TheatreManagement.Server.Controllers
 
                 editedEvent.StartTime = model.StartTime;
                 editedEvent.EndTime = model.EndTime;
-                editedEvent.IsCanceled = model.IsCanceled;
+                editedEvent.CancellationReason = model.CancellationReason;
                 editedEvent.Type = model.Type;
                 editedEvent.LastEditTime = DateTime.Now;
                 editedEvent.User = currentUser;
@@ -554,9 +531,14 @@ namespace TheatreManagement.Server.Controllers
                 switch (model.Type)
                 {
                     case "stationar":
-                        if (editedEvent.Stationar == null)
-                            editedEvent.Stationar = new Stationar();
-                        editedEvent.Stationar.Hall = model.Stationar?.Hall;
+
+                        if (model.Stationar.HallTypeId != editedEvent.Stationar.HallTypeId)
+                        {
+                            var hallType = await _context.HallTypes
+                                .FirstOrDefaultAsync(ht => ht.HallTypeId == model.Stationar.HallTypeId);
+                            editedEvent.Stationar.HallType = hallType;
+                            editedEvent.Stationar.HallTypeId = model.Stationar.HallTypeId;
+                        }
                         editedEvent.Stationar.Type = model.Stationar?.Type;
 
                         if (editedEvent.Tour != null)
@@ -590,24 +572,10 @@ namespace TheatreManagement.Server.Controllers
                         break;
 
                     case "visit":
-                        // Выбирается существующее или создается новое
-                        if (model.Institution.InstitutionId > 0)
-                        {
                             var existingInstitution = await _context.Institutions
-                                .FindAsync(model.Institution.InstitutionId);
+                                .FindAsync(model.Institution!.InstitutionId);
 
                             editedEvent.Institution = existingInstitution;
-                        }
-                        else
-                        {
-                            editedEvent.Institution = new Institution
-                            {
-                                Name = model.Institution.Name,
-                                Town = model.Institution.Town ?? "",
-                                Street = model.Institution.Street ?? "",
-                                House = model.Institution.House ?? ""
-                            };
-                        }
                         break;
                 }
 
@@ -675,28 +643,38 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpPut("{eventId}/cancel")]
-        public async Task<IActionResult> CancelEvent(int eventId)
+        public async Task<IActionResult> CancelEvent(int eventId, [FromBody] CancelEventRequest request)
         {
             var currentUser = await _userManager.GetUserAsync(User);
-
             if (currentUser == null)
             {
                 return Unauthorized("Пользователь не авторизован");
             }
 
-            var canceledEvent = await _context.Events.Where(e => e.EventId == eventId)
-                                                   .FirstOrDefaultAsync();
+            var canceledEvent = await _context.Events
+                .FirstOrDefaultAsync(e => e.EventId == eventId);
 
-            canceledEvent.IsCanceled = true;
+            if (canceledEvent == null)
+            {
+                return NotFound("Мероприятие не найдено");
+            }
+
+            canceledEvent.CancellationReason = request.CancellationReason;
             canceledEvent.User = currentUser;
+            canceledEvent.LastEditTime = DateTime.Now;
 
             await _context.SaveChangesAsync();
-
             return Ok();
         }
 
-        [HttpPut("{eventId}/restore-cancel")]
-        public async Task<IActionResult> RestoreCancelEvent(int eventId)
+        public class CancelEventRequest
+        {
+            public string CancellationReason { get; set; } = string.Empty;
+        }
+
+
+        [HttpPut("{eventId}/restore")]
+        public async Task<IActionResult> RestoreEvent(int eventId)
         {
             var currentUser = await _userManager.GetUserAsync(User);
 
@@ -708,7 +686,7 @@ namespace TheatreManagement.Server.Controllers
             var canceledEvent = await _context.Events.Where(e => e.EventId == eventId)
                                                    .FirstOrDefaultAsync();
 
-            canceledEvent.IsCanceled = false;
+            canceledEvent.CancellationReason = null;
             canceledEvent.User = currentUser;
 
             await _context.SaveChangesAsync();
@@ -736,7 +714,6 @@ namespace TheatreManagement.Server.Controllers
 
             return Ok();
         }
-
 
     }
 }

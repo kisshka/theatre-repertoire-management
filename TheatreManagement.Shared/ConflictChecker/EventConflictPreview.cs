@@ -13,7 +13,8 @@ namespace TheatreManagement.Shared.ConflictChecker
         public DateTime EndTime { get; set; }
         public string? Type { get; set; }
 
-        public string? Hall { get; set; }
+        public string? HallTypeName { get; set; }
+        public int HallTypeId { get; set; }
         public List<int> EmployeeIds { get; set; } = new();
     }
 }

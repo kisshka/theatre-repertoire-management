@@ -5,19 +5,19 @@
 <PageHeader>
     <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
     <PageHeaderExtra>
-            <AuthorizeView Roles="MainAdmin">
-                <Authorized>
-                    <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
-                        Архив
-                        <Icon Type="@IconType.Outline.Right" />
-                    </Button>
-                </Authorized>
-            </AuthorizeView>
+        <AuthorizeView Roles="MainAdmin,SystemAdmin">
+            <Authorized>
+                <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
+                    Архив
+                    <Icon Type="@IconType.Outline.Right" />
+                </Button>
+            </Authorized>
+        </AuthorizeView>
     </PageHeaderExtra>
 </PageHeader>
 
 <div class="table-page-header">
-    <AuthorizeView Roles="MainAdmin">
+    <AuthorizeView Roles="MainAdmin,SystemAdmin">
         <Authorized>
             <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
                 <Icon Type="@IconType.Outline.Plus" />
@@ -26,9 +26,9 @@
     </AuthorizeView>
 
     <Search Placeholder="Введите название представления"
-    @bind-Value="@searchText"
-    EnterButton="true"
-    OnSearch="@OnSearchAsync" />
+            @bind-Value="@searchText"
+            EnterButton="true"
+            OnSearch="@OnSearchAsync" />
 
     <Button Type="ButtonType.Default">
         <Icon Type="@IconType.Fill.Filter" />
@@ -36,16 +36,21 @@
 </div>
 
 <Table TItem="PlayDto"
-DataSource="@plays"
-PageSize="@pageSize"
-Total="@total"
-@bind-PageIndex="currentPage"
-OnChange="@OnTableChange"
-OnRowClick="@OnRowClick">
+       DataSource="@plays"
+       PageSize="@pageSize"
+       Total="@total"
+       @bind-PageIndex="currentPage"
+       OnChange="@OnTableChange"
+       OnRowClick="@OnRowClick">
 
     <PropertyColumn Property="@(c => c.Name)" Title="Название" />
-    <PropertyColumn Property="@(c => c.Duration)" Title="Длительность"/>
-    <PropertyColumn Property="@(c => c.AgeCategory)" Title="Возрастная категория" />
+    <PropertyColumn Property="@(c => c.Duration)" Title="Длительность" />
+    <PropertyColumn Property="@(c => c.SceneTypeName)" Title="Тип сцены" />
+    <PropertyColumn Property="@(c => c.AgeCategory)" Title="Возрастная категория" Filterable="true">
+        <Template>
+                @($"{context.AgeCategory}+")
+        </Template>
+    </PropertyColumn>
     <PropertyColumn Property="c =>c.IsActive" Title="Активен">
         @if (context.IsActive)
         {
@@ -60,7 +65,7 @@ OnRowClick="@OnRowClick">
 </Table>
 
 <AddModal @bind-Visible="@addModalVisible"
-OnSuccess="@OnPlayAdded" />
+          OnSuccess="@OnPlayAdded" />
 
 @inject PlayService playService
 @inject NavigationManager navManager

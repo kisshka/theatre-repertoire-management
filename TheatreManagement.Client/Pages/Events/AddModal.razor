@@ -1,39 +1,49 @@
 ﻿@using TheatreManagement.Shared.DTOs.Employees
 @* // ПЕРВОЕ МОДАЛЬНОЕ ОКНО *@
 <Modal Visible="@Visible"
-Title="Создание мероприятия"
-OnOk="HandleOk"
-OnCancel="HandleCancel"
-ConfirmLoading="Submitting"
-MaskClosable="@false">
+       Title="Создание мероприятия"
+       OnOk="HandleOk"
+       OnCancel="HandleCancel"
+       ConfirmLoading="Submitting"
+       MaskClosable="@false">
 
-    <Form Model="@Model" @ref="@FormRef"
-    OnFinishFailed="@OnFinishFailed"
-    OnFinish="@OnFinish">
+    <Form Model="@Model"
+          @ref="@FormRef"
+          OnFinishFailed="@OnFinishFailed"
+          OnFinish="@OnFinish">
 
         <FormItem Label="Тип мероприятия" Required>
-
             <Select Mode="SelectMode.Default"
-            DataSource="@SelectItemValues.EventTypes"
-            @bind-Value="@selectedEventType"
-            LabelName="Name"
-            ValueName="Value"
-            Placeholder="Выберите тип мероприятия"
-            Disabled="@(userRole != "MainAdmin")">
+                    DataSource="@SelectItemValues.EventTypes"
+                    @bind-Value="@selectedEventType"
+                    LabelName="Name"
+                    ValueName="Value"
+                    Placeholder="Выберите тип мероприятия"
+                    Disabled="@isDisabled">
             </Select>
-
         </FormItem>
 
         <!-- Даты -->
-
-        <FormItem Label="Даты проведения" Required>
+        <span>Даты проведения:</span>
+        <FormItem Required>
+            <Flex Gap="FlexGap.Middle" Align="FlexAlign.Center" Wrap="FlexWrap.Wrap">
+                <DatePicker TValue="DateTime"
+                            @bind-Value="@startDateTime"
+                            ShowTime='@("HH:mm")'
+                            Format="dd.MM.yyyy HH:mm"
+                            AllowClear="false"
+                            ChangeOnClose="true"
+                            Placeholder="@("Выберите дату и время начала")"/>
+                <span>-</span>
+                <DatePicker TValue="DateTime"
+                            @bind-Value="@endDateTime"
+                            ShowTime='@("HH:mm")'
+                            Format="dd.MM.yyyy HH:mm"
+                            AllowClear="false"
+                            ChangeOnClose="true"
+                            Placeholder="@("Выберите дату и время окончания")" />
+            </Flex>
         </FormItem>
-        <RangePicker TValue="DateTime[]"
-        ShowTime='@("HH:mm")'
-        AllowClear="false"
-        @bind-Value="@dateRange" />
-
-
 
         <!-- Поля для Стационара -->
         @if (selectedEventType == "stationar")
@@ -41,15 +51,15 @@ MaskClosable="@false">
             <Divider>Стационар</Divider>
 
             <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
-                <FormItem Label="Зал" Required 
-                Style="width: 100%; max-width: 300px;">
+                <FormItem Label="Зал" Required
+                          Style="width: 100%; max-width: 300px;">
                     <Select Mode="SelectMode.Default"
-                    DataSource="@SelectItemValues.HallTypes"
-                    @bind-Value="@selectedHall"
-                    LabelName="Name"
-                    ValueName="Value"
-                    Placeholder="Выберите зал">
-                    </Select> 
+                            DataSource="@hallTypes"
+                            @bind-Value="@selectedHallTypeId"
+                            LabelName="Name"
+                            ValueName="Value"
+                            Placeholder="Выберите зал">
+                    </Select>
                 </FormItem>
 
                 @if (employeeConflicts.Where(ec => ec.Type == ConflictType.HallConflict).Any())
@@ -65,11 +75,11 @@ MaskClosable="@false">
 
             <FormItem Label="Тип выступления" Required>
                 <Select Mode="SelectMode.Default"
-                DataSource="@SelectItemValues.PerformanceTypes"
-                @bind-Value="@selectedPerformanceType"
-                LabelName="Name"
-                ValueName="Value"
-                Placeholder="Выберите тип выступления">
+                        DataSource="@SelectItemValues.PerformanceTypes"
+                        @bind-Value="@selectedPerformanceType"
+                        LabelName="Name"
+                        ValueName="Value"
+                        Placeholder="Выберите тип выступления">
                 </Select>
             </FormItem>
         }
@@ -94,22 +104,14 @@ MaskClosable="@false">
             <Divider>Учреждение</Divider>
 
             <FormItem Label="Название" Required>
-                <AutoComplete @bind-Value="@Model.Institution.Name"
-                OnInput="OnSearch"
-
-                Options="@institutionOptions"
-                OnSelectionChange="OnInstitutionChange"
-                OnActiveChange="OnInstitutionSelect"
-                Placeholder="Введите название нового учреждения или выберите из списка" />
-            </FormItem>
-            <FormItem Label="Город" Required>
-                <Input @bind-Value="@Model.Institution.Town" @oninput="@(e => OnInstitutionFieldChanged())" Disabled="@isInstitutionSelected" />
-            </FormItem>
-            <FormItem Label="Улица" Required>
-                <Input @bind-Value="@Model.Institution.Street" @oninput="@(e => OnInstitutionFieldChanged())" Disabled="@isInstitutionSelected" />
-            </FormItem>
-            <FormItem Label="Дом" Required>
-                <Input @bind-Value="@Model.Institution.House" @oninput="@(e => OnInstitutionFieldChanged())" Disabled="@isInstitutionSelected" />
+                <Select Mode="SelectMode.Default"
+                        DataSource="@institutions"
+                        @bind-Value="@selectedInstitutionId"
+                        LabelName="@nameof(InstitutionDto.Name)"
+                        ValueName="@nameof(InstitutionDto.InstitutionId)"
+                        EnableSearch="true"
+                        Placeholder="Выберите учреждение">
+                </Select>
             </FormItem>
         }
 
@@ -117,8 +119,8 @@ MaskClosable="@false">
         @if (error.Length > 0)
         {
             <Alert Type="AlertType.Error"
-            Message="@error"
-            Banner />
+                   Message="@error"
+                   Banner />
         }
 
         <!-- Спектакли -->
@@ -131,28 +133,28 @@ MaskClosable="@false">
 
             <div style="border: 1px solid #d9d9d9; border-radius: 4px; padding: 12px; margin-bottom: 12px;">
                 <Button Danger Class="danger-button" OnClick="() => RemovePlayEvent(index)"
-                Disabled="@(Model.PlayEvents.Count == 1)">
+                        Disabled="@(Model.PlayEvents.Count == 1)">
                     <Icon Type="@IconType.Outline.Delete" />
                 </Button>
                 <Button Type="ButtonType.Primary"
-                OnClick="() => OpenRolesModal(index)">
+                        OnClick="() => OpenRolesModal(index)">
                     Состав
                 </Button>
 
                 <FormItem Label="Спектакль">
                     <Select Mode="SelectMode.Default"
-                    EnableSearch="true"
-                    Placeholder="Введите название спектакля"
-                    DataSource="@availablePlays"
-                    @bind-Value="@Model.PlayEvents[index].PlayId"
-                    LabelName="@nameof(PlayDto.Name)"
-                    ValueName="@nameof(PlayDto.PlayId)" />
+                            EnableSearch="true"
+                            Placeholder="Введите название спектакля"
+                            DataSource="@availablePlays"
+                            @bind-Value="@Model.PlayEvents[index].PlayId"
+                            LabelName="@nameof(PlayDto.Name)"
+                            ValueName="@nameof(PlayDto.PlayId)" />
                 </FormItem>
 
                 @if (hasConflict)
                 {
                     <Tooltip Title="В составе спектакля есть конфликты">
-                        <WarningIcon/>  
+                        <WarningIcon />
                     </Tooltip>
                 }
 
@@ -180,23 +182,23 @@ MaskClosable="@false">
 @* ВТОРОЕ МОДАЛЬНОЕ ОКНО *@
 
 <Modal Visible="@rolesModalVisible"
-OnOk="SaveRoles"
-OnCancel="CancelRoles"
-Title="Назначение ролей">
+       OnOk="SaveRoles"
+       OnCancel="CancelRoles"
+       Title="Назначение ролей">
     <div>
         <b>Спектакль:</b> @currentPlayName
     </div>
 
     @* Выбор готового каста *@
     <Select TItem="CastDto"
-    TItemValue="int"
-    DataSource="@currentPlayCasts"
-    @bind-Value="@selectedCastId"
-    LabelName="@nameof(CastDto.Name)"
-    ValueName="@nameof(CastDto.CastId)"
-    EnableSearch="true"
-    Placeholder="Введите название каста"
-    OnSelectedItemChanged="@OnSelectedItemChangedHandler">
+            TItemValue="int"
+            DataSource="@currentPlayCasts"
+            @bind-Value="@selectedCastId"
+            LabelName="@nameof(CastDto.Name)"
+            ValueName="@nameof(CastDto.CastId)"
+            EnableSearch="true"
+            Placeholder="Введите название каста"
+            OnSelectedItemChanged="@OnSelectedItemChangedHandler">
     </Select>
 
     <Form Model="@EmployeeRolesModel" @ref="@EmployeeRolesFormRef">
@@ -224,14 +226,14 @@ Title="Назначение ролей">
                     <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
                         <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
                             <Select Mode="SelectMode.Default"
-                            DataSource="@actors"
-                            Value="@selectedEmployeeId"
-                            ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
-                            LabelName="@nameof(EmployeeDto.FullName)"
-                            ValueName="@nameof(EmployeeDto.EmployeeId)"
-                            EnableSearch="true"
-                            Placeholder="Введите ФИО сотрудника"
-                            Style="width: 100%; max-width: 300px;" />
+                                    DataSource="@actors"
+                                    Value="@selectedEmployeeId"
+                                    ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
+                                    LabelName="@nameof(EmployeeDto.FullName)"
+                                    ValueName="@nameof(EmployeeDto.EmployeeId)"
+                                    EnableSearch="true"
+                                    Placeholder="Введите ФИО сотрудника"
+                                    Style="width: 100%; max-width: 300px;" />
 
                             @if (hasConflict && selectedEmployeeId > 0)
                             {
@@ -271,14 +273,14 @@ Title="Назначение ролей">
                     <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
                         <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
                             <Select Mode="SelectMode.Default"
-                            DataSource="@technics"
-                            Value="@selectedEmployeeId"
-                            ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
-                            LabelName="@nameof(EmployeeDto.FullName)"
-                            ValueName="@nameof(EmployeeDto.EmployeeId)"
-                            EnableSearch="true"
-                            Placeholder="Введите ФИО сотрудника"
-                            Style="width: 100%; max-width: 300px;" />
+                                    DataSource="@technics"
+                                    Value="@selectedEmployeeId"
+                                    ValueChanged="@((int value) => SetTempAssignmentEmployeeId(roleId, index, value))"
+                                    LabelName="@nameof(EmployeeDto.FullName)"
+                                    ValueName="@nameof(EmployeeDto.EmployeeId)"
+                                    EnableSearch="true"
+                                    Placeholder="Введите ФИО сотрудника"
+                                    Style="width: 100%; max-width: 300px;" />
 
                             @if (hasConflict && selectedEmployeeId > 0)
                             {
@@ -299,7 +301,6 @@ Title="Назначение ролей">
 
 </Modal>
 
-
 @code {
     [Parameter] public bool Visible { get; set; }
     [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
@@ -313,7 +314,6 @@ Title="Назначение ролей">
     [Inject] private EventService eventService { get; set; }
     [Inject] private InstitutionService institutionService { get; set; }
     [Inject] private EventConflictCheckerService _conflictChecker { get; set; }
-
     [Inject] private IMessageService messageService { get; set; }
 
     private Form<EventPostModel> FormRef { get; set; }
@@ -323,106 +323,31 @@ Title="Назначение ролей">
     private List<PlayDto> availablePlays = new();
     private bool Submitting { get; set; } = false;
 
-    private DateTime[] dateRange = new DateTime[2];
+    // Заменяем dateRange на два отдельных поля
+    private DateTime startDateTime = DateTime.Now;
+    private DateTime endDateTime = DateTime.Now.AddHours(23);
+
     private string userRole;
 
     // Для выезда
-    private string institutionSearchText = "";
-    private List<string> institutionOptions = new();
     private List<InstitutionDto> institutions = new();
-    private AutoCompleteOption selectInstitutionItem;
-    private AutoCompleteOption activeInstitutionItem;
-    private bool isInstitutionSelected = false;
-
-    private async Task OnSearch(ChangeEventArgs e)
-    {
-        var searchText = e.Value?.ToString() ?? "";
-        institutionSearchText = searchText;
-
-        isInstitutionSelected = false;
-
-        institutions = await institutionService.SearchInstitutionsAsync(searchText);
-        institutionOptions = institutions.Select(i => i.Name).ToList();
-        StateHasChanged();
-    }
-
-    private void OnInstitutionChange(AutoCompleteOption item)
-    {
-        if (item != null)
-        {
-            Model.Institution.InstitutionId = 0;
-
-            var selectedInstitution = institutions.FirstOrDefault(i => i.Name == item.Value);
-            if (selectedInstitution != null)
-            {
-                Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
-                Model.Institution.Name = selectedInstitution.Name;
-                Model.Institution.Town = selectedInstitution.Town;
-                Model.Institution.Street = selectedInstitution.Street;
-                Model.Institution.House = selectedInstitution.House;
-                Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
-                isInstitutionSelected = true;
-            }
-        }
-    }
-
-    private void OnInstitutionFieldChanged()
-    {
-        if (Model.Institution.InstitutionId > 0)
-        {
-            Model.Institution.InstitutionId = 0;
-            isInstitutionSelected = false;
-        }
-    }
-
-    private void OnInstitutionSelect(AutoCompleteOption item)
-    {
-        if (item == null) return;
-
-        Model.Institution.InstitutionId = 0;
-
-        var selectedInstitution = institutions.FirstOrDefault(i => i.Name == item.Value);
-
-        if (selectedInstitution != null)
-        {
-            Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
-            Model.Institution.Name = selectedInstitution.Name;
-            Model.Institution.Town = selectedInstitution.Town;
-            Model.Institution.Street = selectedInstitution.Street;
-            Model.Institution.House = selectedInstitution.House;
-            Model.Institution.InstitutionId = selectedInstitution.InstitutionId;
-
-            isInstitutionSelected = true;
-        }
-
-        StateHasChanged();
-    }
-
-    private async Task<bool> IsInstitutionNameUnique(string name, int? currentId = null)
-    {
-        var existing = await institutionService.GetInstitutionByNameAsync(name);
-
-        if (currentId.HasValue && existing?.InstitutionId == currentId.Value)
-            return true;
-
-        return existing == null;
-    }
+    private int? selectedInstitutionId;
 
     // Для стационара
-    private string _selectedHall = "";
-    private string selectedHall
+    private List<SelectItem<int>> hallTypes = new();
+    private int _selectedHallTypeId;
+    private int selectedHallTypeId
     {
-        get => _selectedHall;
+        get => _selectedHallTypeId;
         set
         {
-            if (_selectedHall != value)
+            if (_selectedHallTypeId != value)
             {
-                _selectedHall = value;
+                _selectedHallTypeId = value;
                 InvokeAsync(async () => await CheckConflicts());
             }
         }
     }
-
     private string selectedPerformanceType = "";
 
     public string error = "";
@@ -432,21 +357,30 @@ Title="Назначение ролей">
 
     private async Task CheckConflicts()
     {
-        if (dateRange == null || dateRange.Length < 2)
+        if (startDateTime == null || endDateTime == null)
             return;
+
+        string hallName = null;
+        int hallTypeId = -1;
+
+        if (selectedEventType == "stationar" && selectedHallTypeId > 0)
+        {
+            hallTypeId = selectedHallTypeId;
+            hallName = hallTypes.FirstOrDefault(h => h.Value == selectedHallTypeId)?.Name;
+        }
 
         var request = new ConflictCheckRequest
             {
-                StartTime = dateRange[0],
-                EndTime = dateRange[1],
+                StartTime = startDateTime,
+                EndTime = endDateTime,
                 Type = selectedEventType,
-                Hall = selectedEventType == "stationar" ? selectedHall : null,
+                HallTypeId = hallTypeId,
+                HallTypeName = hallName,
                 EmployeeIds = GetSelectedEmployeeIds(),
                 ExcludeEventId = Model.EventId > 0 ? Model.EventId : null
             };
 
         var response = await _conflictChecker.CheckConflictsAsync(request);
-
         employeeConflicts = response.Warnings;
         StateHasChanged();
     }
@@ -525,17 +459,24 @@ Title="Назначение ролей">
             await LoadInitialData();
             await LoadUserData();
             AddPlayEvent();
+
+            // Устанавливаем даты из параметра
+            startDateTime = EventDate;
+            endDateTime = EventDate.AddHours(23);
         }
     }
 
     private async Task LoadInitialData()
     {
-        dateRange[0] = EventDate;
-        dateRange[1] = EventDate.AddHours(23);
         availablePlays = await playService.GetPlaysAsync();
-        institutions = await institutionService.SearchInstitutionsAsync(institutionSearchText);
-        institutionOptions = institutions.Select(i => i.Name).ToList();
+        institutions = await institutionService.SearchInstitutionsAsync(null);
 
+        var hallTypesData = await eventService.GetAllStationarTypesAsync();
+        hallTypes = hallTypesData.Select(h => new SelectItem<int>
+            {
+                Value = h.Id,
+                Name = h.Name
+            }).ToList();
     }
 
     private void AddPlayEvent()
@@ -549,7 +490,6 @@ Title="Назначение ролей">
         Model.PlayEvents.RemoveAt(index);
         StateHasChanged();
     }
-
 
     private void OnFinishFailed(EditContext editContext)
     {
@@ -568,22 +508,47 @@ Title="Назначение ролей">
     {
         if (Submitting) return;
 
+        // ❗ ВАЛИДАЦИЯ ДАТ
+        if (startDateTime > endDateTime)
+        {
+            error = "Дата начала не может быть позже даты окончания";
+            StateHasChanged();
+            return;
+        }
+
         StateHasChanged();
 
         try
         {
             Submitting = true;
 
-            Model.StartTime = dateRange[0];
-            Model.EndTime = dateRange[1];
+            Model.StartTime = startDateTime;
+            Model.EndTime = endDateTime;
             Model.Type = selectedEventType;
 
             if (selectedEventType == "stationar")
             {
                 if (Model.Stationar == null)
                     Model.Stationar = new StationarDto();
-                Model.Stationar.Hall = selectedHall;
+
+                Model.Stationar.HallTypeId = selectedHallTypeId;
                 Model.Stationar.Type = selectedPerformanceType;
+            }
+            else if (selectedEventType == "visit")
+            {
+                if (selectedInstitutionId.HasValue && selectedInstitutionId.Value > 0)
+                {
+                    var selectedInstitution = institutions.FirstOrDefault(i => i.InstitutionId == selectedInstitutionId.Value);
+                    if (selectedInstitution != null)
+                    {
+                        Model.Institution = selectedInstitution;
+                    }
+                }
+                else
+                {
+                    error = "Выберите учреждение";
+                    return;
+                }
             }
 
             var formResult = await eventService.CreateEventAsync(Model);
@@ -625,8 +590,12 @@ Title="Назначение ролей">
     {
         Model = new EventPostModel();
         selectedEventType = "stationar";
-        selectedHall = "";
+        selectedHallTypeId = 0;
         selectedPerformanceType = "";
+        error = "";
+        selectedInstitutionId = null;
+        startDateTime = DateTime.Now;
+        endDateTime = DateTime.Now.AddHours(23);
         FormRef?.Reset();
         StateHasChanged();
     }
@@ -713,7 +682,6 @@ Title="Назначение ролей">
     {
         if (selectedCastId <= 0)
         {
-            // tempSelections.Clear();
             await CheckConflicts();
             StateHasChanged();
             return;
@@ -724,12 +692,10 @@ Title="Назначение ролей">
 
         if (selectedCast == null || selectedCast.Roles == null)
         {
-            // tempSelections.Clear();
             await CheckConflicts();
             StateHasChanged();
             return;
         }
-
 
         foreach (var role in selectedCast.Roles)
         {
@@ -747,7 +713,7 @@ Title="Назначение ролей">
                         EmployeeFullName = $"{employee.Surname} {employee.Name}"
                     });
             }
-        } 
+        }
 
         await CheckConflicts();
         StateHasChanged();
@@ -866,7 +832,7 @@ Title="Назначение ролей">
     }
 
     //Управление доступом
-
+    private bool isDisabled { get; set; } = false;
     private async Task LoadUserData()
     {
         var authStateProvider = (CustomAuthStateProvider)provider;
@@ -878,5 +844,8 @@ Title="Назначение ролей">
             selectedEventType = "visit";
         else
             selectedEventType = "stationar";
+
+        isDisabled = userRole != "MainAdmin" && userRole != "SystemAdmin";
+        StateHasChanged();
     }
 }

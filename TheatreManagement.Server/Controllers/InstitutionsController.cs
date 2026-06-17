@@ -8,6 +8,7 @@ using TheatreManagement.Domain.Entities;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Server.Mappings;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -18,7 +19,6 @@ namespace TheatreManagement.Server.Controllers
         private readonly UserManager<User> _userManager;
         private readonly DataContext _context;
 
-
         public InstitutionsController(UserManager<User> userManager, DataContext context)
         {
             _userManager = userManager;
@@ -27,18 +27,18 @@ namespace TheatreManagement.Server.Controllers
 
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstitutionDto>>> GetInstitutions(
-         [FromQuery] string searchText = null,
-         [FromQuery] int page = 1,
-         [FromQuery] int pageSize = 10)
+            [FromQuery] string searchText = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var query = _context.Institutions.AsQueryable();
+            var query = _context.Institutions
+                .Include(i => i.Type)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 var normalizeSearchText = searchText.Trim().ToLower();
-
-                    query = _context.Institutions.Where(p =>
-                    DataContext.CustomLike(p.Name, normalizeSearchText));
+                query = query.Where(p => DataContext.CustomLike(p.Name, normalizeSearchText));
             }
 
             var totalCount = await query.CountAsync();
@@ -46,14 +46,7 @@ namespace TheatreManagement.Server.Controllers
             var items = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(p => new InstitutionDto
-                {
-                    InstitutionId = p.InstitutionId,
-                    Name = p.Name,
-                    House = p.House,
-                    Town = p.Town,
-                    Street = p.Street,
-                })
+                .Select(InstitutionMappings.ToInstitutionDto)
                 .ToListAsync();
 
             return Ok(new PagedResult<InstitutionDto>
@@ -63,28 +56,20 @@ namespace TheatreManagement.Server.Controllers
             });
         }
 
-
         [HttpGet("{institutionId}")]
         public async Task<ActionResult<InstitutionDto>> GetInstitution(int institutionId)
         {
-
-            var institution = await _context.Institutions.FirstOrDefaultAsync(p => p.InstitutionId == institutionId);
+            var institution = await _context.Institutions
+                .Include(i => i.Type)
+                .Where(i => i.InstitutionId == institutionId)
+                .Select(InstitutionMappings.ToInstitutionDto)
+                .FirstOrDefaultAsync();
 
             if (institution == null)
             {
                 return NotFound();
             }
-
-            var institutionDto = new InstitutionDto
-            {
-                InstitutionId = institution.InstitutionId,
-                Name = institution.Name,
-                Town = institution.Town,
-                Street = institution.Street,
-                House = institution.House,
-            };
-
-            return institutionDto;
+            return Ok(institution);
         }
 
         [HttpPost]
@@ -97,12 +82,29 @@ namespace TheatreManagement.Server.Controllers
                 return Unauthorized("Пользователь не авторизован");
             }
 
+            // Находим тип учреждения
+            InstitutionType institutionType = null;
+            if (institutionDto.InstitutionTypeId > 0)
+            {
+                institutionType = await _context.InstitutionTypes
+                    .FirstOrDefaultAsync(it => it.InstitutionTypeId == institutionDto.InstitutionTypeId);
+
+                if (institutionType == null)
+                {
+                    return BadRequest($"Тип учреждения с ID {institutionDto.InstitutionTypeId} не найден");
+                }
+            }
+
             var institution = new Institution
             {
                 Name = institutionDto.Name,
                 Town = institutionDto.Town,
                 Street = institutionDto.Street,
                 House = institutionDto.House,
+                PhoneNumber = institutionDto.PhoneNumber,
+                Comment = institutionDto.Comment,
+                Type = institutionType,
+                InstitutionTypeId = institutionDto.InstitutionTypeId
             };
 
             _context.Institutions.Add(institution);
@@ -112,7 +114,7 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> PutEmployee(InstitutionDto UnstitutionDto)
+        public async Task<IActionResult> PutInstitution(InstitutionDto institutionDto)
         {
             var currentUser = await _userManager.GetUserAsync(User);
 
@@ -121,40 +123,55 @@ namespace TheatreManagement.Server.Controllers
                 return Unauthorized("Пользователь не авторизован");
             }
 
-            var institution = await _context.Institutions.Where(e => e.InstitutionId == UnstitutionDto.InstitutionId)
-                                             .FirstOrDefaultAsync();
+            var institution = await _context.Institutions
+                .Include(i => i.Type)
+                .FirstOrDefaultAsync(i => i.InstitutionId == institutionDto.InstitutionId);
 
-            institution.Name = UnstitutionDto.Name;
-            institution.Street = UnstitutionDto.Street;
-            institution.House = UnstitutionDto.House;
-            institution.Town = UnstitutionDto.Town;
+            if (institution == null)
+            {
+                return NotFound("Учреждение не найдено");
+            }
+
+            // Обновляем тип учреждения, если изменился
+            if (institutionDto.InstitutionTypeId != institution.InstitutionTypeId)
+            {
+                var institutionType = await _context.InstitutionTypes
+                    .FirstOrDefaultAsync(it => it.InstitutionTypeId == institutionDto.InstitutionTypeId);
+
+                if (institutionType == null && institutionDto.InstitutionTypeId > 0)
+                {
+                    return BadRequest($"Тип учреждения с ID {institutionDto.InstitutionTypeId} не найден");
+                }
+
+                institution.Type = institutionType;
+                institution.InstitutionTypeId = institutionDto.InstitutionTypeId;
+            }
+
+            institution.Name = institutionDto.Name;
+            institution.Town = institutionDto.Town;
+            institution.Street = institutionDto.Street;
+            institution.House = institutionDto.House;
+            institution.PhoneNumber = institutionDto.PhoneNumber;
+            institution.Comment = institutionDto.Comment;
 
             await _context.SaveChangesAsync();
-
             return Ok();
         }
 
         [HttpGet("search")]
         public async Task<ActionResult<List<InstitutionDto>>> SearchInstitutions([FromQuery] string searchText = null)
         {
+            var query = _context.Institutions
+                .Include(i => i.Type)
+                .AsQueryable();
 
-            var query = _context.Institutions.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(searchText) && searchText!= string.Empty)
+            if (!string.IsNullOrWhiteSpace(searchText) && searchText != string.Empty)
             {
-                query = query.Where(i =>
-                    DataContext.CustomLike(i.Name, searchText));
+                query = query.Where(i => DataContext.CustomLike(i.Name, searchText));
             }
 
             var institutions = await query
-                .Select(i => new InstitutionDto
-                {
-                    InstitutionId = i.InstitutionId,
-                    Name = i.Name,
-                    Town = i.Town,
-                    Street = i.Street,
-                    House = i.House
-                })
+                .Select(InstitutionMappings.ToInstitutionDto)
                 .ToListAsync();
 
             return Ok(institutions);
@@ -164,19 +181,28 @@ namespace TheatreManagement.Server.Controllers
         public async Task<ActionResult<InstitutionDto>> GetInstitutionByName([FromQuery] string name)
         {
             var institution = await _context.Institutions
+                .Include(i => i.Type)
                 .Where(i => i.Name == name)
-                .Select(i => new InstitutionDto
-                {
-                    InstitutionId = i.InstitutionId,
-                    Name = i.Name,
-                    Town = i.Town,
-                    Street = i.Street,
-                    House = i.House
-                })
+                .Select(InstitutionMappings.ToInstitutionDto)
                 .FirstOrDefaultAsync();
 
             return Ok(institution);
         }
 
+        // Новый метод для получения всех типов учреждений
+        [HttpGet("institution-types")]
+        public async Task<ActionResult<List<InstitutionTypeDto>>> GetInstitutionTypes()
+        {
+            var institutionTypes = await _context.InstitutionTypes
+                .OrderBy(it => it.Name)
+                .Select(it => new InstitutionTypeDto
+                {
+                    Id = it.InstitutionTypeId,
+                    Name = it.Name
+                })
+                .ToListAsync();
+
+            return Ok(institutionTypes);
+        }
     }
 }

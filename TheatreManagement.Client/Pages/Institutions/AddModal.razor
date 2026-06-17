@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using TheatreManagement.Client.Helpers.SelectItems
 @using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Shared.DTOs.Events
 
 <Modal Visible="@Visible"
        OkButtonProps="@(new ButtonProps { Disabled = Submitting })"
@@ -16,18 +17,47 @@
           OnFinish="@OnFinish"
           @ref="@FormRef">
 
-        <FormItem Label="Введите название" Required>
+        <FormItem Label="Тип учреждения" Required>
+            <Select Mode="SelectMode.Default"
+                    DataSource="@institutionTypes"
+                    @bind-Value="@selectedInstitutionTypeId"
+                    LabelName="Name"
+                    ValueName="Id"
+                    Placeholder="Выберите тип учреждения">
+            </Select>
+        </FormItem>
+
+        <FormItem Label="Название" Required>
             <Input @bind-Value="@context.Name" />
         </FormItem>
-        <FormItem Label="Введите город" Required>
+
+        <FormItem Label="Город">
             <Input @bind-Value="@context.Town" />
         </FormItem>
-        <FormItem Label="Введите улицу">
+
+        <FormItem Label="Улица">
             <Input @bind-Value="@context.Street" />
         </FormItem>
-        <FormItem Label="Введите дом">
+
+        <FormItem Label="Дом">
             <Input @bind-Value="@context.House" />
         </FormItem>
+
+        <FormItem Label="Телефон">
+            <Input @bind-Value="@context.PhoneNumber" />
+        </FormItem>
+
+        <FormItem Label="Комментарий">
+            <TextArea @bind-Value="@context.Comment"
+                      Rows="3"
+                      Placeholder="Дополнительная информация об учреждении" />
+        </FormItem>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <Alert Type="AlertType.Error" Message="@Error" Banner />
+        }
+
     </Form>
 </Modal>
 
@@ -35,13 +65,44 @@
     [Parameter] public bool Visible { get; set; }
     [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
     [Parameter] public EventCallback OnSuccess { get; set; }
+
     [Inject] private InstitutionService institutionService { get; set; }
+    [Inject] private IMessageService messageService { get; set; }
 
     private Form<InstitutionDto> FormRef { get; set; }
     private InstitutionDto Model { get; set; } = new();
 
     private string Error { get; set; } = "";
     private bool Submitting { get; set; } = false;
+
+    // Для типа учреждения
+    private List<InstitutionTypeDto> institutionTypes = new();
+    private int selectedInstitutionTypeId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInstitutionTypes();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Visible)
+        {
+            ResetForm();
+        }
+    }
+
+    private async Task LoadInstitutionTypes()
+    {
+        try
+        {
+            institutionTypes = await institutionService.GetAllInstitutionTypesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки типов учреждений: {ex.Message}");
+        }
+    }
 
     private async Task OnFinish(EditContext editContext)
     {
@@ -52,7 +113,19 @@
 
         try
         {
+            Error = "";
+
+            if (selectedInstitutionTypeId == 0)
+            {
+                Error = "Выберите тип учреждения";
+                return;
+            }
+
+            Model.InstitutionTypeId = selectedInstitutionTypeId;
+
             await institutionService.CreateInstitutionAsync(Model);
+
+            messageService.Success("Учреждение успешно добавлено!");
 
             Visible = false;
             await VisibleChanged.InvokeAsync(false);
@@ -92,10 +165,10 @@
         ResetForm();
     }
 
-
     private void ResetForm()
     {
         Model = new InstitutionDto();
+        selectedInstitutionTypeId = 0;
         Error = "";
         FormRef?.Reset();
         StateHasChanged();

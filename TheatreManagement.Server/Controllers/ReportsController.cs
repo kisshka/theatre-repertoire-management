@@ -42,6 +42,7 @@ namespace TheatreManagement.Server.Controllers
                 .Include(e => e.PlayEvents)
                     .ThenInclude(pe => pe.Play)
                 .Include(e => e.Stationar)
+                    .ThenInclude(s => s.HallType)
                 .Include(e => e.Tour)
                 .Include(e => e.Institution)
                 .AsQueryable();
@@ -205,7 +206,7 @@ namespace TheatreManagement.Server.Controllers
                                 TimeRange = timeRange,
                                 Type = GetEventTypeRu(ev.Type),
                                 Location = GetLocation(ev),
-                                Status = ev.IsCanceled ? "Отменено" : "Активно",
+                                Status = ev.CancellationReason != null ? "Отменено" : "Активно",
                                 Plays = playNames
                             };
 
@@ -250,7 +251,7 @@ namespace TheatreManagement.Server.Controllers
                             TimeRange = timeRange,
                             Type = GetEventTypeRu(ev.Type),
                             Location = GetLocation(ev),
-                            Status = ev.IsCanceled ? "Отменено" : "Активно",
+                            Status = ev.CancellationReason != null ? "Отменено" : "Активно",
                             Plays = playNames
                         };
 
@@ -355,7 +356,7 @@ namespace TheatreManagement.Server.Controllers
                                 worksheet.Cell(targetRow, 8).Value = "—";
                             }
 
-                            if (groupedRow.Event.IsCanceled)
+                            if (groupedRow.Event.CancellationReason!= null)
                             {
                                 worksheet.Row(targetRow).Style.Font.FontColor = XLColor.Red;
                             }
@@ -414,7 +415,10 @@ namespace TheatreManagement.Server.Controllers
         private string GetLocation(Event ev)
         {
             if (ev.Type == "stationar" && ev.Stationar != null)
-                return $"{ev.Stationar.Hall}";
+            {
+                var hallName = ev.Stationar.HallType?.Name ?? "Не указан";
+                return $"{hallName}, {ev.Stationar.Type}";
+            }
             if (ev.Type == "visit" && ev.Institution != null)
                 return $"{ev.Institution.Name}";
             if (ev.Type == "tour" && ev.Tour != null)

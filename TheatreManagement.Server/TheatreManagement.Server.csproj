@@ -9,12 +9,14 @@
 
 	<ItemGroup>
 		<PackageReference Include="ClosedXML" Version="0.105.0" />
+		<PackageReference Include="MailKit" Version="4.17.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.27" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.23">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.23" />
+		<PackageReference Include="MimeKit" Version="4.17.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.23">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -23,19 +25,12 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\TheatreManagement.Client\TheatreManagement.Client.csproj" />
     <ProjectReference Include="..\TheatreManagement.Domain\TheatreManagement.Domain.csproj" />
     <ProjectReference Include="..\TheatreManagement.Shared\TheatreManagement.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\Theatre.db">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="icu.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

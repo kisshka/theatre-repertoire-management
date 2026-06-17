@@ -6,32 +6,39 @@
 
 <Modal Visible="@Visible"
        Title="@Title"
-OnOk="HandleOk"
-OnCancel="HandleCancel"
-ConfirmLoading="@isDownloading"
-MaskClosable="@false">
+       OnOk="HandleOk"
+       OnCancel="HandleCancel"
+       ConfirmLoading="@isDownloading"
+       MaskClosable="@false">
 
     <Form Model="@Model"
-    OnFinishFailed="@OnFinishFailed"
-    @ref="@FormRef">
+          OnFinishFailed="@OnFinishFailed"
+          @ref="@FormRef">
 
-        <FormItem Label="Временной отрезок">
-            <RangePicker TValue="DateTime[]"
-            ShowTime="false"
-            AllowClear="false"
-            ChangeOnClose="true"
-            @bind-Value="@dateRange"
-            Format="dd.MM.yyyy" />
+        <FormItem Label="Период">
+            <Flex Gap="FlexGap.Middle" Align="FlexAlign.Center" Wrap="FlexWrap.Wrap">
+                <DatePicker TValue="DateTime"
+                            @bind-Value="@startDate"
+                            Format="dd.MM.yyyy"
+                            AllowClear="false"
+                            Placeholder="@("Выберите дату начала")" />
+                <span>-</span>
+                <DatePicker TValue="DateTime"
+                            @bind-Value="@endDate"
+                            Format="dd.MM.yyyy"
+                            AllowClear="false"
+                            Placeholder="@("Выберите дату окончания")" />
+            </Flex>
         </FormItem>
 
         <FormItem Label="Тип мероприятий">
             <Select Mode="SelectMode.Default"
                     DataSource="@SelectItemValues.ReportEventTypes"
-            @bind-Value="@selectedType"
-            LabelName="Name"
-            ValueName="Value"
-            Placeholder="Выберите тип"
-            AllowClear="false">
+                    @bind-Value="@selectedType"
+                    LabelName="Name"
+                    ValueName="Value"
+                    Placeholder="Выберите тип"
+                    AllowClear="false">
             </Select>
         </FormItem>
 
@@ -54,7 +61,8 @@ MaskClosable="@false">
     private Form<EmployeeDto> FormRef { get; set; }
     private EmployeeDto Model { get; set; } = new();
 
-    private DateTime[] dateRange = new DateTime[] { DateTime.Now, DateTime.Now.AddDays(7) };
+    private DateTime startDate = DateTime.Now;
+    private DateTime endDate = DateTime.Now.AddDays(7);
     private bool isDownloading = false;
     private string? selectedType { get; set; } = "all";
     private bool includeCast { get; set; } = false;
@@ -64,8 +72,8 @@ MaskClosable="@false">
         var reportType = selectedType == "all" ? null : selectedType;
 
         var url = _reportService.GetReportUrl(
-            dateRange[0],
-            dateRange[1],
+            startDate,
+            endDate,
             reportType,
             includeCast,
             EmployeeId > 0 ? EmployeeId : null
@@ -76,6 +84,12 @@ MaskClosable="@false">
 
     private async Task HandleOk()
     {
+
+        if (startDate > endDate)
+        {
+            _messageService.Error("Дата начала не может быть позже даты окончания");
+            return;
+        }
 
         isDownloading = true;
         StateHasChanged();
@@ -115,8 +129,10 @@ MaskClosable="@false">
 
     private void ResetForm()
     {
-        dateRange = new DateTime[] { DateTime.Now, DateTime.Now.AddDays(7) };
-        selectedType = null;
+        startDate = DateTime.Now;
+        endDate = DateTime.Now.AddDays(7);
+        selectedType = "all";
+        includeCast = false;
         Model = new EmployeeDto();
         FormRef?.Reset();
         StateHasChanged();

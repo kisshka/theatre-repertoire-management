@@ -35,7 +35,7 @@
             OnClick="SaveChanges">
                 Сохранить изменения
             </Button>
-            <Button Type="ButtonType.Primary">
+            <Button Type="ButtonType.Primary" OnClick="@ResetPassword">
                 Сбросить пароль
             </Button>
         </Form>
@@ -43,6 +43,7 @@
 
 </div>
 
+@inject NavigationManager navManager
 @inject IMessageService message
 @inject AuthenticationStateProvider provider
 @code {
@@ -83,12 +84,19 @@
         }
     }
 
+    private void ResetPassword()
+    {
+        navManager.NavigateTo("/forgot-password");
+    }
+
     private async Task SaveChanges()
     {
         if (formRef != null)
         {
             formRef.Submit();
         }
+
+        navManager.NavigateTo(navManager.Uri, forceLoad: true);
     }
 
     private void OnFinishFailed(EditContext editContext)

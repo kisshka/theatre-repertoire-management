@@ -27,7 +27,7 @@
 
             <div @onclick="() => GoToDetails(e.EventId)">
                 <Card Title="@timePeriod"
-                    class="@(e.IsCanceled ? "card-cancelled" : "card-stationar")"
+                      class="@(e.CancellationReason != null ? "card-cancelled" : "card-stationar")"
                     Bordered="true">
                     <Extra>
                         @e.Stationar?.Type
@@ -54,7 +54,7 @@
                         }
                     }
 
-                    <div>@(e.Stationar?.Hall)</div>
+                    <div>@(e.Stationar?.HallTypeName)</div>
 
                     </Body>
                 </Card>
@@ -71,7 +71,7 @@
                 var timePeriod = e.GetTimePeriodForDate(Date);
 
             <div @onclick="() => GoToDetails(e.EventId)">
-                <Card class="@(e.IsCanceled ? "card-cancelled" : "card-visit")"
+                <Card class="@(e.CancellationReason != null ? "card-cancelled" : "card-visit")"
                     Bordered="true"
                       Title="@timePeriod">
                     <Extra>
@@ -119,7 +119,7 @@
                 var timePeriod = e.GetTimePeriodForDate(Date);
 
             <div @onclick="() => GoToDetails(e.EventId)">
-                <Card class="@(e.IsCanceled ? "card-cancelled" : "card-tour")"
+                <Card class="@(e.CancellationReason != null ? "card-cancelled" : "card-tour")"
                   Bordered="true"
                       Title="@timePeriod">
                     <Extra>

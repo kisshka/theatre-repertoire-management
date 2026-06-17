@@ -18,6 +18,7 @@ namespace TheatreManagement.Shared.DTOs
         public DateTime? LastEditTime { get; set; }
         public List<RoleGroupDto> Roles { get; set; }
         public string UserFullName { get; set; } = "";
+        public int PlayId { get; set; }
     }
 
     public class RoleGroupDto

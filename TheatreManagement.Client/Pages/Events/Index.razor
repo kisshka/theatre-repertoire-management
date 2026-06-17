@@ -45,7 +45,7 @@ OnSuccess="OnModalSuccess"/>
         public string TimePeriod;
         public string EventType;
         public string Content;
-        public bool IsCanceled;
+        public string CancellationReason;
     }
 
     protected override async Task OnInitializedAsync()
@@ -122,7 +122,7 @@ private string GetEventClassByType(string eventType, bool isCanceled)
             dayData.Events.Add(new EventData
                     {
                         EventType = ev.Type,
-                        IsCanceled = ev.IsCanceled,
+                        CancellationReason = ev.CancellationReason,
                         Content = content,
                         TimePeriod = timePeriod
                     });
@@ -151,11 +151,16 @@ private string GetEventClassByType(string eventType, bool isCanceled)
                         <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
                     </Button>
                 </div>
-
-            <Button Type="ButtonType.Primary" OnClick="@(() => _createReportModalVisible = true)">
+            <Button style="margin-right:5px;" Type="ButtonType.Primary" OnClick="@(() => _createReportModalVisible = true)">
                 Отчет
                 <Icon Type="@IconType.Outline.Right" />
             </Button>
+            <AdminButton>
+                <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
+                    Архив
+                    <Icon Type="@IconType.Outline.Right" />
+                </Button>
+            </AdminButton>
 
             </div>
         </Template>;
@@ -188,6 +193,11 @@ private string GetEventClassByType(string eventType, bool isCanceled)
         StateHasChanged();
     }
 
+    private async Task GoToArchive()
+    {
+        navManager.NavigateTo("/events/archive");
+    }
+
     private RenderFragment DateCellRender(DateTime value) {
         var dayData = GetDayData(value);
         return @<Template>
@@ -205,7 +215,7 @@ private string GetEventClassByType(string eventType, bool isCanceled)
             {
                 <li key="@data.Content" class="event-item">
                     <span class="event-time">@data.TimePeriod</span>
-                    <span class="@GetEventClassByType(data.EventType, data.IsCanceled)">
+                    <span class="@GetEventClassByType(data.EventType, data.CancellationReason != null)">
                         @data.Content
                     </span>
                 </li>

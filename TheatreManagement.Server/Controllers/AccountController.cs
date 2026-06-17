@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
@@ -19,12 +21,15 @@ namespace TheatreManagement.Server.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly DataContext _context;
+        private readonly IEmailSender<User> _emailSender;
+        private readonly IConfiguration _configuration;
 
-
-        public AccountController(UserManager<User> userManager, DataContext context)
+        public AccountController(UserManager<User> userManager, DataContext context, IEmailSender<User> emailSender, IConfiguration configuration)
         {
             _userManager = userManager;
             _context = context;
+            _emailSender = emailSender;
+            _configuration = configuration;
         }
 
         [HttpPost("register")]
@@ -131,7 +136,11 @@ namespace TheatreManagement.Server.Controllers
 
             if (isArchive == true)
             {
-                query = query.IgnoreQueryFilters().Where(p => p.DeletionTime != null);
+                query = query.Where(p => p.DeletionTime != null);
+            }
+            else
+            {
+                query = query.Where(u => u.DeletionTime == null);
             }
 
             if (!string.IsNullOrWhiteSpace(searchText))
@@ -213,6 +222,43 @@ namespace TheatreManagement.Server.Controllers
             await _context.SaveChangesAsync();
 
             return Ok();
+        }
+
+        [HttpPost("forgot")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+                return Ok(new { message = "Если пользователь существует, ссылка отправлена" });
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var encodedToken = System.Web.HttpUtility.UrlEncode(token);
+            var resetLink = $"{_configuration["FrontendUrl"]}/reset-password?email={request.Email}&token={encodedToken}";
+
+            await _emailSender.SendPasswordResetLinkAsync(user, request.Email, resetLink);
+
+            return Ok(new { message = "Ссылка для сброса пароля отправлена на email" });
+        }
+
+        [HttpPost("reset")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            if (string.IsNullOrEmpty(request.Email) ||
+                string.IsNullOrEmpty(request.ResetCode) ||
+                string.IsNullOrEmpty(request.NewPassword))
+                return BadRequest("Все поля обязательны");
+
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+                return BadRequest("Не удалось сбросить пароль");
+
+            var result = await _userManager.ResetPasswordAsync(user, request.ResetCode, request.NewPassword);
+
+            if (result.Succeeded)
+                return Ok(new { message = "Пароль успешно изменен" });
+
+            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
         }
     }
 }

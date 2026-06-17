@@ -46,5 +46,9 @@ namespace TheatreManagement.Client.Services
             return await _httpClient.GetFromJsonAsync<InstitutionDto>($"api/institutions/by-name?name={name}");
         }
 
+        public async Task<List<InstitutionTypeDto>> GetAllInstitutionTypesAsync()
+        {
+            return await _httpClient.GetFromJsonAsync<List<InstitutionTypeDto>>("api/institutions/institution-types");
+        }
     }
 }

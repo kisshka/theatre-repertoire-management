@@ -202,9 +202,9 @@ code {
 }
 
 /*Модальное окно*/
-.ant-modal-body {
+/*.ant-modal-body {
     padding: 20px 50px 80px 50px;
-}
+}*/
 
 /*Динамические поля*/
 .dinamic-fields {
@@ -237,4 +237,10 @@ code {
 
 .dinamic-fields button svg {
     color: white;
+}
+
+/*Не назначено*/
+.empty-role {
+    color: #999;
+    font-style: italic;
 }

@@ -7,7 +7,7 @@
 <PageHeader>
     <PageHeaderTitle>Список сотрудников</PageHeaderTitle>
     <PageHeaderExtra>
-        <AuthorizeView Roles="MainAdmin">
+        <AuthorizeView Roles="MainAdmin,SystemAdmin">
             <Authorized>
                 <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
                     Архив
@@ -19,7 +19,7 @@
 </PageHeader>
 
 <div class="table-page-header">
-    <AuthorizeView Roles="MainAdmin">
+    <AuthorizeView Roles="MainAdmin,SystemAdmin">
         <Authorized>
             <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
                 <Icon Type="@IconType.Outline.Plus" />

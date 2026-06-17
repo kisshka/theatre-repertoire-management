@@ -90,7 +90,7 @@ namespace TheatreManagement.Server.Controllers
                                              .ToListAsync();
             return casts;
         }
-         
+
 
         [HttpGet("{castId}/employeeroles")]
         public async Task<ActionResult<CastWithRolesDto>> GetCastEmployeeRoles(int castId)
@@ -102,6 +102,7 @@ namespace TheatreManagement.Server.Controllers
                 {
                     CastId = c.CastId,
                     Name = c.Name,
+                    PlayId = c.PlayId,
                     LastEditTime = c.LastEditTime,
                     UserFullName = (c.User != null ? c.User.Surname + " " + c.User.Name + " " + c.User.FatherName : ""),
                     Roles = new List<RoleGroupDto>()
@@ -110,35 +111,41 @@ namespace TheatreManagement.Server.Controllers
 
             if (cast == null) return NotFound();
 
+            // Получаем все роли спектакля
+            var allRoles = await _context.RoleInPlays
+                .Where(r => r.PlayId == cast.PlayId) // Нужно добавить PlayId в CastWithRolesDto
+                .ToListAsync();
 
+            // Получаем назначенных сотрудников для этого состава
             var employeeRoles = await _context.EmployeeRoles
                 .Where(er => er.CastId == castId && er.EventId == null)
                 .Include(er => er.Employee)
                 .Include(er => er.RoleInPlay)
                 .ToListAsync();
 
-            // Сотрудники сгруппированы по ролям
-            cast.Roles = employeeRoles
-                .GroupBy(er => er.RoleInPlayId)
-                .Select(g => new RoleGroupDto
+            // Формируем результат для всех ролей
+            cast.Roles = allRoles
+                .Select(role => new RoleGroupDto
                 {
-                    RoleInPlayId = g.Key,
-                    RoleName = g.First().RoleInPlay.Name,
-                    RoleType = g.First().RoleInPlay.Type,
-                    Employees = g.Select(er => new EmployeeDto
-                    {
-                        EmployeeId = er.EmployeeId,
-                        Surname = er.Employee.Surname,
-                        Name = er.Employee.Name,
-                        FatherName = er.Employee.FatherName,
-                        Post = er.Employee.Post
-                    }).ToList()
+                    RoleInPlayId = role.RoleInPlayId,
+                    RoleName = role.Name,
+                    RoleType = role.Type,
+                    Employees = employeeRoles
+                        .Where(er => er.RoleInPlayId == role.RoleInPlayId)
+                        .Select(er => new EmployeeDto
+                        {
+                            EmployeeId = er.EmployeeId,
+                            Surname = er.Employee.Surname,
+                            Name = er.Employee.Name,
+                            FatherName = er.Employee.FatherName,
+                            Post = er.Employee.Post
+                        })
+                        .ToList()
                 })
                 .ToList();
 
-            return cast;
+            return Ok(cast);
         }
-
         [HttpPut]
         public async Task<IActionResult> UpdateCast(CastDto updateCastDto)
         {

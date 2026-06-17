@@ -12,39 +12,44 @@
     </BackIconTemplate>
     <PageHeaderTitle>@(employee.FullName)</PageHeaderTitle>
 </PageHeader>
-<h3>Участие в составах</h3>
 
+<div class="casts-container">
 
+    <div class="preview-control-panel">
+        <h3>Участие в составах</h3>
 <Search Placeholder="Введите название спектакля, состава или роли"
         @bind-Value="@searchText"
         EnterButton="true"
         OnSearch="@OnSearchAsync" />
+    </div>
+    <div Class="cast-card">
+    @foreach (var play in employeePlays)
+    {
+            <Card Class="employee-prewiew-card" Title="@play.PlayName">
+            @foreach( var cast in play.Casts)
+            {
+                <CardGrid Class="employee-inner-column">
+                    <p>@cast.CastName</p>
+                </CardGrid>
+                <CardGrid Class="employee-inner-column">
+                    @foreach (var role in cast.Roles)
+                    {
+                        <p>@role</p>
+                    }
+                </CardGrid>
+            }
+        </Card>
+    }
+    </div>
 
-@foreach (var play in employeePlays)
-{
-    <Card Title="@play.PlayName">
-        @foreach( var cast in play.Casts)
-        {
-            <CardGrid Style="width:50%;text-align:center">
-                @cast.CastName
-            </CardGrid>
-            <CardGrid Style="width:50%;text-align:center">
-                @foreach (var role in cast.Roles)
-                {
-                    <p>@role</p>
-                }
-            </CardGrid>
-        }
-    </Card>
-}
-
+    <div class="preview-control-panel">
 <Pagination PageSize="pageSize"
             Current="currentPage"
             Total="total">
 
-
 </Pagination>
-
+    </div>
+</div>
 
 @inject EmployeeService employeeService
 @inject NavigationManager navManager

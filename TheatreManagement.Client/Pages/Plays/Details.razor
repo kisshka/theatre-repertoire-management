@@ -24,58 +24,72 @@
 <div class="details-container">
     <Card Title=@play.Name Class="details-card" Bordered>
     <Extra>
-        <AuthorizeView Roles="MainAdmin">
+        <AuthorizeView Roles="MainAdmin, SystemAdmin">
             <Authorized>
                 <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
                     <Icon Type="@IconType.Outline.Edit" />
                 </Button>
-                <DeleteButtonWithConfirm OnConfirm="SoftDelete">
-                </DeleteButtonWithConfirm>
+                    @if (play.IsUsed)
+                    {
+                        <Tooltip Title="Спектакль используется в мероприятиях, удаление невозможно">
+                            <Button Danger Disabled="true">
+                                <Icon Type="@IconType.Outline.Delete" />
+                            </Button>
+                        </Tooltip>
+                    }
+                    else
+                    {
+                        <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                        </DeleteButtonWithConfirm>
+                    }
             </Authorized>
         </AuthorizeView>
     </Extra>
     <Body>
-            <CardGrid Class="details-triple-grid" Hoverable="false">
-        Длительность: @play.Duration
-    </CardGrid>
-            <CardGrid Class="details-triple-grid" Hoverable="false">
-        Рейтинг: @play.AgeCategory+
-    </CardGrid>
-            <CardGrid Class="details-triple-grid" Hoverable="false">
-            @if (play.IsActive)
-            {
-                <Tag Color="TagColor.Success">Активен</Tag>
-            }
-            else
-            {
-                <Tag Color="TagColor.Red">Неактивен</Tag>
-            }
-    </CardGrid>
+        <CardGrid Class="details-fourth-grid" Hoverable="false">
+            Длительность: @play.Duration
+        </CardGrid>
+        <CardGrid Class="details-fourth-grid" Hoverable="false">
+            Рейтинг: @play.AgeCategory+
+        </CardGrid>
+        <CardGrid Class="details-fourth-grid" Hoverable="false">
+            @play.SceneTypeName
+        </CardGrid>
+        <CardGrid Class="details-fourth-grid" Hoverable="false">
+                @if (play.IsActive)
+                {
+                    <Tag Color="TagColor.Success">Активен</Tag>
+                }
+                else
+                {
+                    <Tag Color="TagColor.Red">Неактивен</Tag>
+                }
+        </CardGrid>
 
-    <CardGrid Class="details-card-grid" Hoverable="false">
+        <CardGrid Class="details-card-grid" Hoverable="false">
 
-                <AntList Class="details-column" DataSource="@actorRoles">
-            <Header>Актерские роли</Header>
-            <ChildContent Context="item">
-                <ListItem Class="column-list-item">
-                    @item.Name
-                </ListItem>
-            </ChildContent>
-        </AntList>
+                    <AntList Class="details-column" DataSource="@actorRoles">
+                <Header>Актерские роли</Header>
+                <ChildContent Context="item">
+                    <ListItem Class="column-list-item">
+                        @item.Name
+                    </ListItem>
+                </ChildContent>
+            </AntList>
 
-    </CardGrid>
-            <CardGrid Class="details-card-grid" Hoverable="false">
-                <AntList Class="details-column" DataSource="@technicRoles">
-            <Header>Технические роли</Header>
-            <ChildContent Context="item">
-                        <ListItem Class="column-list-item">
-                    @item.Name
-                </ListItem>
-            </ChildContent>
-        </AntList>
-    </CardGrid>
+        </CardGrid>
+                <CardGrid Class="details-card-grid" Hoverable="false">
+                    <AntList Class="details-column" DataSource="@technicRoles">
+                <Header>Технические роли</Header>
+                <ChildContent Context="item">
+                            <ListItem Class="column-list-item">
+                        @item.Name
+                    </ListItem>
+                </ChildContent>
+            </AntList>
+        </CardGrid>
 
-    <p>Последнее изменение: @play.LastEditTime.ToString() - @play.UserFullName.ToString()</p>
+        <p>Последнее изменение: @play.LastEditTime.ToString() - @play.UserFullName.ToString()</p>
     </Body>
 </Card>
 </div>

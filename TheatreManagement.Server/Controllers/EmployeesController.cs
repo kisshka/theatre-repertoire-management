@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
+using TheatreManagement.Server.Mappings;
 using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Employees;
@@ -133,6 +134,9 @@ namespace TheatreManagement.Server.Controllers
                 IsActive = employee.IsActive,
                 LastEditTime = employee.LastEditTime,
                 UserFullName = (employee.User != null ? employee.User.Surname + " " + employee.User.Name + " " + employee.User.FatherName : ""),
+                IsUsed = await _context.EmployeeRoles.AnyAsync(er => er.EmployeeId == employeeId &&
+                                                      ((er.Event != null && er.Event.DeletionTime == null) ||
+                                                      (er.Cast != null && er.Cast.DeletionTime == null)))
             };
 
             return employeeDto;
@@ -243,9 +247,9 @@ namespace TheatreManagement.Server.Controllers
                 EndTime = e.Event.EndTime,
                 Type = e.Event.Type,
                 LastEditTime = e.Event.LastEditTime,
-                IsCanceled = e.Event.IsCanceled,
+                CancellationReason = e.Event.CancellationReason,
                 Plays = e.Event.PlayEvents.Select(p => new PlayDto { Name = p.Play.Name }).ToList(),
-                Stationar = e.Event.Stationar != null ? new StationarDto { Hall = e.Event.Stationar.Hall } : null,
+                //Stationar = e.Event.Stationar != null ? new StationarDto { Hall = e.Event.Stationar.Hall } : null,
 
             }).ToList();
 
@@ -269,29 +273,7 @@ namespace TheatreManagement.Server.Controllers
             var events = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(e => new EventGetModel
-                {
-                    EventId = e.EventId,
-                    StartTime = e.StartTime,
-                    EndTime = e.EndTime,
-                    Type = e.Type,
-                    LastEditTime = e.LastEditTime,
-                    IsCanceled = e.IsCanceled,
-                    Plays = e.PlayEvents.Select(p => new PlayDto { Name = p.Play.Name }).ToList(),
-                    Stationar = e.Stationar != null ? new StationarDto { Hall = e.Stationar.Hall } : null,
-                    Tour = e.Tour != null ? new TourDto
-                    {
-                        Country = e.Tour.Country,
-                        Area = e.Tour.Area
-                    } : null,
-                    Institution = e.Institution != null ? new InstitutionDto
-                    {
-                        Name = e.Institution.Name,
-                        Town = e.Institution.Town,
-                        Street = e.Institution.Street,
-                        House = e.Institution.House
-                    } : null
-                })
+                .Select(EventMappings.ToEventGetModelBasic!)
                 .ToListAsync();
 
             return Ok(new PagedResult<EventGetModel>

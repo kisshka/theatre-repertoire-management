@@ -62,7 +62,7 @@ namespace TheatreManagement.Shared.DTOs.Events
 
         public string? Type { get; set; }
             public DateTime LastEditTime { get; set; }
-            public bool IsCanceled { get; set; }
+            public string? CancellationReason { get; set; }
 
             //Конфликты
             public List<string> Warnings { get; set; } = new();
@@ -81,6 +81,7 @@ namespace TheatreManagement.Shared.DTOs.Events
             public List<PlayWithRolesDto>? PlaysWithRoles { get; set; } = new();
             public List<int> EmployeeRoles { get; set; } = new();
 
+            public DateTime? DeletionTime { get; set; }
     }
 
     public class PlayWithRolesDto

@@ -20,12 +20,20 @@
 }
 
 /*Для страниц Details*/
-.details-card {
+.details-card,
+.employee-details-card {
     box-shadow: 0 1px 2px 3px var(--light-gray);
     border-radius: 5px;
     width: 100%;
     max-width: 1300px;
     padding: 20px;
+}
+
+.details-fourth-grid {
+    width: 25%;
+    text-align: center;
+    box-shadow: none;
+    font-size: 16px;
 }
 
 .details-triple-grid {
@@ -62,7 +70,8 @@
     border-radius: 2px;
 }
 
-.details-card .ant-card-head {
+.details-card .ant-card-head,
+.employee-details-card .ant-card-head {
     font-weight: bold;
     text-align: center;
     font-size: 25px;
@@ -78,7 +87,6 @@
 
 /*Для составов*/
 .casts-container {
-
     max-width: 1300px;
     width: 100%;
     margin: 0 auto;
@@ -139,4 +147,56 @@
 }
 .employee-text {
     margin: 10px;
+}
+
+/*Для карточки сотрудника*/
+
+.employees-details-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 40px;
+}
+
+.employee-main-info {
+    width: 50%;
+    text-align: center;
+    box-shadow: none;
+    font-size: 16px;
+}
+
+.employee-prewiew-card .ant-card-head {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.employee-column-card-grid {
+    width: 50%;
+    border: solid 3px var(--primary-color);
+    text-align: center;
+    padding: 0px;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+.employee-inner-column {
+    width: 50%;
+    text-align: center;
+    padding: 0px;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.employee-inner-column p{
+    padding: 0px;
+}
+
+.preview-control-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+    margin: 20px;
 }

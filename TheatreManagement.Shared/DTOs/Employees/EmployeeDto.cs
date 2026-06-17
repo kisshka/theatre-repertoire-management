@@ -25,6 +25,9 @@ namespace TheatreManagement.Shared.DTOs.Employees
         public DateTime LastEditTime { get; set; }
         public DateTime? DeletionTime { get; set; }
         public string UserFullName { get; set; } = "";
+
+        public bool IsUsed { get; set; }
+
         // ссылки 
         //public string? UserId { get; set; }
         //public UserDto? User { get; set; }

@@ -1,0 +1,316 @@
+﻿@page "/statement"
+@using TheatreManagement.Shared
+@using TheatreManagement.Shared.DTOs.Availability
+@using AntDesign
+@inject HttpClient Http
+@inject IMessageService MessageService
+
+<PageTitle>Ведомость занятости составов</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Ведомость занятости составов</PageHeaderTitle>
+</PageHeader>
+
+<Card>
+    <div class="filter-panel">
+        <div class="filter-row">
+            <div class="filter-item">
+                <label>Начало:</label>
+                <DatePicker @bind-Value="@startDate"
+                            Format="yyyy-MM-dd HH:mm"
+                            ShowTime="true"
+                            Placeholder="@("Выберите дату и время")" />
+            </div>
+            <div class="filter-item">
+                <label>Конец:</label>
+                <DatePicker @bind-Value="@endDate"
+                            Format="yyyy-MM-dd HH:mm"
+                            ShowTime="true"
+                            Placeholder="@("Выберите дату и время")" />
+            </div>
+            <div class="filter-item">
+                <Input Placeholder="Поиск по спектаклю"
+                       @bind-Value="@searchText"
+                       AllowClear="true"
+                       Style="width: 200px" />
+            </div>
+            <Button Type="ButtonType.Primary" OnClick="@LoadData" Loading="@loading">
+                <Icon Type="@IconType.Outline.Search" /> Применить
+            </Button>
+        </div>
+    </div>
+</Card>
+
+<div class="plays-grid">
+    @if (loading)
+    {
+        <Spin Tip="Загрузка..." />
+    }
+    else if (plays != null && plays.Any())
+    {
+        @foreach (var play in plays)
+        {
+            <Card class="play-card"
+                  Title="@play.PlayName"
+                  Extra="@GetPlayStatusTag(play)">
+                <div class="casts-container">
+                    @foreach (var cast in play.Casts)
+                    {
+                        <div class="cast-card @GetCastStatusClass(cast)">
+                            <div class="cast-header">
+                                <span class="cast-name">@cast.CastName</span>
+                                @GetCastStatusTag(cast)
+                            </div>
+                            <div class="cast-roles">
+                                @foreach (var role in cast.Roles)
+                                {
+                                    <div class="role-row">
+                                        <div class="role-name">@role.RoleName:</div>
+                                        <div class="role-employee">
+                                            @if (role.IsAvailable)
+                                            {
+                                                <Tag Color="TagColor.Success">@role.EmployeeFullName</Tag>
+                                            }
+                                            else
+                                            {
+                                                <Tooltip Title="@role.ConflictDescription">
+                                                    <Tag Color="TagColor.Red">@role.EmployeeFullName (занят)</Tag>
+                                                </Tooltip>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="cast-footer">
+                                <Text>Свободны: @cast.AvailableCount / @cast.TotalCount</Text>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </Card>
+        }
+
+        <Pagination Total="@totalCount"
+                    PageSize="@pageSize"
+                    Current="@currentPage"
+                    ShowSizeChanger="true"
+                    ShowQuickJumper="true"/>
+    }
+    else
+    {
+        <Empty Description="@("Нет данных по выбранным фильтрам")" />
+    }
+</div>
+
+@code {
+    private List<PlayAvailabilityDto> plays = new();
+    private int totalCount = 0;
+    private int pageSize = 6;
+    private int currentPage = 1;
+    private string? searchText;
+    private bool loading = false;
+
+    private DateTime? startDate = DateTime.Now.Date.AddHours(10);
+    private DateTime? endDate = DateTime.Now.Date.AddHours(12);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (!startDate.HasValue || !endDate.HasValue)
+        {
+            MessageService.Warning("Выберите период времени");
+            return;
+        }
+
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            var url = $"api/availability/plays?startTime={startDate:yyyy-MM-ddTHH:mm:ss}&endTime={endDate:yyyy-MM-ddTHH:mm:ss}&page={currentPage}&pageSize={pageSize}";
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+                url += $"&searchText={Uri.EscapeDataString(searchText)}";
+
+            var result = await Http.GetFromJsonAsync<PagedResult<PlayAvailabilityDto>>(url);
+
+            if (result != null)
+            {
+                plays = result.Items ?? new();
+                totalCount = result.TotalCount;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageService.Error($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnPageChange(int page, int pageSize)
+    {
+        this.currentPage = page;
+        this.pageSize = pageSize;
+        await LoadData();
+    }
+
+    private RenderFragment GetPlayStatusTag(PlayAvailabilityDto play) => builder =>
+      {
+      if (play.PlayStatus == PlayStatus.HasAvailableCast)
+      {
+          builder.OpenElement(0, "span");
+          builder.AddAttribute(1, "class", "ant-tag ant-tag-green");
+          builder.AddContent(2, "✅ Есть свободный состав");
+          builder.CloseElement();
+      }
+      else
+      {
+          builder.OpenElement(0, "span");
+          builder.AddAttribute(1, "class", "ant-tag ant-tag-red");
+          builder.AddContent(2, "❌ Нет свободных составов");
+          builder.CloseElement();
+      }
+      };
+
+    private RenderFragment GetCastStatusTag(CastAvailabilityDto cast) => builder =>
+    {
+        string colorClass = cast.Status switch
+        {
+            CastStatus.FullAvailable => "ant-tag-green",
+            CastStatus.PartialAvailable => "ant-tag-orange",
+            _ => "ant-tag-red"
+        };
+
+        string text = cast.Status switch
+        {
+            CastStatus.FullAvailable => "Полностью свободен",
+            CastStatus.PartialAvailable => "Частично занят",
+            _ => "Полностью занят"
+        };
+
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", $"ant-tag {colorClass}");
+        builder.AddContent(2, text);
+        builder.CloseElement();
+    };
+
+    private string GetCastStatusClass(CastAvailabilityDto cast)
+    {
+        return cast.Status switch
+        {
+            CastStatus.FullAvailable => "cast-available",
+            CastStatus.PartialAvailable => "cast-partial",
+            _ => "cast-not-available"
+        };
+    }
+}
+
+<style>
+    .filter-panel {
+        padding: 16px;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .filter-item label {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .plays-grid {
+        margin-top: 16px;
+    }
+
+    .play-card {
+        margin-bottom: 24px;
+    }
+
+    .casts-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+    }
+
+    .cast-card {
+        border: 1px solid #d9d9d9;
+        border-radius: 8px;
+        padding: 12px;
+        transition: all 0.3s;
+    }
+
+    .cast-available {
+        background-color: #f6ffed;
+        border-color: #b7eb8f;
+    }
+
+    .cast-partial {
+        background-color: #fffbe6;
+        border-color: #ffe58f;
+    }
+
+    .cast-not-available {
+        background-color: #fff2f0;
+        border-color: #ffccc7;
+    }
+
+    .cast-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .cast-name {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .cast-roles {
+        margin-bottom: 12px;
+    }
+
+    .role-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 13px;
+    }
+
+    .role-name {
+        color: #666;
+    }
+
+    .role-employee {
+        text-align: right;
+    }
+
+    .cast-footer {
+        text-align: right;
+        font-size: 12px;
+        color: #666;
+        padding-top: 8px;
+        border-top: 1px solid #f0f0f0;
+    }
+</style>

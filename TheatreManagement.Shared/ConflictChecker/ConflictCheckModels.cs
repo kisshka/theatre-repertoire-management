@@ -11,7 +11,10 @@ namespace TheatreManagement.Shared.ConflictChecker
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public string? Type { get; set; }
-        public string? Hall { get; set; }
+
+        public string? HallTypeName { get; set; }
+        public int HallTypeId { get; set; }
+
         public List<int> EmployeeIds { get; set; } = new();
         public int? ExcludeEventId { get; set; }
     }
@@ -33,7 +36,7 @@ namespace TheatreManagement.Shared.ConflictChecker
     {
         HallConflict,
         EmployeeConflict,
-        InvalidTime,
-        TooLong,
+        EmployeeMissing,
+        EmployeeIsntActive
     }
 }

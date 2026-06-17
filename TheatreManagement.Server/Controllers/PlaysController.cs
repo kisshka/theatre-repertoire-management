@@ -11,6 +11,7 @@ using TheatreManagement.Domain.Entities;
 using TheatreManagement.Shared;
 using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using TheatreManagement.Server.Mappings;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -34,11 +35,8 @@ namespace TheatreManagement.Server.Controllers
             var plays = await _context.Plays
                 .Where(p => p.IsActive && p.DeletionTime == null)
                 .Include(p => p.RoleInPlays)
-                .Select(p => new PlayDto
-                {
-                    PlayId = p.PlayId,
-                    Name = p.Name,
-                })
+                .Include(p => p.SceneType)
+                .Select(PlayMappings.ToPlayDto)
                 .ToListAsync();
 
             return plays;
@@ -51,7 +49,10 @@ namespace TheatreManagement.Server.Controllers
             [FromQuery] int pageSize = 10,
             [FromQuery] bool isArchive = false)
         {
-            var query = _context.Plays.Include(p => p.User).AsQueryable();
+            var query = _context.Plays
+                .Include(p => p.User)
+                .Include(p => p.SceneType)
+                .AsQueryable();
 
             if (isArchive == true)
             {
@@ -72,17 +73,7 @@ namespace TheatreManagement.Server.Controllers
                 .OrderBy(p => p.PlayId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(p => new PlayDto
-                {
-                    PlayId = p.PlayId,
-                    Name = p.Name,
-                    Duration = p.Duration,
-                    AgeCategory = p.AgeCategory,
-                    IsActive = p.IsActive,
-                    LastEditTime = p.LastEditTime,
-                    UserFullName = (p.User != null ? p.User.Surname + " " + p.User.Name + " " + p.User.FatherName : ""),
-                    DeletionTime = p.DeletionTime
-                })
+                .Select(PlayMappings.ToPlayDto)
                 .ToListAsync();
 
             return Ok(new PagedResult<PlayDto>
@@ -96,39 +87,30 @@ namespace TheatreManagement.Server.Controllers
         [HttpGet("{playId}")]
         public async Task<ActionResult<PlayDto>> GetPlay(int playId)
         {
-            var play = await _context.Plays.Include(p => p.RoleInPlays)
-                                            .Include(p=> p.User)
-                                           .FirstOrDefaultAsync(p => p.PlayId == playId);
+            var playDto = await _context.Plays
+                .Where(p => p.PlayId == playId)
+                .Include(p => p.SceneType)
+                .Select(PlayMappings.ToPlayDto)
+                .FirstOrDefaultAsync();
 
-            if (play == null)
+            if (playDto == null)
             {
                 return NotFound();
             }
 
-            var playDto = new PlayDto
-            {
-                PlayId = play.PlayId,
-                Name = play.Name,
-                Duration = play.Duration,
-                AgeCategory = play.AgeCategory,
-                IsActive = play.IsActive,
-                LastEditTime = play.LastEditTime,
-                UserFullName = (play.User != null ? play.User.Surname + " " + play.User.Name + " " + play.User.FatherName : ""),
-            };
-
-            var roles = play.RoleInPlays.Select(r =>
-            new RoleDto
-            {
-                RoleInPlayId = r.RoleInPlayId,
-                RoleType = r.Type,
-                IsUsed = _context.EmployeeRoles.Any(er => er.RoleInPlayId == r.RoleInPlayId),
-                Name = r.Name
-            }
-            ).ToList();
+            var roles = await _context.RoleInPlays
+                .Where(r => r.PlayId == playId)
+                .Select(r => new RoleDto
+                {
+                    RoleInPlayId = r.RoleInPlayId,
+                    RoleType = r.Type,
+                    IsUsed = _context.EmployeeRoles.Any(er => er.RoleInPlayId == r.RoleInPlayId),
+                    Name = r.Name
+                })
+                .ToListAsync();
 
             playDto.RoleDtos = roles;
-
-            return playDto;
+            return Ok(playDto);
         }
 
         [HttpPost]
@@ -141,6 +123,16 @@ namespace TheatreManagement.Server.Controllers
                 return Unauthorized("Пользователь не авторизован");
             }
 
+
+                SceneType sceneType = await _context.SceneTypes
+                    .FirstOrDefaultAsync(st => st.SceneTypeId == playDto.SceneTypeId);
+
+                if (sceneType == null)
+                {
+                    return BadRequest($"Тип сцены с ID {playDto.SceneTypeId} не найден");
+                }
+
+
             var play = new Play
             {
                 Name = playDto.Name,
@@ -149,7 +141,9 @@ namespace TheatreManagement.Server.Controllers
                 AgeCategory = playDto.AgeCategory,
                 LastEditTime = DateTime.Now,
                 DeletionTime = null,
-                User = currentUser
+                User = currentUser,
+                SceneType = sceneType,
+                SceneTypeId = playDto.SceneTypeId
             };
 
             foreach (var role in playDto.RoleDtos)
@@ -178,11 +172,31 @@ namespace TheatreManagement.Server.Controllers
                 return Unauthorized("Пользователь не авторизован");
             }
 
-            var play = await _context.Plays.Where(p => p.PlayId == playDto.PlayId)
-                                     .Include(p => p.RoleInPlays)
-                                     .FirstOrDefaultAsync();
+            var play = await _context.Plays
+                .Where(p => p.PlayId == playDto.PlayId)
+                .Include(p => p.RoleInPlays)
+                .Include(p => p.SceneType)
+                .FirstOrDefaultAsync();
 
-            var errors = new List<string>();
+            if (play == null)
+            {
+                return NotFound("Спектакль не найден");
+            }
+
+            // Обновляем тип сцены
+            if (playDto.SceneTypeId != play.SceneTypeId)
+            {
+                var sceneType = await _context.SceneTypes
+                    .FirstOrDefaultAsync(st => st.SceneTypeId == playDto.SceneTypeId);
+
+                if (sceneType == null && playDto.SceneTypeId > 0)
+                {
+                    return BadRequest($"Тип сцены с ID {playDto.SceneTypeId} не найден");
+                }
+
+                play.SceneType = sceneType;
+                play.SceneTypeId = playDto.SceneTypeId;
+            }
 
             play.Name = playDto.Name;
             play.Duration = playDto.Duration;
@@ -237,18 +251,15 @@ namespace TheatreManagement.Server.Controllers
                 {
                     return BadRequest(new
                     {
-                        Message = $"{role.Name} Используется в составах или мероприятиях",
+                        Message = $"{role.Name} используется в составах или мероприятиях"
                     });
                 }
                 _context.RoleInPlays.Remove(role);
-
             }
 
             await _context.SaveChangesAsync();
-
             return Ok();
         }
-
 
         [HttpPut("{playId}/soft-delete")]
         public async Task<IActionResult> SoftDeletePlay(int playId)
@@ -259,18 +270,21 @@ namespace TheatreManagement.Server.Controllers
                 return Unauthorized("Пользователь не авторизован");
             }
 
-            var play = await _context.Plays.Where(p => p.PlayId == playId)
-                                           .FirstOrDefaultAsync();
+            var play = await _context.Plays
+                .Where(p => p.PlayId == playId)
+                .FirstOrDefaultAsync();
 
-            var errors = new List<string>();
+            if (play == null)
+            {
+                return NotFound("Спектакль не найден");
+            }
 
             play.DeletionTime = DateTime.Now;
             play.IsActive = false;
             play.User = currentUser;
-
+            play.LastEditTime = DateTime.Now;
 
             await _context.SaveChangesAsync();
-
             return Ok();
         }
 
@@ -283,11 +297,15 @@ namespace TheatreManagement.Server.Controllers
                 return Unauthorized("Пользователь не авторизован");
             }
 
-            var play = await _context.Plays.Where(p => p.PlayId == playId)
-                                           .IgnoreQueryFilters()
-                                           .FirstOrDefaultAsync();
+            var play = await _context.Plays
+                .Where(p => p.PlayId == playId)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync();
 
-            var errors = new List<string>();
+            if (play == null)
+            {
+                return NotFound("Спектакль не найден");
+            }
 
             play.DeletionTime = null;
             play.IsActive = true;
@@ -295,9 +313,22 @@ namespace TheatreManagement.Server.Controllers
             play.User = currentUser;
 
             await _context.SaveChangesAsync();
-
             return Ok();
         }
 
+        [HttpGet("scene-types")]
+        public async Task<ActionResult<List<SceneTypeDto>>> GetSceneTypes()
+        {
+            var sceneTypes = await _context.SceneTypes
+                .OrderBy(st => st.Name)
+                .Select(st => new SceneTypeDto
+                {
+                    Id = st.SceneTypeId,
+                    Name = st.Name
+                })
+                .ToListAsync();
+
+            return Ok(sceneTypes);
+        }
     }
 }

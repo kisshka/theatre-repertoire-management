@@ -15,13 +15,11 @@
 <div class="casts-container">
 
     <div class="add-cast-container">
-<AuthorizeView Roles="MainAdmin">
-     <Authorized>
+    <AdminButton>
         <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
-            <Icon Type="@IconType.Outline.Plus" /> Добавить
+                <Icon Type="@IconType.Outline.Plus" /> Добавить
         </Button>
-    </Authorized>
-</AuthorizeView>
+    </AdminButton>
     </div>
 
 @if (castes != null && castes.Any())
@@ -39,7 +37,7 @@
                         OnSelectedItemChanged="@OnSelectedItemChangedHandler">
                 </Select>
 
-                <AuthorizeView Roles="MainAdmin">
+                <AuthorizeView Roles="MainAdmin, SystemAdmin">
                     <Authorized>
                         <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
                             <Icon Type="@IconType.Outline.Edit" />
@@ -55,34 +53,48 @@
         <Card Class="cast-card">
 
             <Card Title="Актеры" Class="cast-column">
-            @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Актерская"))
-            {
+                @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Актерская"))
+                {
                     <CardGrid Class="cast-column-card-grid">
                         <p class="rolename-text">@role.RoleName</p>
-                </CardGrid>
+                    </CardGrid>
                     <CardGrid Class="cast-column-card-grid">
-                    @foreach (var employee in role.Employees)
-                    {
-                            <p class="employee-text">@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
-                    }
-                </CardGrid>
-            }
-        </Card>
+                        @if (role.Employees != null && role.Employees.Any())
+                        {
+                            @foreach (var employee in role.Employees)
+                            {
+                                <p class="employee-text">@($"{employee.Surname} {employee.Name} {employee.FatherName}")</p>
+                            }
+                        }
+                        else
+                        {
+                            <p class="empty-role">Не назначен</p>
+                        }
+                    </CardGrid>
+                }
+            </Card>
 
-        <Card Title="Технический состав" Class="cast-column">
-            @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Техническая"))
-            {
+            <Card Title="Технический состав" Class="cast-column">
+                @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Техническая"))
+                {
                     <CardGrid Class="cast-column-card-grid">
                         <p class="rolename-text">@role.RoleName</p>
-                </CardGrid>
+                    </CardGrid>
                     <CardGrid Class="cast-column-card-grid">
-                    @foreach (var employee in role.Employees)
-                    {
-                            <p class="employee-text">@($"{@employee.Surname} {@employee.Name} {@employee.FatherName}")</p>
-                    }
-                </CardGrid>
-            }
-        </Card>
+                        @if (role.Employees != null && role.Employees.Any())
+                        {
+                            @foreach (var employee in role.Employees)
+                            {
+                                <p class="employee-text">@($"{employee.Surname} {employee.Name} {employee.FatherName}")</p>
+                            }
+                        }
+                        else
+                        {
+                            <p class="empty-role">Не назначен</p>
+                        }
+                    </CardGrid>
+                }
+            </Card>
         <p>Последнее изменение: @selectedCast.LastEditTime.ToString() - @selectedCast.UserFullName.ToString()</p>
     </Card>
 }

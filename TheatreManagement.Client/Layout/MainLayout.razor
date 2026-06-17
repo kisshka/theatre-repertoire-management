@@ -56,7 +56,7 @@
                 Mode="MenuMode.Vertical" 
                 SelectedKeys=@selectedKeys
                 OnMenuItemClicked="OnMenuItemClicked">
- 
+
                     <MenuItem Key="plays">
                         <Icon Type="@IconType.Outline.Read" />
                         <span>
@@ -81,15 +81,30 @@
                             </NavLink>
                         </span>
                     </MenuItem>
-                    <MenuItem Key="institutions">
-                        <Icon Type="@IconType.Outline.Bank" />
+                    @if (_user?.Role == "MainAdmin" ||
+                    _user?.Role == "SystemAdmin" ||
+                    _user?.Role == "VisitAdmin")
+                    {                   
+                        <MenuItem Key="institutions">
+                            <Icon Type="@IconType.Outline.Bank" />
+                            <span>
+                                <NavLink href="institutions">
+                                    Учреждения
+                                </NavLink>
+                            </span>
+                        </MenuItem>
+                    }
+                    <MenuItem Key="statement">
+                        <Icon Type="@IconType.Outline.Audit" Theme="IconThemeType.Outline" />
                         <span>
-                            <NavLink href="institutions">
-                                Учреждения
+                            <NavLink href="statement">
+                                Ведомость
                             </NavLink>
                         </span>
                     </MenuItem>
-                    @if (_user?.Role == "MainAdmin")
+
+                    @if (_user?.Role == "MainAdmin"||
+                        _user?.Role == "SystemAdmin")
                     {
                         <MenuItem Key="users">
                             <Icon Type="@IconType.Outline.Team" />
@@ -104,7 +119,7 @@
             </Sider>
 
             <Layout Class="site-layout">
-                <Content Class="site-layout-background" Style="margin: 24px 16px;padding: 24px;min-height: 280px;">
+                <Content Class="site-layout-background" Style="margin: 24px 16px;padding: 24px;">
                     @Body
                 </Content>
             </Layout>
@@ -190,6 +205,7 @@
         if (uri.Contains("/employees")) return "employees";
         if (uri.Contains("/users")) return "users";
         if (uri.Contains("/institutions")) return "institutions";
+        if (uri.Contains("/statement")) return "statement";
         
         return "events";
     }

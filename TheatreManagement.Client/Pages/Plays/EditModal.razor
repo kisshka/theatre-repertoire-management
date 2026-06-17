@@ -4,17 +4,17 @@
 @using TheatreManagement.Shared.DTOs
 
 <Modal Visible="@Visible"
-OkButtonProps="@(new ButtonProps { Disabled = Submitting })"
-Title="Редактирование представления"
-OnOk="HandleOk"
-OnCancel="HandleCancel"
-ConfirmLoading="Submitting"
-MaskClosable="@false">
+       OkButtonProps="@(new ButtonProps { Disabled = Submitting })"
+       Title="Редактирование представления"
+       OnOk="HandleOk"
+       OnCancel="HandleCancel"
+       ConfirmLoading="Submitting"
+       MaskClosable="@false">
 
     <Form Model="@Model"
-    OnFinishFailed="@OnFinishFailed"
-    OnFinish="@OnFinish"
-    @ref="@FormRef">
+          OnFinishFailed="@OnFinishFailed"
+          OnFinish="@OnFinish"
+          @ref="@FormRef">
 
         <FormItem Label="Введите название">
             <Input @bind-Value="@context.Name" />
@@ -22,24 +22,40 @@ MaskClosable="@false">
         <FormItem Label="Введите продолжительность">
             <Input @bind-Value="@context.Duration" />
         </FormItem>
+        <FormItem Label="Тип сцены" Required>
+            <Select Mode="SelectMode.Default"
+                    DataSource="@sceneTypes"
+                    @bind-Value="@selectedSceneTypeId"
+                    LabelName="Name"
+                    ValueName="Id"
+                    Placeholder="Выберите тип сцены">
+            </Select>
+        </FormItem>
         <FormItem Label="Введите возрастной рейтинг">
             <Input @bind-Value="@context.AgeCategory" />
         </FormItem>
         <FormItem Label="Статус" Required>
             <Select Mode="SelectMode.Default"
-            DataSource="@Status"
-            @bind-Value="@selectedStatus"
-            LabelName="Name"
-            ValueName="Value">
+                    DataSource="@Status"
+                    @bind-Value="@selectedStatus"
+                    LabelName="Name"
+                    ValueName="Value">
             </Select>
         </FormItem>
+
+        @if (error.Length > 0)
+        {
+            <Alert Type="AlertType.Error"
+                   Message="@error"
+                   Banner />
+        }
 
         @* Актерские роли *@
         <Divider Orientation="DividerOrientation.Left">Актерские роли</Divider>
 
         <Button Type="ButtonType.Primary"
-        OnClick="@AddActorRole"
-        Icon="@IconType.Outline.Plus">
+                OnClick="@AddActorRole"
+                Icon="@IconType.Outline.Plus">
             Добавить роль
         </Button>
 
@@ -49,11 +65,11 @@ MaskClosable="@false">
             <div class="dinamic-fields">
                 <FormItem Required>
                     <Input @bind-Value="@ActorRoles[currentIndex].Name"
-                    Placeholder="Введите название роли" />
+                           Placeholder="Введите название роли" />
                 </FormItem>
                 <Button Danger Class="danger-button"
-                OnClick="@(() => RemoveActorRole(currentIndex))"
-                Disabled="@(ActorRoles.Count == 1 || ActorRoles[i].IsUsed)">
+                        OnClick="@(() => RemoveActorRole(currentIndex))"
+                        Disabled="@(ActorRoles.Count == 1 || ActorRoles[currentIndex].IsUsed)">
                     <Icon Type="@IconType.Outline.Delete" />
                 </Button>
             </div>
@@ -63,8 +79,8 @@ MaskClosable="@false">
         <Divider Orientation="DividerOrientation.Left">Технические роли</Divider>
 
         <Button Type="ButtonType.Primary"
-        OnClick="@AddTechnicRole"
-        Icon="@IconType.Outline.Plus">
+                OnClick="@AddTechnicRole"
+                Icon="@IconType.Outline.Plus">
             Добавить роль
         </Button>
 
@@ -74,11 +90,11 @@ MaskClosable="@false">
             <div class="dinamic-fields">
                 <FormItem Required>
                     <Input @bind-Value="@TechnicRoles[currentIndex].Name"
-                    Placeholder="Введите название роли" />
+                           Placeholder="Введите название роли" />
                 </FormItem>
                 <Button Danger Class="danger-button"
-                OnClick="@(() => RemoveTechnicRole(currentIndex))"
-                Disabled="@(TechnicRoles.Count == 1 || TechnicRoles[i].IsUsed)">
+                        OnClick="@(() => RemoveTechnicRole(currentIndex))"
+                        Disabled="@(TechnicRoles.Count == 1 || TechnicRoles[currentIndex].IsUsed)">
                     <Icon Type="@IconType.Outline.Delete" />
                 </Button>
             </div>
@@ -91,7 +107,6 @@ MaskClosable="@false">
     [Parameter] public bool Visible { get; set; }
     [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
     [Parameter] public EventCallback OnSuccess { get; set; }
-
     [Parameter] public int PlayId { get; set; }
 
     [Inject] private PlayService playService { get; set; }
@@ -99,36 +114,71 @@ MaskClosable="@false">
     private Form<PlayDto> FormRef { get; set; }
     private PlayDto Model { get; set; } = new();
 
-    private List<RoleDto> ActorRoles { get; set; } = new() { new RoleDto("Актерская") };
-    private List<RoleDto> TechnicRoles { get; set; } = new() { new RoleDto("Техническая") };
+    private List<RoleDto> ActorRoles { get; set; } = new();
+    private List<RoleDto> TechnicRoles { get; set; } = new();
 
-    private string Error { get; set; } = "";
     private bool Submitting { get; set; } = false;
-
     private bool selectedStatus = true;
+    private int selectedSceneTypeId;
+
     private List<SelectItem<bool>> Status = new()
     {
         new SelectItem<bool> { Name = "Активен", Value = true },
         new SelectItem<bool> { Name = "Неактивен", Value = false }
     };
 
+    // Для типа сцены
+    private List<SceneTypeDto> sceneTypes = new();
+    private string error = "";
+
     protected override async Task OnParametersSetAsync()
     {
         if (Visible)
         {
+            await LoadSceneTypes();
             await LoadData();
+        }
+    }
+
+    private async Task LoadSceneTypes()
+    {
+        try
+        {
+            sceneTypes = await playService.GetAllSceneTypeAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки типов сцен: {ex.Message}");
         }
     }
 
     private async Task LoadData()
     {
-        Model = await playService.GetPlayAsync(PlayId);
-        selectedStatus = Model.IsActive;
+        try
+        {
+            Model = await playService.GetPlayAsync(PlayId);
+            selectedStatus = Model.IsActive;
+            selectedSceneTypeId = Model.SceneTypeId;
 
-        ActorRoles = Model.RoleDtos.Where(r => r.RoleType == "Актерская").ToList();
-        TechnicRoles = Model.RoleDtos.Where(r => r.RoleType == "Техническая").ToList();
+            ActorRoles = Model.RoleDtos.Where(r => r.RoleType == "Актерская").ToList();
+            TechnicRoles = Model.RoleDtos.Where(r => r.RoleType == "Техническая").ToList();
+
+            if (ActorRoles.Count == 0)
+            {
+                ActorRoles = new List<RoleDto> { new RoleDto { Name = "", RoleType = "Актерская" } };
+            }
+            if (TechnicRoles.Count == 0)
+            {
+                TechnicRoles = new List<RoleDto> { new RoleDto { Name = "", RoleType = "Техническая" } };
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
     }
-
 
     private async Task OnFinish(EditContext editContext)
     {
@@ -139,15 +189,29 @@ MaskClosable="@false">
 
         try
         {
+            error = "";
+
+            if (selectedSceneTypeId == 0)
+            {
+                error = "Выберите тип сцены";
+                return;
+            }
 
             Model.IsActive = selectedStatus;
+            Model.SceneTypeId = selectedSceneTypeId;
             Model.RoleDtos.Clear();
 
             foreach (var role in ActorRoles)
             {
                 if (!string.IsNullOrWhiteSpace(role.Name))
                 {
-                    Model.RoleDtos.Add(role);
+                    Model.RoleDtos.Add(new RoleDto
+                        {
+                            RoleInPlayId = role.RoleInPlayId,
+                            Name = role.Name,
+                            RoleType = "Актерская",
+                            IsUsed = role.IsUsed
+                        });
                 }
             }
 
@@ -155,13 +219,19 @@ MaskClosable="@false">
             {
                 if (!string.IsNullOrWhiteSpace(role.Name))
                 {
-                    Model.RoleDtos.Add(role);
+                    Model.RoleDtos.Add(new RoleDto
+                        {
+                            RoleInPlayId = role.RoleInPlayId,
+                            Name = role.Name,
+                            RoleType = "Техническая",
+                            IsUsed = role.IsUsed
+                        });
                 }
             }
 
-            // Дополнительная проверка: есть ли хотя бы одна роль
             if (Model.RoleDtos.Count == 0)
             {
+                error = "Добавьте хотя бы одну роль";
                 return;
             }
 
@@ -170,12 +240,10 @@ MaskClosable="@false">
             Visible = false;
             await VisibleChanged.InvokeAsync(false);
             await OnSuccess.InvokeAsync();
-
-            ResetForm();
         }
         catch (Exception ex)
         {
-            Error = ex.Message;
+            error = ex.Message;
             StateHasChanged();
         }
         finally
@@ -202,12 +270,11 @@ MaskClosable="@false">
     {
         Visible = false;
         await VisibleChanged.InvokeAsync(false);
-        ResetForm();
     }
 
     private void AddActorRole()
     {
-        ActorRoles.Add(new RoleDto("Актерская"));
+        ActorRoles.Add(new RoleDto { Name = "", RoleType = "Актерская" });
         StateHasChanged();
     }
 
@@ -222,7 +289,7 @@ MaskClosable="@false">
 
     private void AddTechnicRole()
     {
-        TechnicRoles.Add(new RoleDto("Техническая"));
+        TechnicRoles.Add(new RoleDto { Name = "", RoleType = "Техническая" });
         StateHasChanged();
     }
 
@@ -233,15 +300,5 @@ MaskClosable="@false">
             TechnicRoles.RemoveAt(index);
             StateHasChanged();
         }
-    }
-
-    private void ResetForm()
-    {
-        Model = new PlayDto();
-        ActorRoles = new List<RoleDto> { new RoleDto("Актерская") };
-        TechnicRoles = new List<RoleDto> { new RoleDto("Техническая") };
-        Error = "";
-        FormRef?.Reset();
-        StateHasChanged();
     }
 }

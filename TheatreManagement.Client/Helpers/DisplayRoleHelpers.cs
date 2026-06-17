@@ -5,13 +5,17 @@
         private static readonly Dictionary<string, string> _roleDisplayNames = new()
         {
             ["MainAdmin"] = "Главный администратор",
-            ["TravelAdmin"] = "Администратор по выездам",
+            ["VisitAdmin"] = "Администратор по выездам",
             ["TourAdmin"] = "Администратор по гастролям",
-            ["HallAdmin"] = "Администратор по стационарам"
+            ["StationarAdmin"] = "Администратор по стационарам",
+            ["SystemAdmin"] = "Системный администратор"
         };
 
         public static string GetDisplayName(string roleValue)
         {
+            if (string.IsNullOrEmpty(roleValue))
+                return "";
+
             return _roleDisplayNames.TryGetValue(roleValue, out var displayName)
                 ? displayName
                 : roleValue;

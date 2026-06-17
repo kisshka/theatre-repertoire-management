@@ -53,7 +53,7 @@
         public string TimePeriod;
         public string EventType;
         public string Content;
-        public bool IsCanceled;
+        public string CancellationReason;
     }
 
     private string GetEventStyleByType(string eventType, bool isCanceled)
@@ -124,7 +124,7 @@
             dayData.Events.Add(new EventData
             {
                 EventType = ev.Type,
-                IsCanceled = ev.IsCanceled,
+                CancellationReason = ev.CancellationReason,
                 Content = content,
                 TimePeriod = timePeriod
             });
@@ -212,7 +212,7 @@
                     {
                         <li key="@data.Content">
                             <span style="font-weight:inherit;">@data.TimePeriod</span>
-                            <span style="@GetEventStyleByType(data.EventType, data.IsCanceled)">
+                    <span style="@GetEventStyleByType(data.EventType, data.CancellationReason!=null)">
                                 @data.Content
                             </span>
                         </li>

@@ -1,0 +1,167 @@
+﻿@page "/events/archive"
+@using TheatreManagement.Shared.DTOs.Events
+
+<PageTitle>Архив мероприятий</PageTitle>
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>Архив мероприятий</PageHeaderTitle>
+</PageHeader>
+
+<div class="events-archive-container">
+    <div class="preview-control-panel">
+        <Search Placeholder="Поиск по мероприятию..."
+                @bind-Value="@searchText"
+                EnterButton="true"
+                OnSearch="@OnSearchAsync" />
+    </div>
+
+    @if (loading)
+    {
+        <Spin Tip="Загрузка..." />
+    }
+    else if (events.Any())
+    {
+        <div Class="cast-card">
+            @foreach (var ev in events)
+            {
+                <div @onclick="() => OnRestore(ev.EventId)" Style="cursor: pointer;">
+
+                    <Card Class="employee-prewiew-card" Title="@GetEventTitle(ev)">
+                    <Body>
+                        <div class="archive-card-content">
+                            <div class="archive-card-row">
+                                <span class="archive-label">Спектакли:</span>
+                                <span>@string.Join(", ", ev.Plays.Select(p => p.Name))</span>
+                            </div>
+                            <div class="archive-card-row">
+                                <span class="archive-label">Место:</span>
+                                <span>@GetEventLocation(ev)</span>
+                            </div>
+                            <div class="archive-card-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #f0f0f0;">
+                                <span>
+                                    Удалено: @ev.DeletionTime?.ToString("dd.MM.yyyy HH:mm") - @ev.UserFullName
+                                </span>
+                            </div>
+                        </div>
+                    </Body>
+                </Card>
+                </div>
+            }
+        </div>
+
+        <div class="preview-control-panel">
+            <Pagination PageSize="pageSize"
+                        Current="currentPage"
+                        Total="total"/>
+        </div>
+    }
+    else
+    {
+        <Empty Description="@("Нет мероприятий в архиве")" />
+    }
+</div>
+
+@code {
+    private List<EventGetModel> events = new();
+    private int total = 0;
+    private int pageSize = 6;
+    private int currentPage = 1;
+    private string? searchText = null;
+    private bool loading = false;
+
+    [Inject] private ModalService modalService { get; set; }
+    [Inject] private EventService eventService { get; set; }
+    [Inject] private NavigationManager navManager { get; set; }
+    [Inject] private IMessageService messageService { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        loading = true;
+        try
+        {
+            var result = await eventService.GetEventsPagedAsync(page, pageSize, searchText, true);
+            if (result != null)
+            {
+                events = result.Items ?? new List<EventGetModel>();
+                total = result.TotalCount;
+            }
+        }
+        catch (Exception ex)
+        {
+            messageService.Error($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+
+    private async Task OnRestore(int eventId)
+    {
+        var confirmed = await modalService.ConfirmAsync(new ConfirmOptions
+            {
+                Content = "Вы уверены, что хотите восстановить это мероприятие?",
+                OkText = "Да",
+                CancelText = "Нет"
+            });
+
+        if (confirmed)
+        {
+            await eventService.RestoreEventAsync(eventId);
+            await LoadDataAsync(currentPage);
+            messageService.Success("Мероприятие восстановлено");
+        }
+    }
+
+    private string GetEventTitle(EventGetModel ev)
+    {
+        var timeRange = ev.GetDetailsDate();
+        return $"{timeRange} | {GetEventTypeName(ev.Type)}";
+    }
+
+    private string GetEventLocation(EventGetModel ev)
+    {
+        if (ev.Type == "stationar" && ev.Stationar != null)
+            return ev.Stationar.HallTypeName ?? "";
+        else if (ev.Type == "tour" && ev.Tour != null)
+            return $"{ev.Tour.Country}, {ev.Tour.Area}";
+        else if (ev.Type == "visit" && ev.Institution != null)
+            return ev.Institution.Name ?? "";
+        return "";
+    }
+
+    private string GetEventTypeName(string type)
+    {
+        return type switch
+        {
+            "stationar" => "Стационар",
+            "tour" => "Гастроли",
+            "visit" => "Выезд",
+            _ => type
+        };
+    }
+
+    private void GoBack()
+    {
+        navManager.NavigateTo("/events");
+    }
+}

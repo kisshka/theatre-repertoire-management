@@ -10,7 +10,7 @@
 <PageHeader>
     <PageHeaderTitle>Список пользователей</PageHeaderTitle>
     <PageHeaderExtra>
-        <AuthorizeView Roles="MainAdmin">
+        <AuthorizeView Roles="MainAdmin, SystemAdmin">
             <Authorized>
                 <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
                     Архив

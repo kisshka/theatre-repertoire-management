@@ -23,8 +23,8 @@
             @if(error.Length > 0)
             {
                 <Alert Type="AlertType.Error"
-                    Message="@error"
-                    Banner />
+                Message="@error"
+                Banner />
             }
 
         </div>
@@ -45,6 +45,8 @@
             </Button>
         </FormItem>
     </Form>
+
+        <a href="/forgot-password">Забыли пароль?</a>
 </div>
 
 @inject AuthenticationStateProvider provider
@@ -70,7 +72,7 @@
     {
         var authStateProvider = (CustomAuthStateProvider)provider;
         var formResult = await authStateProvider.LoginAsync(model.Username, model.Password);
-       
+
         if (formResult.Succeeded)
         {
             navManager.NavigateTo("/");
