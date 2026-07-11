@@ -27,7 +27,7 @@ namespace TheatreManagement.Client.Services
             if (accessToken != null)
             {
                 this._httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                StartRefreshTimer();
+                Task.Run(() => StartRefreshTimer());
             }
         }
 
@@ -277,9 +277,10 @@ public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         //Таймер для обновления токена
         private void StartRefreshTimer()
         {
-            _refreshTimer?.Dispose();
-            _refreshTimer = new Timer(async _ => await RefreshTokenAsync(),
-                null, TimeSpan.FromMinutes(RefreshIntervalMinutes), TimeSpan.FromMinutes(RefreshIntervalMinutes));
+            _refreshTimer = new Timer(async _ =>
+            {
+                await RefreshTokenAsync();
+            }, null, TimeSpan.FromMinutes(RefreshIntervalMinutes), TimeSpan.FromMinutes(RefreshIntervalMinutes));
         }
     }
 

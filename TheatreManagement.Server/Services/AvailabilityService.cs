@@ -1,4 +1,4 @@
-﻿// TheatreManagement.Server/Services/AvailabilityService.cs
+﻿
 using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Shared;
@@ -126,16 +126,12 @@ namespace TheatreManagement.Server.Services
                     });
                 }
 
-                var playStatus = castDtos.Any(c => c.Status == CastStatus.FullAvailable)
-                    ? PlayStatus.HasAvailableCast
-                    : PlayStatus.NoAvailableCast;
-
                 result.Add(new PlayAvailabilityDto
                 {
                     PlayId = play.PlayId,
                     PlayName = play.Name,
                     Casts = castDtos,
-                    PlayStatus = playStatus
+                    HasAvailableCast = castDtos.Any(c => c.Status == CastStatus.FullAvailable)
                 });
             }
 

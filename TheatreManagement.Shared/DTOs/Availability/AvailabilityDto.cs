@@ -26,7 +26,7 @@ namespace TheatreManagement.Shared.DTOs.Availability
         public int PlayId { get; set; }
         public string PlayName { get; set; } = string.Empty;
         public List<CastAvailabilityDto> Casts { get; set; } = new();
-        public PlayStatus PlayStatus { get; set; }
+        public bool HasAvailableCast { get; set; }
     }
 
     public enum CastStatus
@@ -34,11 +34,5 @@ namespace TheatreManagement.Shared.DTOs.Availability
         FullAvailable,
         PartialAvailable,
         NotAvailable 
-    }
-
-    public enum PlayStatus
-    {
-        HasAvailableCast,
-        NoAvailableCast
     }
 }

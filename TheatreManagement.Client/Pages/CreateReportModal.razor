@@ -42,6 +42,28 @@
             </Select>
         </FormItem>
 
+        <FormItem Label="Тип учреждения">
+            <Select Mode="SelectMode.Default"
+                    DataSource="@SelectItemValues.ReportEventTypes"
+                    @bind-Value="@selectedType"
+                    LabelName="Name"
+                    ValueName="Value"
+                    Placeholder="Выберите тип"
+                    AllowClear="false">
+            </Select>
+        </FormItem>
+
+        <FormItem Label="Спектакль">
+            <Select Mode="SelectMode.Default"
+                    DataSource="@plays"
+                    @bind-Value="@selectedPlay"
+                    LabelName="Name"
+                    ValueName="Value"
+                    Placeholder="Выберите тип"
+                    AllowClear="false">
+            </Select>
+        </FormItem>
+
         <Checkbox Label="Включить составы" @bind-Value="@includeCast"></Checkbox>
 
     </Form>
@@ -57,6 +79,7 @@
     [Inject] private NavigationManager _navManager { get; set; }
     [Inject] private MessageService _messageService { get; set; }
     [Inject] private ReportService _reportService { get; set; }
+    [Inject] private PlayService _playSevice { get; set; }
 
     private Form<EmployeeDto> FormRef { get; set; }
     private EmployeeDto Model { get; set; } = new();
@@ -64,8 +87,29 @@
     private DateTime startDate = DateTime.Now;
     private DateTime endDate = DateTime.Now.AddDays(7);
     private bool isDownloading = false;
+
     private string? selectedType { get; set; } = "all";
+    private int selectedPlay { get; set; } = -1;
+    private int selectedInstitutionType { get; set; } = -1;
+
     private bool includeCast { get; set; } = false;
+    private List<PlayDto> plays = new();
+    private List<SelectItem<int>> playsSelectedItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        plays = await _playSevice.GetPlaysAsync();
+        playsSelectedItems.Add(new SelectItem<int> { Name = "Все", Value = -1});
+        foreach (var play in plays)
+        {
+            playsSelectedItems.Add(new SelectItem<int> { Name = play.Name, Value = play.PlayId });
+        }
+    }
 
     private async Task GetReportUrl()
     {

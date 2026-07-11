@@ -5,25 +5,21 @@
 <PageHeader>
     <PageHeaderTitle>Список спектаклей</PageHeaderTitle>
     <PageHeaderExtra>
-        <AuthorizeView Roles="MainAdmin,SystemAdmin">
-            <Authorized>
+        <AdminButton>
                 <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
                     Архив
                     <Icon Type="@IconType.Outline.Right" />
                 </Button>
-            </Authorized>
-        </AuthorizeView>
+        </AdminButton>
     </PageHeaderExtra>
 </PageHeader>
 
 <div class="table-page-header">
-    <AuthorizeView Roles="MainAdmin,SystemAdmin">
-        <Authorized>
+    <AdminButton>
             <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
                 <Icon Type="@IconType.Outline.Plus" />
             </Button>
-        </Authorized>
-    </AuthorizeView>
+    </AdminButton>
 
     <Search Placeholder="Введите название представления"
             @bind-Value="@searchText"

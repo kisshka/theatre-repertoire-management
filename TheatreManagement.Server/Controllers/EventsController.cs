@@ -267,51 +267,64 @@ namespace TheatreManagement.Server.Controllers
 
         private void SimpleCheckConflicts(List<EventGetModel> events)
         {
-            foreach (var ev in events)
-            {
-                ev.HasConflict = false;
-            }
+            // Конфликты залов
+            var hallEvents = events.Where(e => e.Type == "stationar")
+                                   .ToList();
 
-            var hallEvents = events.Where(e => e.Type == "stationar" && e.Stationar != null).ToList();
             for (int i = 0; i < hallEvents.Count; i++)
             {
+                if (hallEvents[i].HasConflict) continue;
+
                 for (int j = i + 1; j < hallEvents.Count; j++)
                 {
-                    if (hallEvents[i].EventId != hallEvents[j].EventId &&
-                        hallEvents[i].Stationar?.HallTypeId == hallEvents[j].Stationar?.HallTypeId &&
-                        hallEvents[i].StartTime < hallEvents[j].EndTime &&
-                        hallEvents[j].StartTime < hallEvents[i].EndTime)
+                    if (hallEvents[j].HasConflict) continue;
+
+                    var a = hallEvents[i];
+                    var b = hallEvents[j];
+
+                    if (a.EventId != b.EventId &&
+                        a.Stationar!.HallTypeId == b.Stationar!.HallTypeId &&
+                        IsConflicting(a.StartTime!.Value, a.EndTime!.Value, b.StartTime!.Value, b.EndTime!.Value))
                     {
-                        hallEvents[i].HasConflict = true;
-                        hallEvents[j].HasConflict = true;
+                        a.HasConflict = true;
+                        b.HasConflict = true;
+                        break;
                     }
                 }
             }
 
-            var employeeGroups = events
-                .SelectMany(e => e.EmployeeRoles.Select(empId => new { Event = e, EmployeeId = empId }))
-                .Where(x => x.EmployeeId > 0)
-                .GroupBy(x => x.EmployeeId);
+            // Конфликты сотрудников
+            var employeeEvents = events
+                .SelectMany(e => e.EmployeeRoles
+                    .Select(empId => new { EmployeeId = empId, Event = e }))
+                .GroupBy(x => x.EmployeeId)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Select(x => x.Event).ToList());
 
-            foreach (var group in employeeGroups)
+            foreach (var empEvents in employeeEvents)
             {
-                var empEvents = group.ToList();
                 for (int i = 0; i < empEvents.Count; i++)
                 {
+                    if (empEvents[i].HasConflict) continue;
+
                     for (int j = i + 1; j < empEvents.Count; j++)
                     {
-                        if (empEvents[i].Event.EventId != empEvents[j].Event.EventId &&
-                            empEvents[i].Event.StartTime < empEvents[j].Event.EndTime &&
-                            empEvents[j].Event.StartTime < empEvents[i].Event.EndTime)
+                        if (empEvents[j].HasConflict) continue;
+
+                        var a = empEvents[i];
+                        var b = empEvents[j];
+
+                        if (a.EventId != b.EventId &&
+                        IsConflicting(a.StartTime!.Value, a.EndTime!.Value, b.StartTime!.Value, b.EndTime!.Value))
                         {
-                            empEvents[i].Event.HasConflict = true;
-                            empEvents[j].Event.HasConflict = true;
+                            a.HasConflict = true;
+                            b.HasConflict = true;
+                            break;
                         }
                     }
                 }
             }
         }
-
 
         [HttpPost("check-conflicts")]
         public async Task<ActionResult<ConflictCheckResponse>> CheckConflicts([FromBody] ConflictCheckRequest request)

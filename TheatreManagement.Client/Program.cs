@@ -16,6 +16,7 @@ builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<InstitutionService>();
 builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<StatementService>();
 builder.Services.AddScoped<EventConflictCheckerService>();
 
 string apiUrl;
