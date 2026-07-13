@@ -1,201 +1,190 @@
 /* Тело календаря */
-.ant-picker-calendar .ant-picker-panel .ant-picker-body,
-.ant-picker-cell {
-  padding: 2px;
-  background-color: var(--gray);
-  border-radius: 7px;
+.events-calendar-page .ant-picker-calendar .ant-picker-panel .ant-picker-body,
+.events-calendar-page .ant-picker-cell {
+    padding: 2px;
+    background-color: var(--gray);
+    border-radius: 7px;
 }
 
-.ant-picker-cell {
-  background-color: var(--light-gray);
-  border: solid 2px var(--gray);
+.events-calendar-page .ant-picker-cell {
+    background-color: var(--light-gray);
+    border: solid 2px var(--gray);
 }
 
 /* Дни текущего месяца */
-.ant-picker-cell-in-view {
-  background: var(--light);
-  border: solid 2px var(--gray);
-  color: var(--dark);
+.events-calendar-page .ant-picker-cell-in-view {
+    background: var(--light);
+    border: solid 2px var(--gray);
+    color: var(--dark);
 }
 
-.ant-picker-calendar-date-value {
-  text-align: left;
-  font-size: 16px;
-  color: var(--dark-gray);
+.events-calendar-page .ant-picker-calendar-date-value {
+    text-align: left;
+    font-size: 16px;
+    color: var(--dark-gray);
 }
 
-.ant-picker-calendar-date-today {
-  background: var(--light);
+.events-calendar-page .ant-picker-calendar-date-today {
+    background: var(--light);
 }
 
 /* Ячейка */
-.ant-picker-calendar-full .ant-picker-panel .ant-picker-calendar-date {
-  display: block;
-  width: auto;
-  height: auto;
-  margin: 1px 1px;
-  padding: 4px 8px;
-  border: 0;
+.events-calendar-page .ant-picker-calendar-full .ant-picker-panel .ant-picker-calendar-date {
+    display: block;
+    width: auto;
+    height: auto;
+    margin: 1px 1px;
+    padding: 4px 8px;
+    border: 0;
 }
 
-th {
-  text-align: center;
-}
-
-/* Выбранный день */
-.ant-picker-calendar-full .ant-picker-panel .ant-picker-cell-selected {
-  background: var(--light);
+.events-calendar-page th {
+    text-align: center;
 }
 
 /* Текущий день */
-.ant-picker-calendar-full .ant-picker-panel .ant-picker-calendar-date-today {
-  background: var(--light);
-  border: 3px solid var(--primary-color);
-  color: var(--dark);
-  border-radius: 4px;
-  margin: 0;
+.events-calendar-page .ant-picker-calendar-full .ant-picker-panel .ant-picker-calendar-date-today {
+    background: var(--light);
+    border: 3px solid var(--primary-color);
+    color: var(--dark);
+    border-radius: 4px;
+    margin: 0;
 }
 
 /* Выбранный день */
-.ant-picker-calendar-full
-  .ant-picker-panel
-  .ant-picker-cell-selected
-  .ant-picker-calendar-date {
-  background-color: var(--light);
+.events-calendar-page .ant-picker-calendar-full
+.ant-picker-panel
+.ant-picker-cell-selected
+.ant-picker-calendar-date {
+    background-color: var(--light);
+}
+.events-calendar-page .ant-picker-calendar-full .ant-picker-panel .ant-picker-cell-selected {
+    background: var(--light);
 }
 
 /* Цифра выбранного дня должна остаться черной*/
-.ant-picker-calendar-full
-  .ant-picker-panel
-  .ant-picker-cell-selected
-  .ant-picker-calendar-date
-  .ant-picker-calendar-date-value {
-  color: var(--dark);
+    .events-calendar-page .ant-picker-calendar-full .ant-picker-panel .ant-picker-cell-selected .ant-picker-calendar-date .ant-picker-calendar-date-value,
+    .events-calendar-page .ant-picker-cell-in-view:hover .ant-picker-calendar-date-value {
+        color: var( --dark ) !important;
+    }
+
+.events-calendar-page .ant-picker-cell-in-view:hover .ant-picker-cell-inner,
+.events-calendar-page .ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner,
+.events-calendar-page  .ant-picker-cell-in-view:hover .ant-picker-cell-inner {
+    position: relative;
+    transition: all 0.3s !important;
+    transform: scale(1.08);
+    border-radius: 7px;
+    z-index: 1000;
+    box-shadow: 2px 2px 2px 2px var(--dark-gray);
 }
 
-/* Анимация ячеек календаря при наведении */
-.ant-picker-cell-in-view:hover .ant-picker-calendar-date-value {
-  color: var(
-    --dark
-  ) !important; /* При наведении на ячейку цифра остается черной */
+.events-calendar-page  .ant-picker-cell-in-view:hover .ant-picker-cell-inner {
+    background-color: var(--light) !important;
 }
 
-.ant-picker-cell-in-view:hover .ant-picker-cell-inner,
-.ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner,
-.ant-picker-cell-in-view:hover .ant-picker-cell-inner {
-  position: relative;
-  transition: all 0.3s !important;
-  transform: scale(1.08);
-  border-radius: 7px;
-  z-index: 1000;
-  box-shadow: 2px 2px 2px 2px var(--dark-gray);
+.events-calendar-page  .ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
+    background-color: var(--light-gray) !important;
 }
 
-.ant-picker-cell-in-view:hover .ant-picker-cell-inner {
-  background-color: var(--light) !important;
+.events-calendar-page .ant-picker {
+    padding: 2px;
+    margin: 0px;
+    border-radius: 7px;
+    border: none;
+}
+.events-calendar-page .ant-picker-input input {
+    font-size: 20px;
 }
 
-.ant-picker-cell:hover:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
-  background-color: var(--light-gray) !important;
+.events-calendar-page .ant-picker-input input:hover {
+    cursor: pointer;
 }
 
-.ant-picker {
-  padding: 2px;
-  margin: 0px;
-  border-radius: 7px;
-  border: none;
-}
-.ant-picker-input input {
-  font-size: 20px;
-}
-.ant-picker-input input:hover {
-  cursor: pointer;
+.events-calendar-page .ant-picker:hover,
+.events-calendar-page .ant-picker-focused {
+    border: none;
+    cursor: pointer;
 }
 
-.ant-picker:hover,
-.ant-picker-focused {
-  border: none;
-  cursor: pointer;
+.events-calendar-page .calendar-header button {
+    border: var(--gray) 3px solid;
+    padding: 2px;
+    height: 40px;
+    margin: 0px;
+    border-radius: 7px;
 }
 
-.calendar-header button {
-  border: var(--gray) 3px solid;
-  padding: 2px;
-  height: 40px;
-  margin: 0px;
-  border-radius: 7px;
-}
-
-.calendar-header button:hover {
-  border: var(--gray) 3px solid;
-  padding: 2px;
-  height: 40px;
-  margin: 0px;
-  border-radius: 7px;
+.events-calendar-page .calendar-header button:hover {
+    border: var(--gray) 3px solid;
+    padding: 2px;
+    height: 40px;
+    margin: 0px;
+    border-radius: 7px;
 }
 
 /* Расположение текста в ячейках*/
-.events {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.events-calendar-page .events {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
-.events .ant-badge-status {
-  overflow: hidden;
-  white-space: nowrap;
-  width: 100%;
-  text-overflow: ellipsis;
-  font-size: 12px;
+/*.events-calendar-page .events .ant-badge-status {
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+    text-overflow: ellipsis;
+    font-size: 12px;
+}*/
+
+.events-calendar-page .notes-month {
+    text-align: center;
+    font-size: 28px;
 }
 
-.notes-month {
-  text-align: center;
-  font-size: 28px;
-}
-
-.notes-month section {
-  font-size: 28px;
+.events-calendar-page .notes-month section {
+    font-size: 28px;
 }
 
 /* иконки */
-.ant-picker-input .ant-picker-suffix .anticon,
+.events-calendar-page .ant-picker-input .ant-picker-suffix .anticon,
 .calendar-icons {
-  color: var(--dark);
-  font-size: 20px;
+    color: var(--dark);
+    font-size: 20px;
 }
 
 /* DatePicker */
-.ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  bottom: 0px;
-  left: 0px;
-  z-index: 1;
-  content: "";
-  border-width: 1px;
-  border-style: solid;
-  border-color: var(--primary-color);
-  border-image: none;
-  border-radius: 2px;
+.events-calendar-page .ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    z-index: 1;
+    content: "";
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--primary-color);
+    border-image: none;
+    border-radius: 2px;
 }
 
-.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner,
-.ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
-.ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
-  color: var(--dark);
-  background: var(--light);
+.events-calendar-page .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner,
+.events-calendar-page .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
+.events-calendar-page .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
+    color: var(--dark);
+    background: var(--light);
 }
 
 /* Шапка календаря вместе с кнопкой */
-.calendar-header-container {
+.events-calendar-page .calendar-header-container {
     display: flex;
     align-items: center;
     width: 100%;
 }
 
-.calendar-header {
+.events-calendar-page .calendar-header {
     flex: 1;
     display: flex;
     justify-content: center;
@@ -207,7 +196,7 @@ th {
     border-radius: 7px;
 }
 
-.calendar-header .ant-picker-input{
+.events-calendar-page .calendar-header .ant-picker-input {
     flex: 1;
     display: flex;
     justify-content: center;
@@ -219,6 +208,96 @@ th {
     border-radius: 7px;
 }
 
-.archive-btn {
+.events-calendar-page .archive-btn {
     margin-left: auto;
+}
+
+
+/*ОТОБРАЖЕНИЕ КАРТОЧЕК МЕРОПРИЯТИЙ*/
+
+.card-stationar {
+    background: var(--stationar);
+    margin: 2px 0px;
+    border: solid 1px var(--gray);
+}
+
+.card-visit {
+    background: var(--visit);
+    margin: 2px 0px;
+    border: solid 1px var(--gray);
+}
+
+.card-tour {
+    background: var(--tour);
+    margin: 2px 0px;
+    border: solid 1px var(--gray);
+}
+
+.card-cancelled .ant-card-head,
+.card-stationar .ant-card-head,
+.card-visit .ant-card-head,
+.card-tour .ant-card-head {
+    border-bottom: solid 1px var(--gray);
+    font-weight: bold;
+}
+
+.card-cancelled {
+    background: var(--canceled);
+    margin: 2px 0px;
+    border: solid 1px var(--gray);
+}
+
+.event-card-container {
+    background: var(--gray);
+}
+
+.events-card {
+    padding: 0;
+    margin: 0;
+}
+
+/*Ячейка календаря*/
+.calendar-cell {
+    position: relative;
+    min-height: 70px;
+}
+
+.conflict-tooltip {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    z-index: 1;
+}
+
+.events-list {
+    cursor: pointer;
+    min-height: 60px;
+    text-decoration:none;
+    list-style:none;
+}
+
+.event-time {
+    font-weight: inherit;
+}
+/*Цвета мероприятий на календаре*/
+
+.event-canceled {
+    text-decoration: line-through;
+    color: var(--canceled-text);
+}
+
+.event-stationar {
+    color: var(--stationar-text);
+}
+
+.event-tour {
+    color: var(--tour-text);
+}
+
+.event-visit {
+    color: var(--visit-text);
+}
+
+.warning-icon {
+    font-size: 20px;
 }

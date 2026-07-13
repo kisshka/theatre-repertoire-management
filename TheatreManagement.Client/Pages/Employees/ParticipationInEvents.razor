@@ -1,0 +1,251 @@
+﻿@page "/employees/{id:int}/partinevents"
+@using System.Globalization
+@using TheatreManagement.Shared.DTOs.Employees
+
+<PageTitle>Участие в мероприятиях</PageTitle>
+
+
+<PageTitle>"Мероприятия"</PageTitle>
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>@pageTitle</PageHeaderTitle>
+</PageHeader>
+
+
+<div class="events-calendar-page">
+    <Calendar Value="currentDate"
+    DateCellRender="DateCellRender"
+    HeaderRender="CustomHead"
+    OnSelect="OnDateSelect"
+    CultureInfo="@CultureInfo.InvariantCulture" />
+</div>
+
+@inject EmployeeService employeeService
+@inject NavigationManager navManager
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private DateTime currentDate = DateTime.Now;
+    private List<EventGetModel> allEvents = new();
+    private bool isLoading = false;
+    private string pageTitle = "";
+
+    private async Task OnModalSuccess()
+    {
+        StateHasChanged();
+    }
+
+    class DayData
+    {
+        public bool HasConflict = false;
+        public int EventsCount;
+        public List<EventData> Events = new();
+    }
+
+    class EventData
+    {
+        public string TimePeriod;
+        public string EventType;
+        public string Content;
+        public string CancellationReason;
+    }
+
+    private string GetEventStyleByType(string eventType, bool isCanceled)
+    {
+        if (isCanceled) return "color: var(--canceled-text); text-decoration: line-through;";
+
+        return eventType switch
+        {
+            "stationar" => "color: var(--stationar-text);",
+            "tour" => "color: var(--tour-text);",
+            "visit" => "color: var(--visit-text);",
+            _ => "color: #000000;"
+        };
+    }
+
+    private async Task OnValueChanged(DateTime newDate)
+    {
+        currentDate = newDate;
+        await LoadEventsForMonth(currentDate);
+    }
+
+    private async Task LoadEventsForMonth(DateTime date)
+    {
+        if (isLoading) return;
+        isLoading = true;
+
+        try
+        {
+            // Получаем первый и последний день месяца
+            var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
+            var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
+            // К временному промежутку добавлено по 2 недели с начала и конца для правильного отображения мероприятий
+            var startDate = firstDayOfMonth.AddDays(-14);
+            var endDate = lastDayOfMonth.AddDays(14);
+
+            allEvents = await employeeService.GetEmployeeEventsByDateRangeAsync(startDate, endDate, Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private DayData GetDayData(DateTime date)
+    {
+        var eventsOnDay = allEvents.Where(e =>
+        e.StartTime?.Date == date.Date ||
+        (e.StartTime?.Date <= date.Date && e.EndTime?.Date >= date.Date)).ToList();
+
+        var dayData = new DayData
+        {
+            EventsCount = eventsOnDay.Count,
+            HasConflict = eventsOnDay.Any(e => e.HasConflict),
+            Events = new List<EventData>()
+        };
+
+        foreach (var ev in eventsOnDay.Take(3))
+        {
+            string content = ev.Plays.Select(p => p.Name).FirstOrDefault() ?? "Без названия";
+            string timePeriod = ev.GetTimePeriodForDate(date);
+
+            dayData.Events.Add(new EventData
+            {
+                EventType = ev.Type,
+                CancellationReason = ev.CancellationReason,
+                Content = content,
+                TimePeriod = timePeriod
+            });
+        }
+
+        return dayData;
+    }
+
+    private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
+    {
+        return @<Template>
+            <div class="calendar-header-container">
+                <div class="calendar-header">
+                    <Button @onclick="PreviousMonth">
+                        <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
+                    </Button>
+
+                    <DatePicker ValueChanged="OnDatePickerChanged"
+                                AllowClear="false"
+                                Value="currentDate"
+                                ShowToday="true"
+                                TValue="DateTime"
+                                Picker="DatePickerType.Month" />
+
+                    <Button @onclick="NextMonth">
+                        <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
+                    </Button>
+                </div>
+            </div>
+        </Template>
+    ;
+    }
+
+    private void OnDateSelect(DateTime date)
+    {
+        var dateString = $"{date.Year:0000}-{date.Month:00}-{date.Day:00}";
+        navManager.NavigateTo($"/events/{dateString}");
+    }
+
+    private async Task OnDatePickerChanged(DateTime newDate)
+    {
+        currentDate = newDate;
+        await LoadEventsForMonth(currentDate);
+        StateHasChanged();
+    }
+
+    private async Task NextMonth()
+    {
+        currentDate = currentDate.AddMonths(1);
+        await LoadEventsForMonth(currentDate);
+        StateHasChanged();
+    }
+
+    private async Task PreviousMonth()
+    {
+        currentDate = currentDate.AddMonths(-1);
+        await LoadEventsForMonth(currentDate);
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventsForMonth(currentDate);
+        await LoadEmployeeName();
+    }
+
+    private RenderFragment DateCellRender(DateTime value)
+    {
+        var dayData = GetDayData(value);
+        return @<Template>
+            <div style="position: relative; min-height: 70px;">
+                @if (dayData.HasConflict)
+                {
+                    <Tooltip Title="Есть конфликты в расписании" style="position: absolute; top: 2px; right: 4px; z-index: 1;">
+                        <div>
+                            <Icon Type="@IconType.TwoTone.Warning"
+                                  Theme="IconThemeType.TwoTone"
+                                  TwoToneColor="#faad14"
+                                  Style="font-size: 20px;" />
+                        </div>
+                    </Tooltip>
+                }
+                <ul class="events" style="cursor: pointer; min-height: 60px;">
+                    @foreach (var data in dayData.Events)
+                    {
+                        <li key="@data.Content">
+                            <span style="font-weight:inherit;">@data.TimePeriod</span>
+                    <span style="@GetEventStyleByType(data.EventType, data.CancellationReason!=null)">
+                                @data.Content
+                            </span>
+                        </li>
+                    }
+                </ul>
+                @if (dayData.EventsCount > 3)
+                {
+                    <p> ...еще @(dayData.EventsCount - 3)</p>
+                }
+            </div>
+
+        </Template>
+    ;
+    }
+
+    private async Task LoadEmployeeName()
+    {
+        try
+        {
+            var employee = await employeeService.GetEmployeeAsync(Id);
+            pageTitle = $"Расписание сотрудника {employee.FullName}";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки сотрудника: {ex.Message}");
+            pageTitle = "Мероприятия сотрудника";
+        }
+    }
+
+
+    private void GoBack()
+    {
+        navManager.NavigateTo($"/employees/{Id}");
+    }
+}
+

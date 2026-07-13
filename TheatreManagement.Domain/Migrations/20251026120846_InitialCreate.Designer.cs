@@ -66,7 +66,7 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<string>("Post")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Status")
+                    b.Property<string>("IsActive")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Surname")
@@ -212,7 +212,7 @@ namespace TheatreManagement.Domain.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Status")
+                    b.Property<string>("IsActive")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")

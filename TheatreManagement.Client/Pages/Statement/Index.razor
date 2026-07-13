@@ -1,0 +1,232 @@
+﻿@page "/statement"
+@using TheatreManagement.Shared
+@using TheatreManagement.Shared.DTOs.Availability
+@using AntDesign
+
+<PageTitle>Ведомость занятости составов</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Ведомость занятости составов</PageHeaderTitle>
+</PageHeader>
+
+<Card BodyStyle="padding: 16px;" Style="margin-bottom: 16px;">
+    <Flex Gap="FlexGap.Middle" Align="FlexAlign.Center" Wrap="FlexWrap.Wrap">
+        <Flex Align="FlexAlign.Center" Gap="FlexGap.Small">
+            <Text Strong>Начало:</Text>
+            <DatePicker @bind-Value="@startDate"
+                        Format="yyyy-MM-dd HH:mm"
+                        ShowTime="true"
+                        Placeholder="@("Выберите дату и время")"
+                        Style="width: 200px;" />
+        </Flex>
+
+        <Flex Align="FlexAlign.Center" Gap="FlexGap.Small">
+            <Text Strong>Конец:</Text>
+            <DatePicker @bind-Value="@endDate"
+                        Format="yyyy-MM-dd HH:mm"
+                        ShowTime="true"
+                        Placeholder="@("Выберите дату и время")"
+                        Style="width: 200px;" />
+        </Flex>
+
+        <Flex Align="FlexAlign.Center" Gap="FlexGap.Small">
+            <Input Placeholder="Поиск по спектаклю"
+                   @bind-Value="@searchText"
+                   AllowClear="true"
+                   Style="width: 200px;" />
+        </Flex>
+
+        <Button Type="ButtonType.Primary"
+                OnClick="@LoadData"
+                Loading="@loading">
+            <Icon Type="@IconType.Outline.Search" />
+            Применить
+        </Button>
+    </Flex>
+</Card>
+
+@if (plays != null && plays.Any())
+{
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        @foreach (var play in plays)
+        {
+            <Card Title="@play.PlayName">
+                <Extra>
+                    @if (play.HasAvailableCast)
+                    {
+                        <span style="color: #52c41a;">
+                            <Icon Type="@IconType.Outline.CheckCircle" Theme="IconThemeType.Fill" />
+                            Есть свободный состав
+                        </span>
+                    }
+                    else
+                    {
+                        <span style="color: #ff4d4f;">
+                            <Icon Type="@IconType.Outline.CloseCircle" Theme="IconThemeType.Fill" />
+                            Нет свободных составов
+                        </span>
+                    }
+                </Extra>
+                <Body>
+                    <Flex Wrap="FlexWrap.Wrap" Gap="FlexGap.Middle">
+                        @foreach (var cast in play.Casts)
+                        {
+                            <Card Style="flex: 1; min-width: 300px;"
+                                  BodyStyle="padding: 12px;"
+                                  Class="@GetCastStatusClass(cast)">
+                                <Body>
+                                    <Flex Vertical Gap="FlexGap.Small">
+                                        <Flex Justify="FlexJustify.SpaceBetween" Align="FlexAlign.Center">
+                                            <Text Strong>@cast.CastName</Text>
+                                            @switch (cast.Status)
+                                            {
+                                                case CastStatus.FullAvailable:
+                                                    <span style="color: #52c41a;">Полностью свободен</span>
+                                                    break;
+                                                case CastStatus.PartialAvailable:
+                                                    <span style="color: #faad14;">Частично занят</span>
+                                                    break;
+                                                default:
+                                                    <span style="color: #ff4d4f;">Полностью занят</span>
+                                                    break;
+                                            }
+                                        </Flex>
+
+                                        <Divider Style="margin: 8px 0;" />
+
+                                        @foreach (var role in cast.Roles)
+                                        {
+                                            <Flex Justify="FlexJustify.SpaceBetween" Align="FlexAlign.Center">
+                                                <Text>@role.RoleName:</Text>
+                                                @if (role.IsAvailable)
+                                                {
+                                                    <span style="color: #52c41a;">
+                                                        <Icon Type="@IconType.Outline.CheckCircle" Theme="IconThemeType.Fill" />
+                                                        @role.EmployeeFullName
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <Tooltip Title="@role.ConflictDescription">
+                                                        <span style="color: #ff4d4f;">
+                                                            <Icon Type="@IconType.Outline.CloseCircle" Theme="IconThemeType.Fill" />
+                                                            @role.EmployeeFullName
+                                                        </span>
+                                                    </Tooltip>
+                                                }
+                                            </Flex>
+                                        }
+
+                                        <Divider/>
+
+                                        <Flex Justify="FlexJustify.FlexEnd">
+                                            <Text>
+                                                Свободны: <Text Strong>@cast.AvailableCount</Text> / @cast.TotalCount
+                                            </Text>
+                                        </Flex>
+                                    </Flex>
+                                </Body>
+                            </Card>
+                        }
+                    </Flex>
+                </Body>
+            </Card>
+        }
+    </div>
+
+    <Flex Justify="FlexJustify.Center" Style="margin-top: 24px;">
+        <Pagination Total="@totalCount"
+                    PageSize="@pageSize"
+                    Current="@currentPage"
+                    ShowQuickJumper="true"/>
+    </Flex>
+}
+else
+{
+    <Empty Description="@("Нет данных по выбранным фильтрам")" />
+}
+
+@code {
+    [Inject] private StatementService statementService { get; set; }
+    [Inject] private IMessageService messageService { get; set; }
+
+    private List<PlayAvailabilityDto> plays = new();
+    private int totalCount = 0;
+    private int pageSize = 6;
+    private int currentPage = 1;
+    private string? searchText;
+    private bool loading = false;
+
+    private DateTime? startDate = DateTime.Now.Date.AddHours(10);
+    private DateTime? endDate = DateTime.Now.Date.AddHours(12);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (!startDate.HasValue || !endDate.HasValue)
+        {
+            messageService.Warning("Выберите период времени");
+            return;
+        }
+
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await statementService.GetPlayAvailabilityAsync(
+                startDate.Value,
+                endDate.Value,
+                currentPage,
+                pageSize,
+                searchText);
+
+            plays = result?.Items ?? new List<PlayAvailabilityDto>();
+            totalCount = result?.TotalCount ?? 0;
+        }
+        catch (Exception ex)
+        {
+            messageService.Error($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnPageChange(int page, int pageSize)
+    {
+        currentPage = page;
+        this.pageSize = pageSize;
+        await LoadData();
+    }
+
+    private string GetCastStatusClass(CastAvailabilityDto cast)
+    {
+        return cast.Status switch
+        {
+            CastStatus.FullAvailable => "available",
+            CastStatus.PartialAvailable => "partial",
+            _ => "not-available"
+        };
+    }
+}
+
+<style>
+    .available {
+        background-color: #ebffeb;
+    }
+
+    .partial {
+        background-color: #fcffeb;
+    }
+
+    .not-available {
+        background-color: #ffebeb;
+    }
+</style>

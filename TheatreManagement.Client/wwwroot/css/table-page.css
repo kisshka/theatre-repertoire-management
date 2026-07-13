@@ -52,8 +52,7 @@
 
 .ant-pagination-item,
 .ant-pagination-prev .ant-pagination-item-link,
-.ant-pagination-next .ant-pagination-item-link,
-.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+.ant-pagination-next .ant-pagination-item-link,{
     background-color: var(--gray);
     border-color: var(--light-gray);
     border-radius: 5px;
@@ -64,6 +63,7 @@
     border-right-width: 1px;
      background-color: var(--light-gray);
 }
+
 .ant-pagination-item-active a
 {
    background-color: var(--primary-color);
@@ -80,4 +80,12 @@
 .ant-pagination-next .ant-pagination-item-link:hover {
     background-color: var(--light-gray);
     border-color: var(--light-gray);
+}
+
+/*Для сотрудников*/
+.inactive-row, .inactive-row > td {
+    background: var( --canceled);
+}
+.inactive-row:hover, .inactive-row:hover > td {
+    background: var( --canceled) !important;
 }

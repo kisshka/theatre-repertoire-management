@@ -1,0 +1,173 @@
+﻿@page "/plays/{id:int}/casts"
+
+<PageTitle>Список составов</PageTitle>
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>Список составов</PageHeaderTitle>
+</PageHeader>
+
+<div class="casts-container">
+
+    <div class="add-cast-container">
+    <AdminButton>
+        <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+                <Icon Type="@IconType.Outline.Plus" /> Добавить
+        </Button>
+    </AdminButton>
+    </div>
+
+@if (castes != null && castes.Any())
+{
+        <p style="font-size:18px;">Выберите состав, информацию о котором хотите увидеть</p>
+    <div class="cast-control-panel">
+        <InputGroup Compact>
+
+                <Select TItem="CastDto"
+                        TItemValue="int"
+                        DataSource="@castes"
+                        @bind-Value="@selectedCastId" 
+                        LabelName="@nameof(CastDto.Name)"
+                        ValueName="@nameof(CastDto.CastId)"
+                        OnSelectedItemChanged="@OnSelectedItemChangedHandler">
+                </Select>
+
+                <AuthorizeView Roles="MainAdmin, SystemAdmin">
+                    <Authorized>
+                        <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+                            <Icon Type="@IconType.Outline.Edit" />
+                        </Button>
+
+                        <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                        </DeleteButtonWithConfirm>
+                    </Authorized>
+                </AuthorizeView>
+
+        </InputGroup>
+    </div>
+        <Card Class="cast-card">
+
+            <Card Title="Актеры" Class="cast-column">
+                @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Актерская"))
+                {
+                    <CardGrid Class="cast-column-card-grid">
+                        <p class="rolename-text">@role.RoleName</p>
+                    </CardGrid>
+                    <CardGrid Class="cast-column-card-grid">
+                        @if (role.Employees != null && role.Employees.Any())
+                        {
+                            @foreach (var employee in role.Employees)
+                            {
+                                <p class="employee-text">@($"{employee.Surname} {employee.Name} {employee.FatherName}")</p>
+                            }
+                        }
+                        else
+                        {
+                            <p class="empty-role">Не назначен</p>
+                        }
+                    </CardGrid>
+                }
+            </Card>
+
+            <Card Title="Технический состав" Class="cast-column">
+                @foreach (var role in selectedCast.Roles.Where(r => r.RoleType == "Техническая"))
+                {
+                    <CardGrid Class="cast-column-card-grid">
+                        <p class="rolename-text">@role.RoleName</p>
+                    </CardGrid>
+                    <CardGrid Class="cast-column-card-grid">
+                        @if (role.Employees != null && role.Employees.Any())
+                        {
+                            @foreach (var employee in role.Employees)
+                            {
+                                <p class="employee-text">@($"{employee.Surname} {employee.Name} {employee.FatherName}")</p>
+                            }
+                        }
+                        else
+                        {
+                            <p class="empty-role">Не назначен</p>
+                        }
+                    </CardGrid>
+                }
+            </Card>
+        <p>Последнее изменение: @selectedCast.LastEditTime.ToString() - @selectedCast.UserFullName.ToString()</p>
+    </Card>
+}
+else
+{
+    <Card>
+        <p>Отсутствуют готовые составы</p>
+    </Card>
+}
+
+</div>
+
+<EditCastModal @bind-Visible="@editModalVisible"
+CastId="@selectedCastId"
+PlayId="@Id"
+OnSuccess="@OnCastEdited" />
+
+<AddCastModal @bind-Visible="@addModalVisible"
+PlayId="@Id"
+OnSuccess="@OnCastAdded" />
+
+@inject PlayService playService
+@inject NavigationManager navManager
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private List<CastDto> castes = new();
+    private int selectedCastId;
+    private CastWithRolesDto selectedCast = new();
+
+    private bool addModalVisible = false;
+    private bool editModalVisible = false;
+
+    private async Task OnCastEdited()
+    {
+        await LoadDataAsync();
+    }
+    private async Task OnCastAdded()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        castes = await playService.GetCastsAsync(Id);
+        castes = castes.OrderByDescending(c => c.CastId).ToList();
+        if (castes.Count > 0)
+        {
+            selectedCastId = castes[0].CastId;
+            selectedCast = await playService.GetCastAsync(selectedCastId);
+        }
+        StateHasChanged();
+    }
+
+    private async Task SoftDelete()
+    {
+        await playService.SoftDeleteCastAsync(selectedCastId);
+        await LoadDataAsync();
+    }
+
+    private async Task OnSelectedItemChangedHandler()
+    {
+        selectedCast = await playService.GetCastAsync(selectedCastId);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+    private void GoBack()
+    {
+        navManager.NavigateTo($"/plays/{Id}");
+    }
+
+}

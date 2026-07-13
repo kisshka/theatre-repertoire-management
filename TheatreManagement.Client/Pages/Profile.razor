@@ -1,0 +1,106 @@
+﻿@page "/profile"
+@using TheatreManagement.Shared.DTOs.Users
+
+<PageTitle>Профиль</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Мой профиль</PageHeaderTitle>
+</PageHeader>
+
+<div class="card-page">
+
+    <Card>
+        <Form Model="@Model"
+        @ref="@formRef"
+        Layout="FormLayout.Vertical"
+        OnFinish="OnFinish"
+        OnFinishFailed="OnFinishFailed"
+        Class="profile-form">
+
+            <FormItem Label="Фамилия" >
+                <Input @bind-Value="@context.Surname" />
+            </FormItem>
+            <FormItem Label="Имя">
+                <Input @bind-Value="@context.Name" />
+            </FormItem>
+            <FormItem Label="Отчество">
+                <Input @bind-Value="@context.FatherName" />
+            </FormItem>
+            <FormItem Label="E-mail">
+                <Input @bind-Value="@context.Email" />
+            </FormItem>
+            <p>Роль: @RoleHelper.GetDisplayName(context.Role)</p>
+
+            <Button Type="ButtonType.Primary"
+            OnClick="SaveChanges">
+                Сохранить изменения
+            </Button>
+            <Button Type="ButtonType.Primary" OnClick="@ResetPassword">
+                Сбросить пароль
+            </Button>
+        </Form>
+    </Card>
+
+</div>
+
+@inject NavigationManager navManager
+@inject IMessageService message
+@inject AuthenticationStateProvider provider
+@code {
+    private UserDto Model = new();
+    private Form<UserDto> formRef { get; set; }
+    private bool Submitting { get; set; } = false;
+    public string error = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        Model = await authStateProvider.GetCurrentUserAsync();
+    }
+
+    private async Task OnFinish(EditContext editContext)
+    {
+        if (Submitting) return;
+
+        Submitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var authStateProvider = (CustomAuthStateProvider)provider;
+            await authStateProvider.UpdateUserAsync(Model);
+
+            message.Success("Информация успешно обновлена");
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            StateHasChanged();
+        }
+        finally
+        {
+            Submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ResetPassword()
+    {
+        navManager.NavigateTo("/forgot-password");
+    }
+
+    private async Task SaveChanges()
+    {
+        if (formRef != null)
+        {
+            formRef.Submit();
+        }
+
+        navManager.NavigateTo(navManager.Uri, forceLoad: true);
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Console.WriteLine($"Failed:{JsonSerializer.Serialize(Model)}");
+    }
+}

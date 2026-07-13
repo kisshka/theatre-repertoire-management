@@ -1,0 +1,210 @@
+﻿@page "/events/{datestring}"
+@using System.Globalization
+@using TheatreManagement.Shared.DTOs.Events
+@using AntDesign
+
+<PageTitle>Мероприятия на день</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>@pageHeader</PageHeaderTitle>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+</PageHeader>
+
+
+<Row Gutter="0" class="event-container">
+    <!-- Стационарные мероприятия -->
+    <Col Span="8" class="events">
+
+    <Card class="events-card" Title="Стационар" Bordered="false">
+            @foreach (var e in events.Where(e => e.Type == "stationar"))
+            {
+            var timePeriod = e.GetTimePeriodForDate(Date);
+
+            <div @onclick="() => GoToDetails(e.EventId)">
+                <Card Title="@timePeriod"
+                      class="@(e.CancellationReason != null ? "card-cancelled" : "card-stationar")"
+                    Bordered="true">
+                    <Extra>
+                        @e.Stationar?.Type
+                    </Extra>
+                    <Extra>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>@e.Stationar?.Type</span>
+                                @if (e.HasConflict)
+                                {
+                                <Tooltip Title="Есть конфликты в расписании">
+                                    <WarningIcon />
+                                </Tooltip>
+                                }
+                        </div>
+                    </Extra>
+                    <Body>
+                    @if (e.Plays != null && e.Plays.Any())
+                    {
+                        @foreach (var p in e.Plays)
+                        {
+                                <div>
+                                    <strong>@p.Name</strong>
+                                </div>
+                        }
+                    }
+
+                    <div>@(e.Stationar?.HallTypeName)</div>
+
+                    </Body>
+                </Card>
+            </div>
+            }
+        </Card>
+    </Col>
+
+    <!-- Выездные мероприятия -->
+    <Col Span="8" class="events">
+    <Card class="events-card" Title="Выезды" Bordered="false">
+            @foreach (var e in events.Where(e => e.Type == "visit"))
+            {
+                var timePeriod = e.GetTimePeriodForDate(Date);
+
+            <div @onclick="() => GoToDetails(e.EventId)">
+                <Card class="@(e.CancellationReason != null ? "card-cancelled" : "card-visit")"
+                    Bordered="true"
+                      Title="@timePeriod">
+                    <Extra>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                                @if (e.HasConflict)
+                                {
+                                <Tooltip Title="Есть конфликты в расписании">
+                                    <WarningIcon />
+                                </Tooltip>
+                                }
+                        </div>
+                    </Extra>
+                    <Body>
+                            @if (e.Plays != null && e.Plays.Any())
+                            {
+                                @foreach (var p in e.Plays)
+                                {
+                                <div>
+                                    <strong>@p.Name</strong>
+                                </div>
+                                }
+                            }
+                        <div>
+                                @e.Institution?.Name
+                        </div>
+                        <div>
+                            <span>
+                                г.@(e.Institution?.Town ?? "")
+                                ул.@(e.Institution?.Street ?? "")
+                                дом @(e.Institution?.House ?? "")
+                            </span>
+                        </div>
+                    </Body>
+                </Card>
+            </div>
+            }
+        </Card>
+    </Col>
+
+    <!-- Гастрольные мероприятия -->
+    <Col Span="8" class="events">
+    <Card class="events-card" Title="Гастроли" Bordered="false">
+            @foreach (var e in events.Where(e => e.Type == "tour"))
+            {
+                var timePeriod = e.GetTimePeriodForDate(Date);
+
+            <div @onclick="() => GoToDetails(e.EventId)">
+                <Card class="@(e.CancellationReason != null ? "card-cancelled" : "card-tour")"
+                  Bordered="true"
+                      Title="@timePeriod">
+                    <Extra>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                                @if (e.HasConflict)
+                                {
+                                <Tooltip Title="Есть конфликты в расписании">
+                                    <WarningIcon />
+                                </Tooltip>
+                                }
+                        </div>
+                    </Extra>
+                    <Body>
+                            @if (e.Plays != null && e.Plays.Any())
+                            {
+                                @foreach (var p in e.Plays)
+                                {
+                                <div>
+                                    <strong>@p.Name</strong>
+                                </div>
+                                }
+                            }
+                        <div>@(e.Tour?.Country ?? "")</div>
+                        <div>@(e.Tour?.Area ?? "")</div>
+                    </Body>
+                </Card>
+            </div>
+            }
+        </Card>
+    </Col>
+</Row>
+
+@if(!events.Any())
+{
+    <div class="empty-container">
+        <Icon Type="@IconType.Outline.Inbox" />
+        <div>Нет мероприятий</div>
+    </div>
+}
+
+
+<Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+    <Icon Type="@IconType.Outline.Plus" />
+    Добавить
+</Button>
+
+<AddModal @bind-Visible="addModalVisible"
+          OnSuccess="OnModalSuccess"
+          EventDate="@Date" />
+
+@code {
+    [Parameter] public string DateString { get; set; }
+
+    private DateTime Date { get; set; }
+    private string dayName { get; set; }
+    private string pageHeader { get; set; }
+    private bool addModalVisible { get; set; }
+    private List<EventGetModel> events { get; set; } = new();
+
+    [Inject] private EventService eventService { get; set; }
+    [Inject] private NavigationManager navManager { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Date = DateTime.ParseExact(DateString, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        await LoadData();
+    }
+
+    private async Task OnModalSuccess()
+    {
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task LoadData()
+    {
+        events = await eventService.GetEventsByDayAsync(Date);
+        var culture = new CultureInfo("ru-RU");
+        dayName = culture.DateTimeFormat.GetDayName(Date.DayOfWeek);
+        pageHeader = $"Мероприятия на {Date:dd-MM-yyyy} ({dayName})";
+    }
+
+    private void GoToDetails(int eventId)
+    {
+        navManager.NavigateTo($"/events/{DateString}/details/{eventId}");
+    }
+
+}

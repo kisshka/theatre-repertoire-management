@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
+using TheatreManagement.Domain.Entities;
+using System.Runtime.CompilerServices;
 
 namespace TheatreManagement.Domain.Data
 {
@@ -13,16 +15,38 @@ namespace TheatreManagement.Domain.Data
         public virtual DbSet<Employee> Employees { get; set; }
         public virtual DbSet<EmployeeRole> EmployeeRoles { get; set; }
         public virtual DbSet<Event> Events { get; set; }
+        public virtual DbSet<PlayEvent> PlayEvents { get; set; }
         public virtual DbSet<Institution> Institutions { get; set; }
         public virtual DbSet<Play> Plays { get; set; }
         public virtual DbSet<RoleInPlay> RoleInPlays { get; set; }
         public virtual DbSet<Stationar> Stationars { get; set; }
         public virtual DbSet<Tour> Tours { get; set; }
+
+        public virtual DbSet<HallType> HallTypes { get; set; }
+        public virtual DbSet<InstitutionType> InstitutionTypes { get; set; }
+        public virtual DbSet<SceneType> SceneTypes { get; set; }
+
         public override DbSet<User> Users { get; set; }
+
+
+        [DbFunction("CustomLike", IsBuiltIn = false)]
+        [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
+        public static bool CustomLike(string text, string pattern)
+        {
+            if (text == null || pattern == null) return false;
+            return text.Contains(pattern, StringComparison.OrdinalIgnoreCase);
+        }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<Cast>().HasQueryFilter(i => i.DeletionTime == null);
+            builder.Entity<Employee>().HasQueryFilter(i => i.DeletionTime == null);
+            builder.Entity<Play>().HasQueryFilter(i => i.DeletionTime == null);
+            builder.Entity<Event>().HasQueryFilter(i => i.DeletionTime == null);
+            // Удаленные юзеры еще нужны
+            //builder.Entity<User>().HasQueryFilter(i => i.DeletionTime == null);
 
             builder.Entity<Event>()
               .HasOne(e => e.Stationar)
@@ -34,7 +58,7 @@ namespace TheatreManagement.Domain.Data
                 .HasOne(e => e.Tour)
                 .WithOne(t => t.Event)
                 .HasForeignKey<Tour>(t => t.TourId)
-                .IsRequired(false); 
+                .IsRequired(false);
         }
     }
 }

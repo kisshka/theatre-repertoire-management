@@ -1,0 +1,202 @@
+﻿.card-page {
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    min-height: 100vh;
+    width: 100%;
+    margin: 20px;
+}
+
+.card-page .ant-card {
+    width: 100%;
+    max-width: 1300px;
+    border: solid 3px var(--light-gray);
+/*    box-shadow: 0 1px 2px 0 var(--light-gray);*/
+}
+
+.ant-card-body p {
+    margin: 20px 0px;
+    font-size: 16px;
+}
+
+/*Для страниц Details*/
+.details-card,
+.employee-details-card {
+    box-shadow: 0 1px 2px 3px var(--light-gray);
+    border-radius: 5px;
+    width: 100%;
+    max-width: 1300px;
+    padding: 20px;
+}
+
+.details-fourth-grid {
+    width: 25%;
+    text-align: center;
+    box-shadow: none;
+    font-size: 16px;
+}
+
+.details-triple-grid {
+    width: 33%;
+    text-align: center;
+    box-shadow: none;
+    font-size: 16px;
+}
+
+.details-card-grid {
+    width: 50%;
+    text-align: center;
+    padding: 0px;
+    background-color: var(--light-gray);
+    border: solid 3px var(--primary-color);
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.details-column .ant-list-header,
+.cast-column .ant-card-head {
+    font-weight: 700;
+    font-size: 16px;
+    border: solid 3px var(--primary-color);
+    color: var(--light);
+    background-color: var(--primary-color);
+    border-radius: 2px;
+    margin: 0px;
+}
+.column-list-item {
+    background-color: var(--light);
+    padding: 10px 40px;
+    text-align:center;
+    border-radius: 2px;
+}
+
+.details-card .ant-card-head,
+.employee-details-card .ant-card-head {
+    font-weight: bold;
+    text-align: center;
+    font-size: 25px;
+}
+
+.details-container {
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 40px;
+}
+
+/*Для составов*/
+.casts-container {
+    max-width: 1300px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.add-cast-container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+    margin-left: 5px;
+}
+
+.cast-control-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.cast-card {
+    box-shadow: 0 1px 2px 3px var(--light-gray);
+    width: 100%;
+}
+
+.cast-column .ant-card-head {
+    padding: 0px 10px;
+    max-height: 90px;
+    border-radius: 2px;
+}
+
+.cast-column {
+    border: solid 3px var(--primary-color);
+    border-radius: 5px;
+    margin: 5px;
+}
+
+.cast-column .ant-card-head .ant-card-head-title {
+    padding: 2px 0px;
+}
+
+.cast-column-card-grid {
+    width: 50%;
+    text-align: center;
+    padding: 0px;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.rolename-text {
+    margin: 10px;
+    font-weight: 700;
+}
+.employee-text {
+    margin: 10px;
+}
+
+/*Для карточки сотрудника*/
+
+.employees-details-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 40px;
+}
+
+.employee-main-info {
+    width: 50%;
+    text-align: center;
+    box-shadow: none;
+    font-size: 16px;
+}
+
+.employee-prewiew-card .ant-card-head {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.employee-column-card-grid {
+    width: 50%;
+    border: solid 3px var(--primary-color);
+    text-align: center;
+    padding: 0px;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+.employee-inner-column {
+    width: 50%;
+    text-align: center;
+    padding: 0px;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.employee-inner-column p{
+    padding: 0px;
+}
+
+.preview-control-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+    margin: 20px;
+}

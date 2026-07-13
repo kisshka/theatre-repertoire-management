@@ -1,0 +1,145 @@
+@page "/users"
+@using TheatreManagement.Client.Helpers
+@using TheatreManagement.Client.Services
+@using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Shared.DTOs.Users
+
+
+<PageTitle>Список пользователей</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Список пользователей</PageHeaderTitle>
+    <PageHeaderExtra>
+        <AuthorizeView Roles="MainAdmin, SystemAdmin">
+            <Authorized>
+                <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
+                    Архив
+                    <Icon Type="@IconType.Outline.Right" />
+                </Button>
+            </Authorized>
+        </AuthorizeView>
+    </PageHeaderExtra>
+</PageHeader>
+
+@* Добавление пользователя *@
+<div class="table-page-header">
+    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+        <Icon Type="@IconType.Outline.Plus" />
+    </Button>
+
+    <Search Placeholder="Введите ФИО пользователя"
+    @bind-Value="@searchText"
+    EnterButton="true"
+    OnSearch="@OnSearchAsync" />
+
+    <Button Type="ButtonType.Default">
+        <Icon Type="@IconType.Fill.Filter"/>
+    </Button>
+</div>
+
+<Table TItem="@UserDto"
+DataSource="@users"
+PageSize="@pageSize"
+Total="@total"
+@bind-PageIndex="currentPage"
+OnChange="@OnTableChange"
+OnRowClick="@OnRowClick">
+    @foreach (var column in columns)
+    {
+        if (column == "Role")
+        {
+            <Column TData="object" DataIndex="@column" Title="Роль">
+                <Template>
+                    @RoleHelper.GetDisplayName(context.Role)
+                </Template>
+            </Column>
+        }
+        else
+        {
+            <Column TData="object" DataIndex="@column"></Column>
+        }
+    }
+</Table>
+
+<AddModal @bind-Visible="@addModalVisible"
+OnSuccess="@OnUserAdded"/>
+
+<EditModal @bind-Visible="@editModalVisible"
+           Id="@editId"
+           OnSuccess="@OnUserAdded" />
+
+
+@inject AuthenticationStateProvider provider
+@inject ModalService ModalService;
+@inject NavigationManager navManager
+@code {
+    private bool addModalVisible = false;
+    private bool editModalVisible = false;
+    private string editId = "";
+
+    private List<UserDto> users;
+
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
+
+    private async Task OnUserAdded()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        await LoadDataAsync(currentPage);
+        StateHasChanged();
+    }
+
+    // Данные для заполнения таблиц
+    string[] columns = { "Surname", "Name", "Fathername", "Role" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<UserDto> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    private async Task OnRowClick(RowData<UserDto> row)
+    {
+        editId = row.Data.Id;
+        editModalVisible = true;
+    }
+    
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        try
+        {
+            var result = await authStateProvider.GetUsersPagedAsync(page, pageSize, searchText);
+            if (result != null)
+            {
+                users = result.Items ?? new List<UserDto>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task GoToArchive()
+    {
+        navManager.NavigateTo("/users/archive");
+    }
+
+}
+
+

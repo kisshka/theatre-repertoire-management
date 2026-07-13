@@ -3,16 +3,46 @@ html, body {
 }
 
 :root {
-  --primary-color: #708D81;
-  --secondary-color: #D4B655;
-  --dark-header: #001427;
-
-  --dark-gray:#615f5f; 
-  --gray: #ada1a1;
-  --light-gray: #d4d1d1;
-
-  --light: #ffffff;
-  --dark: #000000;
+    --primary-color: #708D81;
+    --secondary-color: #D4B655;
+    --danger-color: #e07272;
+    --danger-light: #f79f9f;
+    --dark-header: #001427;
+    --dark-gray: #615f5f;
+    --gray: #ada1a1;
+    --light-gray: #d4d1d1;
+    --light: #ffffff;
+    --dark: #000000;
+    /*Карточки мероприятий*/
+    --stationar: #b9e3b8;
+    --visit: #b8c6e3;
+    --tour: #f2e4aa;
+    --canceled: #e3c0b8;
+    /*Отображение на календаре*/
+    --stationar-text: #187800;
+    --visit-text: #0f00b3;
+    --tour-text: #997a00;
+    --canceled-text: #7a4033;
+    /*Переопределение переменных AntDesign*/
+    --ant-primary-color: var(--primary-color);
+    --ant-primary-color-hover: var(--secondary-color);
+    --ant-primary-color-active: var(--primary-color);
+    --ant-primary-color-outline: var(--light-gray);
+    --ant-border-color-base: var(--light-gray);
+    --ant-primary-1: #def2dc;
+    --ant-primary-5: #309127;
+    /*Теги и алерты*/
+/*    --ant-success-color: #18850f;
+    --ant-success-color-deprecated-border: #36b92b;
+    --ant-success-color-deprecated-bg: #c5fcc0;*/
+    --ant-warning-color: #faad14;
+    --ant-error-color: #bd4a4a;
+    --ant-font-size-base: 14px;
+    --ant-heading-color: rgba(0, 0, 0, 0.85);
+    --ant-text-color: rgba(0, 0, 0, 0.65);
+    --ant-text-color-secondary: rgba(0, 0, 0, 0.45);
+    --ant-disabled-color: rgba(0, 0, 0, 0.25);
+    --ant-border-radius-base: 2px;
 }
 
 h1 {
@@ -41,15 +71,13 @@ justify-content: space-between;
 
 .ant-btn-primary {
     color: var(--light);
-    border-color:  var(--primary-color);
-    background:  var(--primary-color);
+    border-color: var(--primary-color);
     text-shadow: none;
     box-shadow: none;
     border-radius: 5px;
 }
 .ant-btn-primary:hover, .ant-btn-primary:focus {
     border-color:   var(--secondary-color);
-    background:   var(--secondary-color);
     box-shadow: none;
 }
 
@@ -67,8 +95,9 @@ justify-content: space-between;
     border-radius: 5px;
 }
 .ant-btn-default:hover, .ant-btn-default:focus {
-    border-color:   var(--light-gray);
-    background:   var(--light-gray);
+    border-color: var(--light-gray);
+    color: var(--dark);
+    background: var(--light-gray);
     box-shadow: none;
 }
 .ant-btn-default .anticon {
@@ -122,9 +151,9 @@ justify-content: space-between;
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "Произошла непредвиденная ошибка."
+}
 
 .loading-progress {
     position: relative;
@@ -136,17 +165,17 @@ justify-content: space-between;
 
     .loading-progress circle {
         fill: none;
-        stroke: #e0e0e0;
+        stroke: var(--primary-color);
         stroke-width: 0.6rem;
         transform-origin: 50% 50%;
         transform: rotate(-90deg);
     }
 
-        .loading-progress circle:last-child {
-            stroke: #1b6ec2;
-            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
-            transition: stroke-dasharray 0.05s ease-in-out;
-        }
+    .loading-progress circle:last-child {
+        stroke: var(--primary-color);
+        stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+        transition: stroke-dasharray 0.05s ease-in-out;
+    }
 
 .loading-progress-text {
     position: absolute;
@@ -156,7 +185,7 @@ justify-content: space-between;
 }
 
     .loading-progress-text:after {
-        content: var(--blazor-load-percentage-text, "Loading");
+        content: var(--blazor-load-percentage-text, "Загрузка");
     }
 
 code {
@@ -170,4 +199,48 @@ code {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
+}
+
+/*Модальное окно*/
+/*.ant-modal-body {
+    padding: 20px 50px 80px 50px;
+}*/
+
+/*Динамические поля*/
+.dinamic-fields {
+    display: flex;
+    margin-top: 8px;
+    margin-bottom: 0px;
+    width: 100%;
+}
+
+.dinamic-fields .ant-input {
+    min-width: 250px;
+    margin-right: 10px;
+}
+
+/*Кнопки удлаения*/
+.danger-button {
+    background: var(--danger-color);
+    padding: 5px 7px;
+    margin-left: 4px;
+    border: none;
+}
+
+.danger-button:hover, .danger-button:focus {
+    background: var(--danger-light);
+}
+
+.dinamic-fields button[disabled], .dinamic-fields button[disabled]:hover {
+    background: var(--gray)
+}
+
+.dinamic-fields button svg {
+    color: white;
+}
+
+/*Не назначено*/
+.empty-role {
+    color: #999;
+    font-style: italic;
 }

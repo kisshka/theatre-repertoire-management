@@ -1,0 +1,128 @@
+﻿@page "/plays/archive"
+
+<PageTitle>Список спектаклей(Архив)</PageTitle>
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>
+        Список спектаклей(Архив)
+    </PageHeaderTitle>
+</PageHeader>
+
+<div class="table-page-header">
+    <Search Placeholder="Введите название представления"
+    @bind-Value="@searchText"
+    EnterButton="true"
+    OnSearch="@OnSearchAsync" />
+
+    <Button Type="ButtonType.Default">
+        <Icon Type="@IconType.Fill.Filter" />
+    </Button>
+</div>
+
+<Table TItem="PlayDto"
+DataSource="@plays"
+PageSize="@pageSize"
+Total="@total"
+@bind-PageIndex="currentPage"
+OnChange="@OnTableChange"
+OnRowClick="@OnRowClick">
+
+    <PropertyColumn Property="@(c => c.Name)" Title="Название" />
+    <PropertyColumn Property="@(c => c.Duration)" Title="Длительность" />
+    <PropertyColumn Property="@(c => c.AgeCategory)" Title="Возрастная категория" />
+    <PropertyColumn Property="c =>c.IsActive" Title="Активен">
+        @if (context.IsActive)
+        {
+            <Icon Type="@IconType.Outline.CheckSquare" Style="color:var(--primary-color); font-size:20px;" />
+        }
+        else
+        {
+            <Icon Type="@IconType.Outline.CloseSquare" Style="color:var(--danger-color); font-size:20px;" />
+        }
+    </PropertyColumn>
+    <PropertyColumn Property="@(c => c.UserFullName)" Title="Удалил" />
+    <PropertyColumn Property="@(c => c.DeletionTime)" Title="Время удаления" />
+
+</Table>
+
+<AddModal @bind-Visible="@addModalVisible"
+OnSuccess="@OnPlayAdded" />
+
+@inject PlayService playService
+@inject NavigationManager navManager
+@inject ModalService modalService
+
+@code {
+    [Inject] private IMessageService messageService { get; set; }
+    private List<PlayDto> plays = new();
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
+
+    private bool addModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnRowClick(RowData<PlayDto> row)
+    {
+        var play = row.Data;
+        var confirmed = await modalService.ConfirmAsync(new ConfirmOptions
+                {
+                    Content = $"Вы уверены, что хотите восстановить запись {play.Name}?",
+                    OkText = "Да",
+                    CancelText = "Нет"
+                });
+
+        if (confirmed)
+        {
+            await playService.RestorePlayAsync(play.PlayId);
+            messageService.Success("Данные успешно восстановлены");
+            await LoadDataAsync(1);
+            }
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<PlayDto> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    private async Task OnPlayAdded()
+    {
+        await LoadDataAsync(currentPage);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        try
+        {
+            var result = await playService.GetPlaysPagedAsync(page, pageSize, searchText, true);
+
+            if (result != null)
+            {
+                plays = result.Items ?? new List<PlayDto>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+}

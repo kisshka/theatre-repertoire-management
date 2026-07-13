@@ -1,0 +1,222 @@
+﻿@page "/employees/{id:int}"
+@using TheatreManagement.Shared.DTOs.Employees
+
+<PageTitle>Информация о сотруднике</PageTitle>
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>Информация о сотруднике</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="ButtonType.Primary" OnClick="@(() => _createReportModalVisible = true)">
+            Отчет
+            <Icon Type="@IconType.Outline.Right" />
+        </Button>
+    </PageHeaderExtra>
+</PageHeader>
+
+<div class="employees-details-container">
+    <Card Title=@employee.FullName Class="employee-details-card">
+    <Extra>
+            <AuthorizeView Roles="MainAdmin,SystemAdmin">
+            <Authorized>
+                <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+                    <Icon Type="@IconType.Outline.Edit" />
+                </Button>
+
+                    @if (employee.IsUsed)
+                    {
+                        <Tooltip Title="Сотрудник используется в мероприятиях или составах, удаление невозможно">
+                            <Button Danger Disabled="true">
+                                <Icon Type="@IconType.Outline.Delete" />
+                            </Button>
+                        </Tooltip>
+                    }
+                    else
+                    {
+                        <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                        </DeleteButtonWithConfirm>
+                    }
+            </Authorized>
+        </AuthorizeView>
+    </Extra>
+    <Body>
+
+        <CardGrid Class="employee-main-info" Hoverable="false">
+            Должность: @employee.Post
+        </CardGrid>
+            <CardGrid Class="employee-main-info" Hoverable="false">
+            @if (employee.IsActive)
+            {
+                <Tag Color="TagColor.Success">Присутствует</Tag>
+            }
+            else
+            {
+                <Tag Color="TagColor.Red">Отсутствует</Tag>
+            }
+        </CardGrid>
+
+        @* Участие *@
+
+            <CardGrid Class="employee-column-card-grid">
+                <Button Style="width:100%" Type="ButtonType.Primary"
+            OnClick="@(() => navManager.NavigateTo($"/employees/{Id}/partincasts"))">
+                Участие в составах (@castsCount)
+                <Icon Type="@IconType.Outline.Right" />
+            </Button>
+
+            @foreach( var part in previewCasts)
+            {
+                    <Card Class="employee-prewiew-card" Title="@part.PlayName">
+                    @foreach (var cast in part.Casts)
+                    {
+                            <CardGrid Class="employee-inner-column">
+                                <p>@cast.CastName</p>
+                        </CardGrid>
+                            <CardGrid Class="employee-inner-column">
+                            @foreach (var role in cast.Roles)
+                            {
+                                <p>@role</p>
+                            }
+                        </CardGrid>
+                    }
+                </Card>
+            }
+        </CardGrid>
+
+            <CardGrid Class="employee-column-card-grid">
+            <Button Style="width:100%" Type="ButtonType.Primary"
+            OnClick="@(() => navManager.NavigateTo($"/employees/{Id}/partinevents"))">
+                Участие в мероприятиях (@eventsCount)
+                <Icon Type="@IconType.Outline.Right" />
+            </Button>
+            @foreach (var ev in previewEvents)
+            {
+                    <Card Class="employee-prewiew-card" Title="@GetEventTitle(ev)">
+                    @if (ev.Plays != null && ev.Plays.Any())
+                    {
+                            <CardGrid Class="employee-inner-column">
+                        @foreach (var play in ev.Plays.Take(2))
+                        {
+                                <p>@play.Name</p>
+                        }
+                        </CardGrid>
+                            <CardGrid Class="employee-inner-column">
+                            <p>@GetEventLocation(ev)</p>
+                        </CardGrid>
+                    }
+                </Card>
+            }
+
+        </CardGrid>
+
+        <p>Последнее изменение: @employee.LastEditTime.ToString() - @employee.UserFullName.ToString()</p>
+    </Body>
+</Card>
+</div>
+
+<EditModal @bind-Visible="@editModalVisible"
+EmployeeId="@Id"
+OnSuccess="@OnEmployeeEdit" />
+
+<CreateReportModal @bind-Visible="_createReportModalVisible"
+EmployeeId="@Id"
+Title="@_reportModalTitle"/>
+
+
+@inject EmployeeService employeeService
+@inject NavigationManager navManager
+@code {
+    [Parameter] public int Id { get; set; }
+    private string _reportModalTitle = "";
+
+    private EmployeeDto employee = new();
+
+    private List<EmployeePlays> previewCasts = new();
+    private int castsCount = new();
+
+    private List<EventGetModel> previewEvents = new();
+    private int eventsCount = new();
+
+
+    private bool _createReportModalVisible = false;
+
+    private bool editModalVisible = false;
+
+    private string GetEventTitle(EventGetModel ev)
+    {
+        var timeRange = $"{ev.StartTime:dd.MM.yyyy HH:mm} - {ev.EndTime:dd.MM.yyyy HH:mm}";
+        return $"{timeRange} | {GetEventTypeName(ev.Type)}";
+    }
+
+    private string GetEventLocation(EventGetModel ev)
+    {
+        if (ev.Type == "stationar" && ev.Stationar != null)
+            return ev.Stationar.HallTypeName;
+        else if (ev.Type == "tour" && ev.Tour != null)
+            return $"{ev.Tour.Country}, {ev.Tour.Area}";
+        else if (ev.Type == "visit" && ev.Institution != null)
+            return ev.Institution.Name;
+        return "";
+    }
+
+    private string GetEventTypeName(string type)
+    {
+        return type switch
+        {
+            "stationar" => "Стационар",
+            "tour" => "Гастроли",
+            "visit" => "Выезд",
+            _ => type
+        };
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        employee = await employeeService.GetEmployeeAsync(Id);
+
+        var castResult = await employeeService.GetEmployeeCastsAsync(Id, 1, 5);
+        if (castResult != null)
+        {
+            previewCasts = castResult.Items ?? new List<EmployeePlays>();
+            castsCount = castResult.TotalCount;
+            StateHasChanged();
+        }
+
+        var eventResult = await employeeService.GetEmployeeEventsPreviewAsync(Id, 1, 5);
+        if (eventResult != null)
+        {
+            previewEvents = eventResult.Items ?? new List<EventGetModel>();
+            eventsCount = eventResult.TotalCount;
+            StateHasChanged();
+        }
+
+        _reportModalTitle = $"Создание отчета {employee.FullName}";
+    }
+
+    private async Task OnEmployeeEdit()
+    {
+        await LoadData();
+    }
+
+    private async Task SoftDelete()
+    {
+        await employeeService.SoftDeleteEmployeeAsync(Id);
+        navManager.NavigateTo("/employees");
+    }
+
+    private void GoBack()
+    {
+        navManager.NavigateTo("/employees");
+    }
+}

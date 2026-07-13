@@ -1,0 +1,128 @@
+﻿@page "/employees"
+@using TheatreManagement.Shared.DTOs.Employees
+@inject HttpClient Http
+
+<PageTitle>Список сотрудников</PageTitle>
+
+<PageHeader>
+    <PageHeaderTitle>Список сотрудников</PageHeaderTitle>
+    <PageHeaderExtra>
+        <AuthorizeView Roles="MainAdmin,SystemAdmin">
+            <Authorized>
+                <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
+                    Архив
+                    <Icon Type="@IconType.Outline.Right" />
+                </Button>
+            </Authorized>
+        </AuthorizeView>
+    </PageHeaderExtra>
+</PageHeader>
+
+<div class="table-page-header">
+    <AuthorizeView Roles="MainAdmin,SystemAdmin">
+        <Authorized>
+            <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+                <Icon Type="@IconType.Outline.Plus" />
+            </Button>
+        </Authorized>
+    </AuthorizeView>
+
+    <Search Placeholder="Введите ФИО сотрудника"
+    @bind-Value="@searchText"
+    EnterButton="true"
+    OnSearch="@OnSearchAsync" />
+
+    <Button Type="ButtonType.Default">
+        <Icon Type="@IconType.Fill.Filter" />
+    </Button>
+</div>
+
+<Table TItem="EmployeeDto"
+DataSource="@employees"
+PageSize="@pageSize"
+Total="@total"
+@bind-PageIndex="currentPage"
+OnChange="@OnTableChange"
+OnRowClick="@OnRowClick">
+    <PropertyColumn Property="@(c => c.Surname)" Title="Фамилия" />
+    <PropertyColumn Property="@(c => c.Name)" Title="Имя" />
+    <PropertyColumn Property="@(c => c.FatherName)" Title="Отчество" />
+    <PropertyColumn Property="@(c => c.Post)" Title="Должность" />
+    <PropertyColumn Property="c =>c.IsActive" Title="Присутствует">
+        @if (context.IsActive)
+        {
+            <Icon Type="@IconType.Outline.CheckSquare" Style="color:var(--primary-color); font-size:20px;" />
+        }
+        else
+        {
+            <Icon Type="@IconType.Outline.CloseSquare" Style="color:var(--danger-color); font-size:20px;" />
+        }
+    </PropertyColumn>
+</Table>
+
+<AddModal @bind-Visible="@addModalVisible"
+          OnSuccess="@OnPlayAdded" />
+
+@inject EmployeeService employeeService
+@inject NavigationManager navManager
+@code {
+
+    private List<EmployeeDto> employees = new();
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
+    private bool addModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnRowClick(RowData<EmployeeDto> row)
+    {
+        var employee = row.Data;
+        navManager.NavigateTo($"/employees/{employee.EmployeeId}");
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<EmployeeDto> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    private async Task OnPlayAdded()
+    {
+        await LoadDataAsync(currentPage);
+    }
+
+    private async Task LoadDataAsync(int page)
+    {
+        try
+        {
+            var result = await employeeService.GetEmployeesPagedAsync(page, pageSize, searchText);
+            if (result != null)
+            {
+                employees = result.Items ?? new List<EmployeeDto>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task GoToArchive()
+    {
+        navManager.NavigateTo("/employees/archive");
+    }
+}
+
+

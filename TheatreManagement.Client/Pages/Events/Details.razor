@@ -1,0 +1,305 @@
+﻿@page "/events/{datestring}/details/{eventid:int}"
+@using AntDesign
+@using TheatreManagement.Shared.ConflictChecker
+@using TheatreManagement.Shared.DTOs.Events
+@using System.Globalization
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>Информация о мероприятии</PageHeaderTitle>
+</PageHeader>
+
+<Card Title="@EventTitle">
+    <Extra>
+        @if (conflicts.Where(ec => ec.Type == ConflictType.HallConflict).Any())
+        {
+            var hallMessage = string.Join(Environment.NewLine, conflicts.Where(ec => ec.Type == ConflictType.HallConflict)
+            .Select(c => c.Message));
+
+            <Tooltip Title="@hallMessage">
+                <WarningIcon />
+            </Tooltip>
+        }
+
+        @if (Model.CancellationReason != null)
+        {
+            <Tag Color="TagColor.Red">Отменено</Tag>
+            <span style="color: var(--canceled-text)">@Model.CancellationReason</span>
+        }
+
+        @if(IsAllow)
+        {
+            <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+                <Icon Type="@IconType.Outline.Edit" />
+            </Button>
+            @if (Model.CancellationReason != null)
+            {
+                <Button Type="ButtonType.Default" OnClick="@RestoreCancelEventAsync">
+                    <Icon Type="@IconType.Outline.Undo" />
+                </Button>
+            }
+            else
+            {
+                <Popconfirm Title="Отмена мероприятия"
+                            OnConfirm="CancelEvent"
+                            Placement="Placement.TopRight">
+                    <TitleTemplate>
+                        <div style="min-width: 250px;">
+                                <TextArea @bind-Value="@cancellationReason"
+                                          MaxLength=55
+                                          Rows="2"
+                                          ShowCount
+                                          Placeholder="Укажите причину отмены мероприятия..." />
+                        </div>
+                    </TitleTemplate>
+                    <IconTemplate></IconTemplate>
+                    <ChildContent>
+                        <Button Danger Class="danger-button">
+                            <Icon Type="@IconType.Outline.Stop" />
+                            Отменить
+                        </Button>
+                    </ChildContent>
+                </Popconfirm>
+            }
+        }
+
+        <AuthorizeView Roles="MainAdmin, SystemAdmin">
+            <Authorized>
+                <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                </DeleteButtonWithConfirm>
+            </Authorized>
+        </AuthorizeView>
+    </Extra>
+    <Body>
+
+        @foreach(var play in Model.PlaysWithRoles)
+        {
+            <Card Title="@play.PlayName">
+
+                <Card Title="Актеры">
+                    @foreach (var role in play.RoleGroups.Where(r => r.RoleType == "Актерская"))
+                    {
+                        <CardGrid Style="width:50%">
+                            @role.RoleName
+                        </CardGrid>
+                        <CardGrid Style="width:50%">
+                            @if (role.Employees != null && role.Employees.Any())
+                            {
+                                @foreach (var employee in role.Employees)
+                                {
+                                    var hasConflict = HasEmployeeConflict(employee.EmployeeId);
+                                    var conflictMessage = GetEmployeeConflictMessage(employee.EmployeeId);
+
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <span>@($"{employee.Surname} {employee.Name} {employee.FatherName}")</span>
+                                        @if (hasConflict)
+                                        {
+                                            <Tooltip Title="@conflictMessage">
+                                                <WarningIcon />
+                                            </Tooltip>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="empty-role">Не назначен</p>
+                            }
+                        </CardGrid>
+                    }
+                </Card>
+
+                <Card Title="Технический состав">
+                    @foreach (var role in play.RoleGroups.Where(r => r.RoleType == "Техническая"))
+                    {
+                        <CardGrid Style="width:50%">
+                            @role.RoleName
+                        </CardGrid>
+                        <CardGrid Style="width:50%">
+                            @if (role.Employees != null && role.Employees.Any())
+                            {
+                                @foreach (var employee in role.Employees)
+                                {
+                                    var hasConflict = HasEmployeeConflict(employee.EmployeeId);
+                                    var conflictMessage = GetEmployeeConflictMessage(employee.EmployeeId);
+
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <span>@($"{employee.Surname} {employee.Name} {employee.FatherName}")</span>
+                                        @if (hasConflict)
+                                        {
+                                            <Tooltip Title="@conflictMessage">
+                                                <WarningIcon />
+                                            </Tooltip>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="empty-role">Не назначен</p>
+                            }
+                        </CardGrid>
+                    }
+                </Card>
+
+            </Card>
+        }
+        <p>Последнее изменение: @Model.LastEditTime.ToString() - @Model.UserFullName.ToString()</p>
+    </Body>
+</Card>
+
+<EditModal @bind-Visible="editModalVisible"
+OnSuccess="OnModalSuccess"
+EventId="@EventId"/>
+
+@code {
+    [Parameter] public int EventId { get; set; }
+    [Parameter] public string DateString { get; set; }
+
+    [Inject] private AuthenticationStateProvider provider { get; set; }
+    [Inject] private EventService eventService { get; set; }
+    [Inject] private NavigationManager navManager { get; set; }
+    [Inject] private EventConflictCheckerService _conflictChecker { get; set; }
+
+    private string EventTitle { get; set; } = "";
+    private bool IsAllow { get; set; } = false;
+    private string cancellationReason = "";
+
+    private EventGetModel Model = new();
+    private bool editModalVisible = false;
+    private List<Warning> conflicts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await LoadData();
+        EventTitle = GetEventTitle();
+        await CheckConflicts();
+        await GiveAccess();
+    }
+
+    private string GetEventTitle()
+    {
+        var dateInfo = Model.GetDetailsDate();
+
+        var location = Model.Type switch
+        {
+            "stationar" => $"{Model.Stationar?.HallTypeName}, {Model.Stationar?.Type}",
+            "tour" => $"{Model.Tour?.Country}, {Model.Tour?.Area}",
+            "visit" =>  $"{Model.Institution?.Name} ({Model.Institution?.Town})",
+            _ => ""
+        };
+
+        return $"{dateInfo} | {location}";
+    }
+
+    private async Task OnModalSuccess()
+    {
+        await LoadData();
+        EventTitle = GetEventTitle();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadData()
+    {
+        Model = await eventService.GetEventDetailsAsync(EventId);
+    }
+
+    //Проверка на наличие конфликтов
+    private async Task CheckConflicts()
+    {
+
+        var request = new ConflictCheckRequest
+            {
+                StartTime = Model.StartTime.Value,
+                EndTime = Model.EndTime.Value,
+                Type = Model.Type,
+                HallTypeName = Model.Type == "stationar" ? Model.Stationar.HallTypeName : "",
+                HallTypeId = Model.Type == "stationar" ? Model.Stationar.HallTypeId : -1,
+                EmployeeIds = GetEmployeeIdsFromEvent(),
+                ExcludeEventId = Model.EventId
+            };
+
+        var response = await _conflictChecker.CheckConflictsAsync(request);
+
+        conflicts = response.Warnings;
+        StateHasChanged();
+    }
+
+    private List<int> GetEmployeeIdsFromEvent()
+    {
+        var ids = new List<int>();
+
+        if (Model.PlaysWithRoles != null)
+        {
+            foreach (var play in Model.PlaysWithRoles)
+            {
+                foreach (var role in play.RoleGroups)
+                {
+                    foreach (var employee in role.Employees)
+                    {
+                        if (employee.EmployeeId > 0 && !ids.Contains(employee.EmployeeId))
+                        {
+                            ids.Add(employee.EmployeeId);
+                        }
+                    }
+                }
+            }
+        }
+
+        return ids;
+    }
+
+    private bool HasEmployeeConflict(int employeeId)
+    {
+        return conflicts.Any(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
+    }
+
+    private string GetEmployeeConflictMessage(int employeeId)
+    {
+        var conflict = conflicts.FirstOrDefault(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
+        return conflict?.Message ?? "";
+    }
+
+    private async Task GiveAccess()
+    {
+        var authStateProvider = (CustomAuthStateProvider)provider;
+        string userRole = await authStateProvider.GetCurrentUserRoleAsync();
+
+        IsAllow = userRole == "MainAdmin" ||
+                  userRole == "SystemAdmin" ||
+                  (userRole == "StationarAdmin" && Model.Type == "stationar") ||
+                  (userRole == "TourAdmin" && Model.Type == "tour") ||
+                  (userRole == "VisitAdmin" && Model.Type == "visit");
+    }
+
+    private async Task OnEmployeeEdit()
+    {
+        await LoadData();
+    }
+
+    private async Task SoftDelete()
+    {
+        await eventService.SoftDeleteEventAsync(EventId);
+        navManager.NavigateTo($"/events/{DateString}");
+    }
+
+    private async Task RestoreCancelEventAsync()
+    {
+        await eventService.RestoreCancelEventAsync(EventId);
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task CancelEvent()
+    {
+        await eventService.CancelEventAsync(EventId, cancellationReason);
+        await LoadData();
+        StateHasChanged();
+    }
+}

@@ -15,274 +15,7 @@ namespace TheatreManagement.Domain.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
-
-            modelBuilder.Entity("Domain.Entities.Cast", b =>
-                {
-                    b.Property<int>("CastId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("LastEditTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("CastId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Castes");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Employee", b =>
-                {
-                    b.Property<int>("EmployeeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("FatherName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("LastEditTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Post")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Surname")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("EmployeeId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Employees");
-                });
-
-            modelBuilder.Entity("Domain.Entities.EmployeeRole", b =>
-                {
-                    b.Property<int>("EmployeeRoleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("CastId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("EventId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("LastEditTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("RoleInPlayId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("EmployeeRoleId");
-
-                    b.HasIndex("CastId");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("EventId");
-
-                    b.HasIndex("RoleInPlayId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("EmployeeRoles");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Event", b =>
-                {
-                    b.Property<int>("EventId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("End")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("InstitutionId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsCanceled")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("LastEditTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("PlayId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("Start")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("StationarId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TourId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Type")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("EventId");
-
-                    b.HasIndex("InstitutionId");
-
-                    b.HasIndex("PlayId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Events");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Institution", b =>
-                {
-                    b.Property<int>("InstitutionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("House")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Street")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Town")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("InstitutionId");
-
-                    b.ToTable("Institutions");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Play", b =>
-                {
-                    b.Property<int>("PlayId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("AgeCategory")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Duration")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("LastEditTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("PlayId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Plays");
-                });
-
-            modelBuilder.Entity("Domain.Entities.RoleInPlay", b =>
-                {
-                    b.Property<int>("RoleInPlayId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("LastEditTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("PlayId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Type")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("RoleInPlayId");
-
-                    b.HasIndex("PlayId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("RoleInPlays");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Stationar", b =>
-                {
-                    b.Property<int>("StationarId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Hall")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Type")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("StationarId");
-
-                    b.ToTable("Stationars");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Tour", b =>
-                {
-                    b.Property<int>("TourId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Area")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Country")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("TourId");
-
-                    b.ToTable("Tours");
-                });
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.23");
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
@@ -296,6 +29,9 @@ namespace TheatreManagement.Domain.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -305,9 +41,6 @@ namespace TheatreManagement.Domain.Migrations
 
                     b.Property<string>("FatherName")
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("INTEGER");
@@ -488,132 +221,354 @@ namespace TheatreManagement.Domain.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Entities.Cast", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Cast", b =>
                 {
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("Casts")
-                        .HasForeignKey("UserId");
+                    b.Property<int>("CastId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.Navigation("User");
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastEditTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PlayId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("CastId");
+
+                    b.HasIndex("PlayId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Castes");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Employee", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Employee", b =>
                 {
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("Employees")
-                        .HasForeignKey("UserId");
+                    b.Property<int>("EmployeeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.Navigation("User");
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FatherName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastEditTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Post")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Surname")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("EmployeeId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Employees");
                 });
 
-            modelBuilder.Entity("Domain.Entities.EmployeeRole", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.EmployeeRole", b =>
                 {
-                    b.HasOne("Domain.Entities.Cast", "Cast")
-                        .WithMany("EmployeeRoles")
-                        .HasForeignKey("CastId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<int>("EmployeeRoleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.HasOne("Domain.Entities.Employee", "Employee")
-                        .WithMany("EmployeeRoles")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<int?>("CastId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasOne("Domain.Entities.Event", "Event")
-                        .WithMany("EmployeeRoles")
-                        .HasForeignKey("EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasOne("Domain.Entities.RoleInPlay", "RoleInPlay")
-                        .WithMany("EmployeeRoles")
-                        .HasForeignKey("RoleInPlayId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<int?>("EventId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("EmployeeRoles")
-                        .HasForeignKey("UserId");
+                    b.Property<int>("RoleInPlayId")
+                        .HasColumnType("INTEGER");
 
-                    b.Navigation("Cast");
+                    b.HasKey("EmployeeRoleId");
 
-                    b.Navigation("Employee");
+                    b.HasIndex("CastId");
 
-                    b.Navigation("Event");
+                    b.HasIndex("EmployeeId");
 
-                    b.Navigation("RoleInPlay");
+                    b.HasIndex("EventId");
 
-                    b.Navigation("User");
+                    b.HasIndex("RoleInPlayId");
+
+                    b.ToTable("EmployeeRoles");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Event", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Event", b =>
                 {
-                    b.HasOne("Domain.Entities.Institution", "Institution")
-                        .WithMany("Events")
-                        .HasForeignKey("InstitutionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<int>("EventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.HasOne("Domain.Entities.Play", "Play")
-                        .WithMany("Events")
-                        .HasForeignKey("PlayId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("TEXT");
 
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("Events")
-                        .HasForeignKey("UserId");
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("TEXT");
 
-                    b.Navigation("Institution");
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("TEXT");
 
-                    b.Navigation("Play");
+                    b.Property<int?>("InstitutionId")
+                        .HasColumnType("INTEGER");
 
-                    b.Navigation("User");
+                    b.Property<DateTime>("LastEditTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("PlayId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("StationarId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("TourId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("EventId");
+
+                    b.HasIndex("InstitutionId");
+
+                    b.HasIndex("PlayId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Events");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Play", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.HallType", b =>
                 {
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("Plays")
-                        .HasForeignKey("UserId");
+                    b.Property<int>("HallTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.Navigation("User");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("HallTypeId");
+
+                    b.ToTable("HallTypes");
                 });
 
-            modelBuilder.Entity("Domain.Entities.RoleInPlay", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Institution", b =>
                 {
-                    b.HasOne("Domain.Entities.Play", "Play")
-                        .WithMany("RoleInPlays")
-                        .HasForeignKey("PlayId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<int>("InstitutionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("RoleInPlays")
-                        .HasForeignKey("UserId");
+                    b.Property<string>("Comment")
+                        .HasColumnType("TEXT");
 
-                    b.Navigation("Play");
+                    b.Property<string>("House")
+                        .HasColumnType("TEXT");
 
-                    b.Navigation("User");
+                    b.Property<int>("InstitutionTypeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Street")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Town")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("InstitutionId");
+
+                    b.HasIndex("InstitutionTypeId");
+
+                    b.ToTable("Institutions");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Stationar", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.InstitutionType", b =>
                 {
-                    b.HasOne("Domain.Entities.Event", "Event")
-                        .WithOne("Stationar")
-                        .HasForeignKey("Domain.Entities.Stationar", "StationarId");
+                    b.Property<int>("InstitutionTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.Navigation("Event");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("InstitutionTypeId");
+
+                    b.ToTable("InstitutionTypes");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Tour", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Play", b =>
                 {
-                    b.HasOne("Domain.Entities.Event", "Event")
-                        .WithOne("Tour")
-                        .HasForeignKey("Domain.Entities.Tour", "TourId");
+                    b.Property<int>("PlayId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.Navigation("Event");
+                    b.Property<int>("AgeCategory")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastEditTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SceneTypeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PlayId");
+
+                    b.HasIndex("SceneTypeId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Plays");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.PlayEvent", b =>
+                {
+                    b.Property<int>("PlayEventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlayId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("StartTime")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PlayEventId");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("PlayId");
+
+                    b.ToTable("PlayEvents");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.RoleInPlay", b =>
+                {
+                    b.Property<int>("RoleInPlayId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PlayId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("RoleInPlayId");
+
+                    b.HasIndex("PlayId");
+
+                    b.ToTable("RoleInPlays");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.SceneType", b =>
+                {
+                    b.Property<int>("SceneTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("SceneTypeId");
+
+                    b.ToTable("SceneTypes");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Stationar", b =>
+                {
+                    b.Property<int>("StationarId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HallTypeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("StationarId");
+
+                    b.HasIndex("HallTypeId");
+
+                    b.ToTable("Stationars");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Tour", b =>
+                {
+                    b.Property<int>("TourId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Area")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("TourId");
+
+                    b.ToTable("Tours");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -667,55 +622,232 @@ namespace TheatreManagement.Domain.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.Cast", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Cast", b =>
                 {
-                    b.Navigation("EmployeeRoles");
+                    b.HasOne("TheatreManagement.Domain.Entities.Play", "Play")
+                        .WithMany("Casts")
+                        .HasForeignKey("PlayId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("Casts")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Play");
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Employee", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Employee", b =>
                 {
-                    b.Navigation("EmployeeRoles");
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("Employees")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Event", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.EmployeeRole", b =>
                 {
-                    b.Navigation("EmployeeRoles");
+                    b.HasOne("TheatreManagement.Domain.Entities.Cast", "Cast")
+                        .WithMany("EmployeeRoles")
+                        .HasForeignKey("CastId");
 
-                    b.Navigation("Stationar");
+                    b.HasOne("TheatreManagement.Domain.Entities.Employee", "Employee")
+                        .WithMany("EmployeeRoles")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Tour");
+                    b.HasOne("TheatreManagement.Domain.Entities.Event", "Event")
+                        .WithMany("EmployeeRoles")
+                        .HasForeignKey("EventId");
+
+                    b.HasOne("TheatreManagement.Domain.Entities.RoleInPlay", "RoleInPlay")
+                        .WithMany("EmployeeRoles")
+                        .HasForeignKey("RoleInPlayId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cast");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Event");
+
+                    b.Navigation("RoleInPlay");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Institution", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Event", b =>
                 {
-                    b.Navigation("Events");
+                    b.HasOne("TheatreManagement.Domain.Entities.Institution", "Institution")
+                        .WithMany("Events")
+                        .HasForeignKey("InstitutionId");
+
+                    b.HasOne("TheatreManagement.Domain.Entities.Play", null)
+                        .WithMany("Events")
+                        .HasForeignKey("PlayId");
+
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("Events")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Institution");
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Play", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Institution", b =>
                 {
-                    b.Navigation("Events");
+                    b.HasOne("TheatreManagement.Domain.Entities.InstitutionType", "Type")
+                        .WithMany("Institutions")
+                        .HasForeignKey("InstitutionTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("RoleInPlays");
+                    b.Navigation("Type");
                 });
 
-            modelBuilder.Entity("Domain.Entities.RoleInPlay", b =>
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Play", b =>
                 {
-                    b.Navigation("EmployeeRoles");
+                    b.HasOne("TheatreManagement.Domain.Entities.SceneType", "SceneType")
+                        .WithMany("Plays")
+                        .HasForeignKey("SceneTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("Plays")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("SceneType");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.PlayEvent", b =>
+                {
+                    b.HasOne("TheatreManagement.Domain.Entities.Event", "Event")
+                        .WithMany("PlayEvents")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TheatreManagement.Domain.Entities.Play", "Play")
+                        .WithMany("PlayEvents")
+                        .HasForeignKey("PlayId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("Play");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.RoleInPlay", b =>
+                {
+                    b.HasOne("TheatreManagement.Domain.Entities.Play", "Play")
+                        .WithMany("RoleInPlays")
+                        .HasForeignKey("PlayId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Play");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Stationar", b =>
+                {
+                    b.HasOne("TheatreManagement.Domain.Entities.HallType", "HallType")
+                        .WithMany("Stationars")
+                        .HasForeignKey("HallTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TheatreManagement.Domain.Entities.Event", "Event")
+                        .WithOne("Stationar")
+                        .HasForeignKey("TheatreManagement.Domain.Entities.Stationar", "StationarId");
+
+                    b.Navigation("Event");
+
+                    b.Navigation("HallType");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Tour", b =>
+                {
+                    b.HasOne("TheatreManagement.Domain.Entities.Event", "Event")
+                        .WithOne("Tour")
+                        .HasForeignKey("TheatreManagement.Domain.Entities.Tour", "TourId");
+
+                    b.Navigation("Event");
                 });
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
                     b.Navigation("Casts");
 
-                    b.Navigation("EmployeeRoles");
-
                     b.Navigation("Employees");
 
                     b.Navigation("Events");
 
                     b.Navigation("Plays");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Cast", b =>
+                {
+                    b.Navigation("EmployeeRoles");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Employee", b =>
+                {
+                    b.Navigation("EmployeeRoles");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Event", b =>
+                {
+                    b.Navigation("EmployeeRoles");
+
+                    b.Navigation("PlayEvents");
+
+                    b.Navigation("Stationar");
+
+                    b.Navigation("Tour");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.HallType", b =>
+                {
+                    b.Navigation("Stationars");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Institution", b =>
+                {
+                    b.Navigation("Events");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.InstitutionType", b =>
+                {
+                    b.Navigation("Institutions");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.Play", b =>
+                {
+                    b.Navigation("Casts");
+
+                    b.Navigation("Events");
+
+                    b.Navigation("PlayEvents");
 
                     b.Navigation("RoleInPlays");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.RoleInPlay", b =>
+                {
+                    b.Navigation("EmployeeRoles");
+                });
+
+            modelBuilder.Entity("TheatreManagement.Domain.Entities.SceneType", b =>
+                {
+                    b.Navigation("Plays");
                 });
 #pragma warning restore 612, 618
         }

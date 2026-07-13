@@ -1,0 +1,144 @@
+﻿@page "/plays/{id:int}"
+
+<PageTitle>Информация о спектакле</PageTitle>
+
+<PageHeader>
+
+    <PageHeaderTitle>Информация о спектакле</PageHeaderTitle>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary" OnClick="@GoBack">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderExtra>
+        <Button class="right-pageheader-button" Type="ButtonType.Primary"
+        OnClick="@GoToCasts">
+            Составы
+            <Icon Type="@IconType.Outline.Right" />
+        </Button>
+    </PageHeaderExtra>
+</PageHeader>
+
+
+<div class="details-container">
+    <Card Title=@play.Name Class="details-card" Bordered>
+    <Extra>
+        <AuthorizeView Roles="MainAdmin, SystemAdmin">
+            <Authorized>
+                <Button Type="ButtonType.Default" OnClick="@(() => editModalVisible = true)">
+                    <Icon Type="@IconType.Outline.Edit" />
+                </Button>
+                    @if (play.IsUsed)
+                    {
+                        <Tooltip Title="Спектакль используется в мероприятиях, удаление невозможно">
+                            <Button Danger Disabled="true">
+                                <Icon Type="@IconType.Outline.Delete" />
+                            </Button>
+                        </Tooltip>
+                    }
+                    else
+                    {
+                        <DeleteButtonWithConfirm OnConfirm="SoftDelete">
+                        </DeleteButtonWithConfirm>
+                    }
+            </Authorized>
+        </AuthorizeView>
+    </Extra>
+    <Body>
+        <CardGrid Class="details-fourth-grid" Hoverable="false">
+            Длительность: @play.Duration
+        </CardGrid>
+        <CardGrid Class="details-fourth-grid" Hoverable="false">
+            Рейтинг: @play.AgeCategory+
+        </CardGrid>
+        <CardGrid Class="details-fourth-grid" Hoverable="false">
+            @play.SceneTypeName
+        </CardGrid>
+        <CardGrid Class="details-fourth-grid" Hoverable="false">
+                @if (play.IsActive)
+                {
+                    <Tag Color="TagColor.Success">Активен</Tag>
+                }
+                else
+                {
+                    <Tag Color="TagColor.Red">Неактивен</Tag>
+                }
+        </CardGrid>
+
+        <CardGrid Class="details-card-grid" Hoverable="false">
+
+                    <AntList Class="details-column" DataSource="@actorRoles">
+                <Header>Актерские роли</Header>
+                <ChildContent Context="item">
+                    <ListItem Class="column-list-item">
+                        @item.Name
+                    </ListItem>
+                </ChildContent>
+            </AntList>
+
+        </CardGrid>
+                <CardGrid Class="details-card-grid" Hoverable="false">
+                    <AntList Class="details-column" DataSource="@technicRoles">
+                <Header>Технические роли</Header>
+                <ChildContent Context="item">
+                            <ListItem Class="column-list-item">
+                        @item.Name
+                    </ListItem>
+                </ChildContent>
+            </AntList>
+        </CardGrid>
+
+        <p>Последнее изменение: @play.LastEditTime.ToString() - @play.UserFullName.ToString()</p>
+    </Body>
+</Card>
+</div>
+
+<EditModal @bind-Visible="@editModalVisible"
+PlayId="Id"
+OnSuccess="@OnPlayAdded" />
+
+@inject PlayService playService
+@inject NavigationManager navManager
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private PlayDto play = new();
+    private List<RoleDto> actorRoles = new();
+    private List<RoleDto> technicRoles = new();
+
+    private bool editModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task OnPlayAdded()
+    {
+        await LoadData();
+    }
+
+    private async Task SoftDelete()
+    {
+        await playService.SoftDeletePlayAsync(Id);
+        navManager.NavigateTo("/plays");
+    }
+
+    private async Task LoadData()
+    {
+        play = await playService.GetPlayAsync(Id);
+
+        actorRoles = play.RoleDtos.Where(r => r.RoleType == "Актерская").ToList();
+        technicRoles = play.RoleDtos.Where(r => r.RoleType == "Техническая").ToList();
+    }
+
+    private void GoBack()
+    {
+        navManager.NavigateTo("/plays");
+    }
+    private void GoToCasts()
+    {
+        navManager.NavigateTo($"/plays/{play.PlayId}/casts");
+    }
+}

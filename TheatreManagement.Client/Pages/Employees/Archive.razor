@@ -1,0 +1,126 @@
+﻿@page "/employees/archive"
+@using TheatreManagement.Shared.DTOs.Employees
+
+<PageTitle>Список сотрудников(Архив)</PageTitle>
+
+<PageHeader>
+    <BackIconTemplate>
+        <Button Type="ButtonType.Primary">
+            <Icon Type="@IconType.Outline.Left" />
+            Назад
+        </Button>
+    </BackIconTemplate>
+    <PageHeaderTitle>Список сотрудников(Архив)</PageHeaderTitle>
+</PageHeader>
+
+<div class="table-page-header">
+    <Search Placeholder="Введите ФИО сотрудника"
+            @bind-Value="@searchText"
+            EnterButton="true"
+            OnSearch="@OnSearchAsync" />
+
+    <Button Type="ButtonType.Default">
+        <Icon Type="@IconType.Fill.Filter" />
+    </Button>
+</div>
+
+<Table TItem="EmployeeDto"
+       DataSource="@employees"
+       PageSize="@pageSize"
+       Total="@total"
+       @bind-PageIndex="currentPage"
+       OnChange="@OnTableChange"
+       OnRowClick="@OnRowClick">
+    <PropertyColumn Property="@(c => c.Surname)" Title="Фамилия" />
+    <PropertyColumn Property="@(c => c.Name)" Title="Имя" />
+    <PropertyColumn Property="@(c => c.FatherName)" Title="Отчество" />
+    <PropertyColumn Property="@(c => c.Post)" Title="Должность" />
+    <PropertyColumn Property="c =>c.IsActive" Title="Присутствует">
+        @if (context.IsActive)
+        {
+            <Icon Type="@IconType.Outline.CheckSquare" Style="color:var(--primary-color); font-size:20px;" />
+        }
+        else
+        {
+            <Icon Type="@IconType.Outline.CloseSquare" Style="color:var(--danger-color); font-size:20px;" />
+        }
+    </PropertyColumn>
+    <PropertyColumn Property="@(c => c.UserFullName)" Title="Удалил" />
+    <PropertyColumn Property="@(c => c.DeletionTime)" Title="Время удаления" />
+</Table>
+
+@* <AddModal @bind-Visible="@addModalVisible"
+          OnSuccess="@OnPlayAdded" /> *@
+
+@inject EmployeeService employeeService
+@inject NavigationManager navManager
+@inject ModalService modalService
+@code {
+    [Inject] private IMessageService messageService { get; set; }
+
+    private List<EmployeeDto> employees = new();
+    private int total = 0;
+    private int pageSize = 10;
+    private int currentPage = 1;
+    private string? searchText = null;
+    private bool addModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnRowClick(RowData<EmployeeDto> row)
+    {
+        var employee = row.Data;
+        var confirmed = await modalService.ConfirmAsync(new ConfirmOptions
+            {
+                Content = $"Вы уверены, что хотите восстановить запись {employee.Name}?",
+                OkText = "Да",
+                CancelText = "Нет"
+            });
+
+        if (confirmed)
+        {
+            await employeeService.RestoreEmployeeAsync(employee.EmployeeId);
+            messageService.Success("Данные успешно восстановлены");
+            await LoadDataAsync(1);
+        }
+    }
+
+    private async Task OnSearchAsync()
+    {
+        currentPage = 1;
+        await LoadDataAsync(1);
+    }
+
+    private async Task OnTableChange(QueryModel<EmployeeDto> queryModel)
+    {
+        await LoadDataAsync(queryModel.PageIndex);
+    }
+
+    // private async Task OnPlayAdded()
+    // {
+    //     await LoadDataAsync(currentPage);
+    // }
+
+    private async Task LoadDataAsync(int page)
+    {
+        try
+        {
+            var result = await employeeService.GetEmployeesPagedAsync(page, pageSize, searchText, true);
+            if (result != null)
+            {
+                employees = result.Items ?? new List<EmployeeDto>();
+                total = result.TotalCount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+}
+
+

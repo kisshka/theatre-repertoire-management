@@ -1,0 +1,216 @@
+﻿@using AntDesign
+@using Microsoft.AspNetCore.Components.Forms
+@using TheatreManagement.Client.Helpers.SelectItems
+@using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Shared.DTOs.Employees
+
+<Modal Visible="@Visible"
+       Title="@Title"
+       OnOk="HandleOk"
+       OnCancel="HandleCancel"
+       ConfirmLoading="@isDownloading"
+       MaskClosable="@false">
+
+    <Form Model="@Model"
+          OnFinishFailed="@OnFinishFailed"
+          @ref="@FormRef">
+
+        <FormItem Label="Период">
+            <Flex Gap="FlexGap.Middle" Align="FlexAlign.Center" Wrap="FlexWrap.Wrap">
+                <DatePicker TValue="DateTime"
+                            @bind-Value="@startDate"
+                            Format="dd.MM.yyyy"
+                            AllowClear="false"
+                            ChangeOnClose="true"
+                            Placeholder="@("Выберите дату начала")" />
+                <span>-</span>
+                <DatePicker TValue="DateTime"
+                            @bind-Value="@endDate"
+                            Format="dd.MM.yyyy"
+                            ChangeOnClose="true"
+                            AllowClear="false"
+                            Placeholder="@("Выберите дату окончания")" />
+            </Flex>
+        </FormItem>
+
+        <FormItem Label="Тип мероприятий">
+            <Select TItem="SelectItem<string>"
+                    TItemValue="string"
+                    Mode="SelectMode.Default"
+                    DataSource="@SelectItemValues.ReportEventTypes"
+                    @bind-Value="@selectedType"
+                    ValueName="@nameof(SelectItem<string>.Value)"
+                    LabelName="@nameof(SelectItem<string>.Name)"
+                    Placeholder="Выберите тип"
+                    OnSelectedItemChanged="OnSelectedItemChangedHandler"
+                    AllowClear="false">
+            </Select>
+        </FormItem>
+
+        @if (selectedType == "visit")
+        {
+            <FormItem Label="Тип учреждения">
+                <Select Mode="SelectMode.Default"
+                        DataSource="@InstitutionTypeSelectedItems"
+                        @bind-Value="@selectedInstitutionType"
+                        LabelName="Name"
+                        ValueName="Value"
+                        Placeholder="Выберите тип учреждения"
+                        AllowClear="false">
+                </Select>
+            </FormItem>
+        }
+
+        <FormItem Label="Спектакль">
+            <Select Mode="SelectMode.Default"
+                    DataSource="@playsSelectedItems"
+                    @bind-Value="@selectedPlay"
+                    LabelName="Name"
+                    ValueName="Value"
+                    Placeholder="Выберите спектакль"
+                    AllowClear="false">
+            </Select>
+        </FormItem>
+
+        <Checkbox Label="Включить составы" @bind-Value="@includeCast"></Checkbox>
+
+    </Form>
+</Modal>
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+    [Parameter] public EventCallback OnSuccess { get; set; }
+    [Parameter] public int EmployeeId { get; set; } = -1;
+    [Parameter] public string Title { get; set; } = "Создание отчета";
+
+    [Inject] private NavigationManager _navManager { get; set; }
+    [Inject] private MessageService _messageService { get; set; }
+    [Inject] private ReportService _reportService { get; set; }
+    [Inject] private PlayService _playService { get; set; }
+    [Inject] private InstitutionService _institutionService { get; set; }
+
+    private Form<EmployeeDto> FormRef { get; set; }
+    private EmployeeDto Model { get; set; } = new();
+
+    private DateTime startDate = DateTime.Now;
+    private DateTime endDate = DateTime.Now.AddDays(7);
+    private bool isDownloading = false;
+
+    private string? selectedType { get; set; } = "all";
+    private int selectedPlay { get; set; } = -1;
+    private int selectedInstitutionType { get; set; } = -1;
+
+    private List<SelectItem<int>> playsSelectedItems = new();
+    private List<SelectItem<int>> InstitutionTypeSelectedItems = new();
+
+    private bool includeCast { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        // Подгрузка спеткаклей
+        var plays = await _playService.GetPlaysAsync();
+        playsSelectedItems.Add(new SelectItem<int> { Name = "Все", Value = -1});
+        foreach (var play in plays)
+        {
+            playsSelectedItems.Add(new SelectItem<int> { Name = play.Name, Value = play.PlayId });
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnSelectedItemChangedHandler(SelectItem<string> value)
+    {
+        if (value?.Value == "visit")
+        {
+            InstitutionTypeSelectedItems.Clear();
+            var institutions = await _institutionService.GetAllInstitutionTypesAsync();
+            InstitutionTypeSelectedItems.Add(new SelectItem<int> { Name = "Все", Value = -1 });
+            foreach (var inst in institutions)
+            {
+                 InstitutionTypeSelectedItems.Add(new SelectItem<int> { Name = inst.Name, Value = inst.Id });
+            }
+            StateHasChanged();
+        }
+
+    }
+
+    private async Task GetReportUrl()
+    {
+        var reportType = selectedType == "all" ? null : selectedType;
+
+        var url = _reportService.GetReportUrl(
+            startDate,
+            endDate,
+            reportType,
+            includeCast,
+            EmployeeId > 0 ? EmployeeId : null
+        );
+
+        _navManager.NavigateTo(url, true);
+    }
+
+    private async Task HandleOk()
+    {
+
+        if (startDate > endDate)
+        {
+            _messageService.Error("Дата начала не может быть позже даты окончания");
+            return;
+        }
+
+        isDownloading = true;
+        StateHasChanged();
+
+        try
+        {
+            await GetReportUrl();
+            _messageService.Success("Генерация отчета началась. Дожидайтесь скачивания.");
+            Visible = false;
+            await VisibleChanged.InvokeAsync(false);
+        }
+        catch (Exception ex)
+        {
+            _messageService.Error($"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isDownloading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        foreach (var error in editContext.GetValidationMessages())
+        {
+            _messageService.Error(error);
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        Visible = false;
+        await VisibleChanged.InvokeAsync(false);
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        startDate = DateTime.Now;
+        endDate = DateTime.Now.AddDays(7);
+        selectedType = "all";
+        includeCast = false;
+        Model = new EmployeeDto();
+
+        playsSelectedItems.Clear();
+        InstitutionTypeSelectedItems.Clear();
+
+        FormRef?.Reset();
+        StateHasChanged();
+    }
+}
