@@ -21,45 +21,53 @@
                             @bind-Value="@startDate"
                             Format="dd.MM.yyyy"
                             AllowClear="false"
+                            ChangeOnClose="true"
                             Placeholder="@("Выберите дату начала")" />
                 <span>-</span>
                 <DatePicker TValue="DateTime"
                             @bind-Value="@endDate"
                             Format="dd.MM.yyyy"
+                            ChangeOnClose="true"
                             AllowClear="false"
                             Placeholder="@("Выберите дату окончания")" />
             </Flex>
         </FormItem>
 
         <FormItem Label="Тип мероприятий">
-            <Select Mode="SelectMode.Default"
+            <Select TItem="SelectItem<string>"
+                    TItemValue="string"
+                    Mode="SelectMode.Default"
                     DataSource="@SelectItemValues.ReportEventTypes"
                     @bind-Value="@selectedType"
-                    LabelName="Name"
-                    ValueName="Value"
+                    ValueName="@nameof(SelectItem<string>.Value)"
+                    LabelName="@nameof(SelectItem<string>.Name)"
                     Placeholder="Выберите тип"
+                    OnSelectedItemChanged="OnSelectedItemChangedHandler"
                     AllowClear="false">
             </Select>
         </FormItem>
 
-        <FormItem Label="Тип учреждения">
-            <Select Mode="SelectMode.Default"
-                    DataSource="@SelectItemValues.ReportEventTypes"
-                    @bind-Value="@selectedType"
-                    LabelName="Name"
-                    ValueName="Value"
-                    Placeholder="Выберите тип"
-                    AllowClear="false">
-            </Select>
-        </FormItem>
+        @if (selectedType == "visit")
+        {
+            <FormItem Label="Тип учреждения">
+                <Select Mode="SelectMode.Default"
+                        DataSource="@InstitutionTypeSelectedItems"
+                        @bind-Value="@selectedInstitutionType"
+                        LabelName="Name"
+                        ValueName="Value"
+                        Placeholder="Выберите тип учреждения"
+                        AllowClear="false">
+                </Select>
+            </FormItem>
+        }
 
         <FormItem Label="Спектакль">
             <Select Mode="SelectMode.Default"
-                    DataSource="@plays"
+                    DataSource="@playsSelectedItems"
                     @bind-Value="@selectedPlay"
                     LabelName="Name"
                     ValueName="Value"
-                    Placeholder="Выберите тип"
+                    Placeholder="Выберите спектакль"
                     AllowClear="false">
             </Select>
         </FormItem>
@@ -79,7 +87,8 @@
     [Inject] private NavigationManager _navManager { get; set; }
     [Inject] private MessageService _messageService { get; set; }
     [Inject] private ReportService _reportService { get; set; }
-    [Inject] private PlayService _playSevice { get; set; }
+    [Inject] private PlayService _playService { get; set; }
+    [Inject] private InstitutionService _institutionService { get; set; }
 
     private Form<EmployeeDto> FormRef { get; set; }
     private EmployeeDto Model { get; set; } = new();
@@ -92,9 +101,10 @@
     private int selectedPlay { get; set; } = -1;
     private int selectedInstitutionType { get; set; } = -1;
 
-    private bool includeCast { get; set; } = false;
-    private List<PlayDto> plays = new();
     private List<SelectItem<int>> playsSelectedItems = new();
+    private List<SelectItem<int>> InstitutionTypeSelectedItems = new();
+
+    private bool includeCast { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,12 +113,30 @@
 
     private async Task LoadData()
     {
-        plays = await _playSevice.GetPlaysAsync();
+        // Подгрузка спеткаклей
+        var plays = await _playService.GetPlaysAsync();
         playsSelectedItems.Add(new SelectItem<int> { Name = "Все", Value = -1});
         foreach (var play in plays)
         {
             playsSelectedItems.Add(new SelectItem<int> { Name = play.Name, Value = play.PlayId });
         }
+        StateHasChanged();
+    }
+
+    private async Task OnSelectedItemChangedHandler(SelectItem<string> value)
+    {
+        if (value?.Value == "visit")
+        {
+            InstitutionTypeSelectedItems.Clear();
+            var institutions = await _institutionService.GetAllInstitutionTypesAsync();
+            InstitutionTypeSelectedItems.Add(new SelectItem<int> { Name = "Все", Value = -1 });
+            foreach (var inst in institutions)
+            {
+                 InstitutionTypeSelectedItems.Add(new SelectItem<int> { Name = inst.Name, Value = inst.Id });
+            }
+            StateHasChanged();
+        }
+
     }
 
     private async Task GetReportUrl()
@@ -178,6 +206,10 @@
         selectedType = "all";
         includeCast = false;
         Model = new EmployeeDto();
+
+        playsSelectedItems.Clear();
+        InstitutionTypeSelectedItems.Clear();
+
         FormRef?.Reset();
         StateHasChanged();
     }

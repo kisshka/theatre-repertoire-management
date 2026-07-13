@@ -135,6 +135,10 @@ private string GetEventClassByType(string eventType, bool isCanceled)
     {
         return @<Template>
             <div class="calendar-header-container">
+                <Button Type="ButtonType.Default" Style="background-color: #d4d1d1; border: none;">
+                    <Icon Type="database" Theme="IconThemeType.Fill" Style="color: #968a8a;" Height="22px" Width="22px" />
+            </Button>
+
                 <div class="calendar-header">
                     <Button @onclick="PreviousMonth">
                         <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
