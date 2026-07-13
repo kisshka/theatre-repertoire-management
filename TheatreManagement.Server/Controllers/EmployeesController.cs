@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ namespace TheatreManagement.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class EmployeesController : ControllerBase
     {
         private readonly UserManager<User> _userManager;

@@ -1,22 +1,24 @@
-﻿using System;
+﻿using Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
-using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Domain.Entities;
-using TheatreManagement.Shared;
-using Domain.Entities;
-using Microsoft.AspNetCore.Identity;
 using TheatreManagement.Server.Mappings;
+using TheatreManagement.Shared;
+using TheatreManagement.Shared.DTOs;
 
 namespace TheatreManagement.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PlaysController : ControllerBase
     {
         private readonly UserManager<User> _userManager;

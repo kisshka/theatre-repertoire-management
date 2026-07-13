@@ -231,8 +231,7 @@ namespace TheatreManagement.Client.Services
         }
     }
 
-    // Пока что самое адекватное обновление токена
-    // Вынесу потом
+    // ТЕПЕРЬ ТОЧНО РАБОЧЕЕ ОБНОВЛЕНИЕ ТОКЕНА Я СКОРО УБИВАТЬ НАЧНУ
     public class AuthHandler : DelegatingHandler
     {
         private readonly ILocalStorageService _localStorage;
@@ -261,20 +260,23 @@ namespace TheatreManagement.Client.Services
                 var refreshToken = await _localStorage.GetItemAsync<string>("refreshToken");
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
-                    var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "refresh")
-                    {
-                        Content = JsonContent.Create(new { refreshToken })
-                    };
+                    var refreshRequest = new HttpRequestMessage(HttpMethod.Post,
+                        new Uri(request.RequestUri!, "/refresh"));
+
+                    refreshRequest.Content = JsonContent.Create(new { refreshToken });
 
                     var refreshResponse = await base.SendAsync(refreshRequest, cancellationToken);
 
                     if (refreshResponse.IsSuccessStatusCode)
                     {
-                        var json = await refreshResponse.Content.ReadFromJsonAsync<TokenResponse>();
-                        if (json != null)
-                        {
-                            await _localStorage.SetItemAsync("accessToken", json.AccessToken);
-                            await _localStorage.SetItemAsync("refreshToken", json.RefreshToken);
+                        var strResponse = await refreshResponse.Content.ReadAsStringAsync();
+                        var jsonResponse = JsonNode.Parse(strResponse);
+                        var newAccessToken = jsonResponse?["accessToken"]?.ToString();
+                        var newRefreshToken = jsonResponse?["refreshToken"]?.ToString();
+
+
+                            await _localStorage.SetItemAsync("accessToken", newAccessToken);
+                            await _localStorage.SetItemAsync("refreshToken", newRefreshToken);
 
                             var retryRequest = new HttpRequestMessage(request.Method, request.RequestUri);
 
@@ -285,31 +287,25 @@ namespace TheatreManagement.Client.Services
                                 retryRequest.Content.Headers.ContentType = request.Content.Headers.ContentType;
                             }
 
-                            retryRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", json.AccessToken);
+                            retryRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", newAccessToken);
                             response = await base.SendAsync(retryRequest, cancellationToken);
-                        }
+
                     }
                     else
                     {
                         await _localStorage.RemoveItemAsync("accessToken");
                         await _localStorage.RemoveItemAsync("refreshToken");
-                        _navigationManager.NavigateTo("/login", forceLoad: true);
+                        //_navigationManager.NavigateTo("/login", forceLoad: true);
                     }
                 }
                 else
                 {
-                    _navigationManager.NavigateTo("/login", forceLoad: true);
+                    _navigationManager.NavigateTo("/login", forceLoad: false);
                 }
             }
 
             return response;
         }
-    }
-
-    public class TokenResponse
-    {
-        public string AccessToken { get; set; } = string.Empty;
-        public string RefreshToken { get; set; } = string.Empty;
     }
 
 }

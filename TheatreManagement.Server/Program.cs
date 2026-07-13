@@ -62,48 +62,48 @@ namespace TheatreManagement.Server
                 .AllowAnyOrigin());
 
             //Создание ролей
-            //using (var scope = app.Services.CreateScope())
-            //{
-            //    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            //    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            using (var scope = app.Services.CreateScope())
+            {
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
-            //    string[] roles = { "MainAdmin", "VisitAdmin", "TourAdmin", "StationarAdmin", "SystemAdmin" };
+                string[] roles = { "MainAdmin", "VisitAdmin", "TourAdmin", "StationarAdmin", "SystemAdmin" };
 
-            //    foreach (var role in roles)
-            //    {
-            //        if (!await roleManager.RoleExistsAsync(role))
-            //        {
-            //            await roleManager.CreateAsync(new IdentityRole(role));
-            //        }
-            //    }
+                foreach (var role in roles)
+                {
+                    if (!await roleManager.RoleExistsAsync(role))
+                    {
+                        await roleManager.CreateAsync(new IdentityRole(role));
+                    }
+                }
 
-            //    var systemAdminEmail = "System1@admin.com";
-            //    var systemAdminUser = await userManager.FindByEmailAsync(systemAdminEmail);
+                var systemAdminEmail = "System1@admin.com";
+                var systemAdminUser = await userManager.FindByEmailAsync(systemAdminEmail);
 
-            //    if (systemAdminUser == null)
-            //    {
-            //        var systemAdmin = new User
-            //        {
-            //            UserName = systemAdminEmail,
-            //            Email = systemAdminEmail,
-            //            Surname = "Системный",
-            //            Name = "Администратор",
-            //            FatherName = ""
-            //        };
+                if (systemAdminUser == null)
+                {
+                    var systemAdmin = new User
+                    {
+                        UserName = systemAdminEmail,
+                        Email = systemAdminEmail,
+                        Surname = "Системный",
+                        Name = "Администратор",
+                        FatherName = ""
+                    };
 
-            //        var result = await userManager.CreateAsync(systemAdmin, "System1@admin.com");
+                    var result = await userManager.CreateAsync(systemAdmin, "System1@admin.com");
 
-            //        if (result.Succeeded)
-            //        {
-            //            await userManager.AddToRoleAsync(systemAdmin, "SystemAdmin");
-            //        }
-            //        else
-            //        {
-            //            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            //            Console.WriteLine($"Ошибка создания пользователя: {errors}");
-            //        }
-            //    }
-            //}
+                    if (result.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(systemAdmin, "SystemAdmin");
+                    }
+                    else
+                    {
+                        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                        Console.WriteLine($"Ошибка создания пользователя: {errors}");
+                    }
+                }
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

@@ -6,27 +6,54 @@
 
 
 <PageTitle>Мероприятия</PageTitle>
-
 <div class="events-calendar-page">
-    <Calendar   Value="currentDate"
-    DateCellRender="DateCellRender"
-    HeaderRender="CustomHead"
-    OnSelect="OnDateSelect"
-    CultureInfo="@CultureInfo.InvariantCulture" />
+    @if (_isCalendarMode) {
+
+        <Calendar Value="currentDate"
+                  DateCellRender="DateCellRender"
+                  HeaderRender="CustomHead"
+                  OnSelect="OnDateSelect"
+                  CultureInfo="@CultureInfo.InvariantCulture" />
+    }
+    else {
+    <EventsHeader CurrentDate="@currentDate"
+                             CurrentDateChanged="@(async (date) => await OnDatePickerChanged(date))"
+                             OnPreviousMonth="PreviousMonth"
+                             OnNextMonth="NextMonth"
+                             OnChangeMode="ChangeMode"
+                             IsCalendarMode="@_isCalendarMode"
+                             OnCreateReport="() => _createReportModalVisible = true"/>
+
+                             // Табличка
+@*         <Table DataSource="@data" Bordered=@true Title="@title" Footer="@footer" HidePagination="@true">
+            <PropertyColumn Property="c=>c.Name">
+                <a>@context.Name</a>
+            </PropertyColumn>
+            <PropertyColumn Property="c=>c.Money" Style="text-align: right"></PropertyColumn>
+            <PropertyColumn Property="c=>c.Address"></PropertyColumn>
+        </Table> *@
+
+    }
 </div>
 
 <CreateReportModal @bind-Visible="_createReportModalVisible"
 OnSuccess="OnModalSuccess"/>
 
-@inject NavigationManager navManager
-@inject EventService eventService
-
 @code {
+    [Inject] private NavigationManager navManager { get; set; }
+    [Inject] private EventService eventService { get; set; }
     private DateTime currentDate = DateTime.Now;
     private List<EventGetModel> allEvents = new();
-    private bool isLoading = false;
 
+    private bool isLoading = false;
     private bool _createReportModalVisible = false;
+    private bool _isCalendarMode = true;
+
+    private void ChangeMode()
+    {
+        _isCalendarMode = !_isCalendarMode;
+        StateHasChanged();
+    }
 
     private async Task OnModalSuccess()
     {
@@ -133,41 +160,13 @@ private string GetEventClassByType(string eventType, bool isCanceled)
 
     private RenderFragment CustomHead(CalendarHeaderRenderArgs calendarHeaderRenderArgs)
     {
-        return @<Template>
-            <div class="calendar-header-container">
-                <Button Type="ButtonType.Default" Style="background-color: #d4d1d1; border: none;">
-                    <Icon Type="database" Theme="IconThemeType.Fill" Style="color: #968a8a;" Height="22px" Width="22px" />
-            </Button>
-
-                <div class="calendar-header">
-                    <Button @onclick="PreviousMonth">
-                        <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
-                    </Button>
-
-                    <DatePicker ValueChanged="OnDatePickerChanged"
-                                AllowClear="false" 
-                                Value="currentDate"
-                                ShowToday="true"
-                                TValue="DateTime"
-                                Picker="DatePickerType.Month" />
-
-                    <Button @onclick="NextMonth">
-                        <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
-                    </Button>
-                </div>
-            <Button style="margin-right:5px;" Type="ButtonType.Primary" OnClick="@(() => _createReportModalVisible = true)">
-                Отчет
-                <Icon Type="@IconType.Outline.Right" />
-            </Button>
-            <AdminButton>
-                <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
-                    Архив
-                    <Icon Type="@IconType.Outline.Right" />
-                </Button>
-            </AdminButton>
-
-            </div>
-        </Template>;
+       return @<EventsHeader CurrentDate="@currentDate"
+                         CurrentDateChanged="@(async (date) => await OnDatePickerChanged(date))"
+                         OnPreviousMonth="PreviousMonth"
+                         OnNextMonth="NextMonth"
+                         OnChangeMode="ChangeMode"
+                         IsCalendarMode="@_isCalendarMode"
+                         OnCreateReport="() => _createReportModalVisible = true"/>;
     }
 
     private void OnDateSelect(DateTime date)
@@ -195,11 +194,6 @@ private string GetEventClassByType(string eventType, bool isCanceled)
         currentDate = currentDate.AddMonths(-1);
         await LoadEventsForMonth(currentDate);
         StateHasChanged();
-    }
-
-    private async Task GoToArchive()
-    {
-        navManager.NavigateTo("/events/archive");
     }
 
     private RenderFragment DateCellRender(DateTime value) {

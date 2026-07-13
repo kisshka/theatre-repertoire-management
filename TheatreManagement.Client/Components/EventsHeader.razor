@@ -1,0 +1,68 @@
+﻿@using AntDesign
+
+<div class="calendar-header-container">
+
+    <Button Type="ButtonType.Default" Style="background-color: #d4d1d1; border: none; padding: 0px 5px;" OnClick="@OnChangeMode">
+        @if (IsCalendarMode)
+        {
+            <Icon Type="table" Theme="IconThemeType.Outline" Style="color: #968a8a;" Height="25px" Width="25px" />
+        }
+        else
+        {
+            <Icon Type="calendar" Theme="IconThemeType.Outline" Style="color: #968a8a;" Height="25px" Width="25px" />
+        }
+    </Button>
+
+    <div class="calendar-header">
+        <Button OnClick="@OnPreviousMonth">
+            <Icon class="calendar-icons" Type="@IconType.Outline.Left" />
+        </Button>
+
+        <DatePicker ValueChanged="OnDatePickerChanged"
+                    AllowClear="false"
+                    Value="CurrentDate"
+                    ShowToday="true"
+                    TValue="DateTime"
+                    Picker="DatePickerType.Month" />
+
+        <Button OnClick="@OnNextMonth">
+            <Icon class="calendar-icons" Type="@IconType.Outline.Right" />
+        </Button>
+    </div>
+
+    <Button Style="margin-right:5px;" Type="ButtonType.Primary" OnClick="@OnCreateReport">
+        Отчет
+        <Icon Type="@IconType.Outline.Right" />
+    </Button>
+
+    <AdminButton>
+        <Button Type="ButtonType.Primary" OnClick="@GoToArchive">
+            Архив
+            <Icon Type="@IconType.Outline.Right" />
+        </Button>
+    </AdminButton>
+</div>
+
+@code {
+    [Inject] private NavigationManager navManager { get; set; }
+
+    [Parameter] public DateTime CurrentDate { get; set; }
+    [Parameter] public EventCallback<DateTime> CurrentDateChanged { get; set; }
+    [Parameter] public EventCallback OnPreviousMonth { get; set; }
+    [Parameter] public EventCallback OnNextMonth { get; set; }
+    [Parameter] public EventCallback OnCreateReport { get; set; }
+    [Parameter] public EventCallback OnChangeMode { get; set; }
+
+    [Parameter] public bool IsCalendarMode { get; set; }
+
+    private async Task OnDatePickerChanged(DateTime newDate)
+    {
+        await CurrentDateChanged.InvokeAsync(newDate);
+    }
+
+
+    private async Task GoToArchive()
+    {
+        navManager.NavigateTo("/events/archive");
+    }
+}
