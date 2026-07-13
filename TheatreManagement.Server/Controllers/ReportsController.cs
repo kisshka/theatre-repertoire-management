@@ -1,19 +1,21 @@
 ﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using System.Globalization;
 using TheatreManagement.Domain.Data;
-using TheatreManagement.Shared.DTOs.Events;
-using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Domain.Entities;
-using Microsoft.VisualBasic;
+using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Employees;
+using TheatreManagement.Shared.DTOs.Events;
 
 namespace TheatreManagement.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ReportsController : ControllerBase
     {
         private readonly DataContext _context;

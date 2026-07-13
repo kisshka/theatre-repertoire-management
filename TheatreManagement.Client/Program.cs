@@ -32,14 +32,14 @@ builder.Services.AddScoped<EventConflictCheckerService>();
 // Аутентификация
 builder.Services.AddScoped<AuthHandler>();
 
-builder.Services.AddHttpClient("ServerAPI", client =>
+builder.Services.AddHttpClient("API", client =>
 {
     client.BaseAddress = new Uri(apiUrl);
 })
 .AddHttpMessageHandler<AuthHandler>();
 
 builder.Services.AddScoped(sp =>
-    sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));
 
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 

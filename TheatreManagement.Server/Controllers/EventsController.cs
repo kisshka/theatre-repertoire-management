@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -6,17 +7,18 @@ using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
-using TheatreManagement.Shared.ConflictChecker;
-using TheatreManagement.Shared.DTOs.Events;
 using TheatreManagement.Server.Mappings;
-using TheatreManagement.Shared.DTOs.Employees;
-using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared;
+using TheatreManagement.Shared.ConflictChecker;
+using TheatreManagement.Shared.DTOs;
+using TheatreManagement.Shared.DTOs.Employees;
+using TheatreManagement.Shared.DTOs.Events;
 
 namespace TheatreManagement.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class EventsController : ControllerBase
     {
         private readonly UserManager<User> _userManager;

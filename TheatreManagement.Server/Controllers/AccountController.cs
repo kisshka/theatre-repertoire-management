@@ -33,6 +33,7 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpPost("register")]
+        [Authorize]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
             if (!ModelState.IsValid)
@@ -63,11 +64,12 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpPut]
+        [Authorize]
         public async Task<IActionResult> PutUser(UserDto userDto)
         {
             var user = await _userManager.FindByIdAsync(userDto.Id);
             if (user == null)
-                return NotFound();
+                return Unauthorized();
 
             user.Surname = userDto.Surname;
             user.Name = userDto.Name;
@@ -88,26 +90,31 @@ namespace TheatreManagement.Server.Controllers
         [HttpGet("current")]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return NotFound();
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+                return Unauthorized();
 
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await _userManager.GetRolesAsync(currentUser);
 
             return new UserDto
             {
-                Id = user.Id,
-                Email = user.Email,
-                Surname = user.Surname,
-                Name = user.Name,
-                FatherName = user.FatherName,
+                Id = currentUser.Id,
+                Email = currentUser.Email,
+                Surname = currentUser.Surname,
+                Name = currentUser.Name,
+                FatherName = currentUser.FatherName,
                 Role = roles[0]
             };
         }
 
         [HttpGet("{userId}")]
+        [Authorize]
         public async Task<ActionResult<UserDto>> GetUser(string userId)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+                return Unauthorized();
+
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
                 return NotFound();
@@ -126,12 +133,14 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<PagedResult<UserDto>>> GetUsers(
         [FromQuery] string searchText = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] bool isArchive = false)
         {
+
             var query = _context.Users.AsQueryable();
 
             if (isArchive == true)
@@ -184,15 +193,16 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpPut("{userId}/soft-delete")]
+        [Authorize]
         public async Task<IActionResult> SoftDeleteUser(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return Unauthorized();
 
             user.LockoutEnd = DateTime.UtcNow.AddYears(100);
             user.LockoutEnabled = true;
 
-            if (user == null)
-                return NotFound();
 
             user.DeletionTime = DateTime.UtcNow;
             _context.SaveChanges();
@@ -200,13 +210,12 @@ namespace TheatreManagement.Server.Controllers
         }
 
         [HttpPut("{userId}/restore")]
+        [Authorize]
         public async Task<IActionResult> RestoreUser(string userId)
         {
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null)
-            {
-                return Unauthorized("Пользователь не авторизован");
-            }
+                return Unauthorized();
 
             var user = await _context.Users.Where(u => u.Id == userId)
                                            .IgnoreQueryFilters()
