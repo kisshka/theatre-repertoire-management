@@ -1,0 +1,118 @@
+﻿@using TheatreManagement.Shared.Helpers
+
+<Space>
+    <Select Mode="SelectMode.Default"
+            Style="width: 200px;"
+            DataSource="@DataSource"
+            @bind-Value="@SelectedId"
+            TItem="Guide"
+            TItemValue="int"
+            LabelName="Name"
+            ValueName="Id"
+            OnSelectedItemChanged="OnSelectedItemChangedHandler"
+            Placeholder="@Placeholder">
+    </Select>
+
+    @* Кнопки управления *@
+    <AuthorizeView Roles="MainAdmin, SystemAdmin">
+        <Authorized>
+            <Button Type="ButtonType.Primary"
+                    Style="margin: 0px 2px;"
+                    OnClick="OpenAddModal">
+                <Icon Type="@IconType.Outline.Plus" />
+            </Button>
+
+            <Button Type="ButtonType.Default"
+                    OnClick="OpenEditModal"
+                    Disabled="@(SelectedId == 0)"
+                    Style="margin: 0px 2px;">
+                <Icon Type="@IconType.Outline.Edit" />
+            </Button>
+
+            <Button Danger Class="danger-button"
+                    OnClick="@OnDelete"
+                    Disabled="@(SelectedId == 0 || DeleteButtonIsDisabled)">
+                <Icon Type="@IconType.Outline.Delete" />
+            </Button>
+        </Authorized>
+        </AuthorizeView>
+</Space>
+
+<Modal Visible="@_modalVisible"
+       Title="@(IsEditing ? "Редактирование" : "Добавление")"
+       OnOk="HandleOk"
+       OnCancel="HandleCancel"
+       MaskClosable="@false">
+
+    <FormItem Label="@FieldLabel">
+        <Input @bind-Value="@_fieldValue" />
+    </FormItem>
+
+</Modal>
+
+@code {
+    [Parameter] public List<Guide> DataSource { get; set; } = new();
+
+    [Parameter] public int SelectedId { get; set; }
+    public Guide SelectedValue { get; set; } = new();
+
+    [Parameter] public EventCallback<int> SelectedIdChanged { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Выберите...";
+    [Parameter] public string FieldLabel { get; set; } = "Название";
+
+    [Parameter] public EventCallback<string> OnSave { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
+
+    private bool DeleteButtonIsDisabled { get; set; } = true;
+
+    private bool _modalVisible;
+    private bool IsEditing;
+    private string _fieldValue = "";
+
+    private async void OpenAddModal()
+    {
+        await SelectedIdChanged.InvokeAsync(0);
+        IsEditing = false;
+        _fieldValue = "";
+        _modalVisible = true;
+    }
+
+    private void OpenEditModal()
+    {
+        if (SelectedId > 0)
+        {
+            IsEditing = true;
+
+            var selected = DataSource.FirstOrDefault(x => x.Id == SelectedId);
+            _fieldValue = selected.Name;
+            _modalVisible = true;
+        }
+    }
+
+    private async Task HandleOk()
+    {
+        await OnSave.InvokeAsync(_fieldValue);
+        _modalVisible = false;
+    }
+
+    private void HandleCancel()
+    {
+        _modalVisible = false;
+    }
+
+    private async Task OnSelectedItemChangedHandler(Guide value)
+    {
+        if (value != null)
+        {
+            await SelectedIdChanged.InvokeAsync(value.Id);
+            SelectedValue = value;
+            DeleteButtonIsDisabled = value.IsUsed;
+        }
+        else
+        {
+            DeleteButtonIsDisabled = true;
+        }
+
+    }
+
+}

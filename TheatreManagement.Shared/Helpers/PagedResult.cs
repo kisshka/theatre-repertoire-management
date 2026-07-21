@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TheatreManagement.Shared
+namespace TheatreManagement.Shared.Helpers
 {
     public class PagedResult<T>
     {

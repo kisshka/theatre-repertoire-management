@@ -10,8 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Users;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Server.Controllers
 {

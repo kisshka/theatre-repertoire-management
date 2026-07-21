@@ -1,7 +1,6 @@
 ﻿@using AntDesign
 @using Microsoft.AspNetCore.Components.Forms
-@using TheatreManagement.Client.Helpers.SelectItems
-@using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Shared.Helpers
 @using TheatreManagement.Shared.DTOs.Events
 
 <Modal Visible="@Visible"
@@ -18,13 +17,12 @@
           @ref="@FormRef">
 
         <FormItem Label="Тип учреждения" Required>
-            <Select Mode="SelectMode.Default"
-                    DataSource="@institutionTypes"
-                    @bind-Value="@selectedInstitutionTypeId"
-                    LabelName="Name"
-                    ValueName="Id"
-                    Placeholder="Выберите тип учреждения">
-            </Select>
+            <SelectWithAddingItems @bind-SelectedId="selectedInstitutionTypeId"
+                                   DataSource="@institutionTypes"
+                                   OnDelete="institutionTypesDelete"
+                                   Placeholder="Выберите тип учреждения"
+                                   FieldLabel="тип учреждения"
+                                   OnSave="SaveinstitutionTypes" />
         </FormItem>
 
         <FormItem Label="Название" Required>
@@ -68,6 +66,7 @@
     [Parameter] public int InstitutionId { get; set; }
 
     [Inject] private InstitutionService institutionService { get; set; }
+    [Inject] private InstitutionTypeService institutionTypeService { get; set; }
     [Inject] private IMessageService messageService { get; set; }
 
     private Form<InstitutionDto> FormRef { get; set; }
@@ -77,18 +76,20 @@
     private bool Submitting { get; set; } = false;
 
     // Для типа учреждения
-    private List<InstitutionTypeDto> institutionTypes = new();
+    private List<Guide> institutionTypes = new();
     private int selectedInstitutionTypeId;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadInstitutionTypes();
-    }
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     await LoadInstitutionTypes();
+    //     await LoadDataAsync();
+    // }
 
     protected override async Task OnParametersSetAsync()
     {
         if (Visible)
         {
+            await LoadInstitutionTypes();
             await LoadDataAsync();
         }
     }
@@ -187,5 +188,27 @@
         Error = "";
         FormRef?.Reset();
         StateHasChanged();
+    }
+
+    private async Task institutionTypesDelete()
+    {
+        await institutionTypeService.DeleteInstitutionTypeAsync(selectedInstitutionTypeId);
+        selectedInstitutionTypeId = 0;
+        await LoadInstitutionTypes();
+    }
+
+    private async Task SaveinstitutionTypes(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return;
+
+        if (selectedInstitutionTypeId == 0)
+        {
+            await institutionTypeService.AddInstitutionTypeAsync(name);
+        }
+        else
+        {
+            await institutionTypeService.UpdateInstitutionTypeAsync(selectedInstitutionTypeId, name);
+        }
+        await LoadInstitutionTypes();
     }
 }

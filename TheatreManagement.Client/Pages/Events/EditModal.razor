@@ -1,4 +1,5 @@
 ﻿@using TheatreManagement.Shared.DTOs.Employees
+@using TheatreManagement.Shared.Helpers
 @* // ПЕРВОЕ МОДАЛЬНОЕ ОКНО *@
 <Modal Visible="@Visible"
        Title="Изменение мероприятия"
@@ -27,20 +28,20 @@
         <span>Даты проведения:</span>
         <FormItem Required>
             <Flex Gap="FlexGap.Middle" Align="FlexAlign.Center" Wrap="FlexWrap.Wrap">
-                <DatePicker TValue="DateTime"
+                <DatePicker TValue="DateTime?"
                             @bind-Value="@startDateTime"
                             ShowTime='@("HH:mm")'
                             Format="dd.MM.yyyy HH:mm"
                             AllowClear="false"
-                            ChangeOnClose="true"
+                            ChangeOnClose
                             Placeholder="@("Выберите дату и время начала")" />
                 <span>-</span>
-                <DatePicker TValue="DateTime"
+                <DatePicker TValue="DateTime?"
                             @bind-Value="@endDateTime"
                             ShowTime='@("HH:mm")'
                             Format="dd.MM.yyyy HH:mm"
                             AllowClear="false"
-                            ChangeOnClose="true"
+                            ChangeOnClose
                             Placeholder="@("Выберите дату и время окончания")" />
             </Flex>
         </FormItem>
@@ -51,15 +52,13 @@
             <Divider>Стационар</Divider>
 
             <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
-                <FormItem Label="Зал" Required
-                          Style="width: 100%; max-width: 300px;">
-                    <Select Mode="SelectMode.Default"
-                            DataSource="@hallTypes"
-                            @bind-Value="@selectedHallTypeId"
-                            LabelName="Name"
-                            ValueName="Value"
-                            Placeholder="Выберите зал">
-                    </Select>
+                <FormItem Label="Зал" Required Style="width: 100%; max-width: 300px;">
+                    <SelectWithAddingItems @bind-SelectedId="selectedHallTypeId"
+                                           DataSource="@hallTypes"
+                                           OnDelete="HallTypeDelete"
+                                           Placeholder="Выберите зал"
+                                           FieldLabel="Зал"
+                                           OnSave="SaveHallType" />
                 </FormItem>
 
                 @if (employeeConflicts.Where(ec => ec.Type == ConflictType.HallConflict).Any())
@@ -309,7 +308,10 @@
     [Inject] private EmployeeService employeeService { get; set; }
     [Inject] private EventService eventService { get; set; }
     [Inject] private InstitutionService institutionService { get; set; }
+    [Inject] private HallTypeService hallTypeService { get; set; }
+
     [Inject] private EventConflictCheckerService _conflictChecker { get; set; }
+
     [Inject] private IMessageService messageService { get; set; }
 
     private Form<EventPostModel> FormRef { get; set; }
@@ -320,8 +322,8 @@
     private bool Submitting { get; set; } = false;
 
     // Заменяем dateRange на два отдельных поля
-    private DateTime startDateTime = DateTime.Now;
-    private DateTime endDateTime = DateTime.Now.AddHours(23);
+    private DateTime? startDateTime = DateTime.Now;
+    private DateTime? endDateTime = DateTime.Now.AddHours(23);
 
     private string userRole;
 
@@ -330,7 +332,7 @@
     private int? selectedInstitutionId;
 
     // Для стационара
-    private List<SelectItem<int>> hallTypes = new();
+    private List<Guide> hallTypes = new();
     private int _selectedHallTypeId;
     private int selectedHallTypeId
     {
@@ -356,18 +358,18 @@
             return;
 
         string hallName = null;
-        int hallTypeId = -1;
+        int hallTypeId = 0;
 
         if (selectedEventType == "stationar" && selectedHallTypeId > 0)
         {
             hallTypeId = selectedHallTypeId;
-            hallName = hallTypes.FirstOrDefault(h => h.Value == selectedHallTypeId)?.Name;
+            hallName = hallTypes.FirstOrDefault(h => h.Id == selectedHallTypeId)?.Name;
         }
 
         var request = new ConflictCheckRequest
             {
-                StartTime = startDateTime,
-                EndTime = endDateTime,
+                StartTime = startDateTime.Value,
+                EndTime = endDateTime.Value,
                 Type = selectedEventType,
                 HallTypeId = hallTypeId,
                 HallTypeName = hallName,
@@ -459,12 +461,7 @@
         availablePlays = await playService.GetPlaysAsync();
         institutions = await institutionService.SearchInstitutionsAsync(null);
 
-        var hallTypesData = await eventService.GetAllStationarTypesAsync();
-        hallTypes = hallTypesData.Select(h => new SelectItem<int>
-            {
-                Value = h.Id,
-                Name = h.Name
-            }).ToList();
+        hallTypes = await eventService.GetAllStationarTypesAsync();
     }
 
     private async Task LoadEventData()
@@ -538,8 +535,8 @@
             Submitting = true;
             error = "";
 
-            Model.StartTime = startDateTime;
-            Model.EndTime = endDateTime;
+            Model.StartTime = startDateTime.Value;
+            Model.EndTime = endDateTime.Value;
             Model.Type = selectedEventType;
 
             if (selectedEventType == "stationar")
@@ -854,5 +851,29 @@
 
         isDisabled = userRole != "MainAdmin" && userRole != "SystemAdmin";
         StateHasChanged();
+    }
+
+
+
+    private async Task HallTypeDelete()
+    {
+        await hallTypeService.DeleteHallTypeAsync(selectedHallTypeId);
+        selectedHallTypeId = 0;
+        await LoadInitialData();
+    }
+
+    private async Task SaveHallType(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return;
+
+        if (selectedHallTypeId == 0)
+        {
+            await hallTypeService.AddHallTypeAsync(name);
+        }
+        else
+        {
+            await hallTypeService.UpdateHallTypeAsync(selectedHallTypeId, name);
+        }
+        await LoadInitialData();
     }
 }

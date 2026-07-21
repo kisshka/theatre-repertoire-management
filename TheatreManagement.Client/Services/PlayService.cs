@@ -1,8 +1,7 @@
 ﻿using AntDesign;
 using System.Net.Http.Json;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs;
-using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Client.Services
 {
@@ -81,9 +80,9 @@ namespace TheatreManagement.Client.Services
             else 
                 return new CastWithRolesDto ();
         }
-        public async Task<List<SceneTypeDto>> GetAllSceneTypeAsync()
+        public async Task<List<Guide>> GetAllSceneTypeAsync()
         {
-            return await _httpClient.GetFromJsonAsync<List<SceneTypeDto>>($"api/plays/scene-types");
+            return await _httpClient.GetFromJsonAsync<List<Guide>>($"api/plays/scene-types");
         }
     }
 }

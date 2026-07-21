@@ -1,4 +1,5 @@
 ﻿@using TheatreManagement.Shared.DTOs.Employees
+@using TheatreManagement.Shared.Helpers
 @* // ПЕРВОЕ МОДАЛЬНОЕ ОКНО *@
 <Modal Visible="@Visible"
        Title="Создание мероприятия"
@@ -27,20 +28,20 @@
         <span>Даты проведения:</span>
         <FormItem Required>
             <Flex Gap="FlexGap.Middle" Align="FlexAlign.Center" Wrap="FlexWrap.Wrap">
-                <DatePicker TValue="DateTime"
+                <DatePicker TValue="DateTime?"
                             @bind-Value="@startDateTime"
                             ShowTime='@("HH:mm")'
                             Format="dd.MM.yyyy HH:mm"
                             AllowClear="false"
-                            ChangeOnClose="true"
+                            ChangeOnClose
                             Placeholder="@("Выберите дату и время начала")"/>
                 <span>-</span>
-                <DatePicker TValue="DateTime"
+                <DatePicker TValue="DateTime?"
                             @bind-Value="@endDateTime"
                             ShowTime='@("HH:mm")'
                             Format="dd.MM.yyyy HH:mm"
                             AllowClear="false"
-                            ChangeOnClose="true"
+                            ChangeOnClose
                             Placeholder="@("Выберите дату и время окончания")" />
             </Flex>
         </FormItem>
@@ -51,15 +52,14 @@
             <Divider>Стационар</Divider>
 
             <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
-                <FormItem Label="Зал" Required
-                          Style="width: 100%; max-width: 300px;">
-                    <Select Mode="SelectMode.Default"
-                            DataSource="@hallTypes"
-                            @bind-Value="@selectedHallTypeId"
-                            LabelName="Name"
-                            ValueName="Value"
-                            Placeholder="Выберите зал">
-                    </Select>
+
+               <FormItem Label="Зал" Required>
+                    <SelectWithAddingItems @bind-SelectedId="selectedHallTypeId"
+                                           DataSource="@hallTypes"
+                                           OnDelete="HallTypeDelete"
+                                           Placeholder="Выберите зал"
+                                           FieldLabel="Зал"
+                                           OnSave="SaveHallType" />
                 </FormItem>
 
                 @if (employeeConflicts.Where(ec => ec.Type == ConflictType.HallConflict).Any())
@@ -303,76 +303,78 @@
 </Modal>
 
 @code {
-    [Parameter] public bool Visible { get; set; }
-    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
-    [Parameter] public EventCallback OnSuccess { get; set; }
-    [Parameter] public DateTime EventDate { get; set; }
+	[Parameter] public bool Visible { get; set; }
+	[Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+	[Parameter] public EventCallback OnSuccess { get; set; }
+	[Parameter] public DateTime EventDate { get; set; }
 
-    // Мои сервисы
-    [Inject] private AuthenticationStateProvider provider { get; set; }
-    [Inject] private PlayService playService { get; set; }
-    [Inject] private EmployeeService employeeService { get; set; }
-    [Inject] private EventService eventService { get; set; }
-    [Inject] private InstitutionService institutionService { get; set; }
-    [Inject] private EventConflictCheckerService _conflictChecker { get; set; }
-    [Inject] private IMessageService messageService { get; set; }
+	// Мои сервисы
+	[Inject] private AuthenticationStateProvider provider { get; set; }
+	[Inject] private PlayService playService { get; set; }
+	[Inject] private EmployeeService employeeService { get; set; }
+	[Inject] private EventService eventService { get; set; }
+	[Inject] private HallTypeService hallTypeService { get; set; }
+	[Inject] private InstitutionService institutionService { get; set; }
+	[Inject] private EventConflictCheckerService _conflictChecker { get; set; }
 
-    private Form<EventPostModel> FormRef { get; set; }
-    private EventPostModel Model { get; set; } = new();
+	[Inject] private IMessageService messageService { get; set; }
 
-    private string selectedEventType = "stationar";
-    private List<PlayDto> availablePlays = new();
-    private bool Submitting { get; set; } = false;
+	private Form<EventPostModel> FormRef { get; set; }
+	private EventPostModel Model { get; set; } = new();
 
-    private DateTime startDateTime = DateTime.Now;
-    private DateTime endDateTime = DateTime.Now.AddHours(23);
+	private string selectedEventType = "stationar";
+	private List<PlayDto> availablePlays = new();
+	private bool Submitting { get; set; } = false;
 
-    private string userRole;
+	private DateTime? startDateTime = DateTime.Now;
+	private DateTime? endDateTime = DateTime.Now.AddHours(23);
 
-    // Для выезда
-    private List<InstitutionDto> institutions = new();
-    private int? selectedInstitutionId;
+	private string userRole;
 
-    // Для стационара
-    private List<SelectItem<int>> hallTypes = new();
-    private int _selectedHallTypeId;
-    private int selectedHallTypeId
-    {
-        get => _selectedHallTypeId;
-        set
-        {
-            if (_selectedHallTypeId != value)
+	// Для выезда
+	private List<InstitutionDto> institutions = new();
+	private int? selectedInstitutionId;
+
+	// Для стационара
+	private List<Guide> hallTypes = new();
+	private int _selectedHallTypeId = 0;
+	private int selectedHallTypeId
+	{
+		get => _selectedHallTypeId;
+		set
+		{
+			if (_selectedHallTypeId != value)
+			{
+				_selectedHallTypeId = value;
+				InvokeAsync(async () => await CheckConflicts());
+			}
+		}
+	}
+	private string selectedPerformanceType = "";
+
+	public string error = "";
+
+	//Проверка на наличие конфликтов
+	private List<Warning> employeeConflicts = new();
+
+	private async Task CheckConflicts()
+	{
+		if (startDateTime == null || endDateTime == null)
+			return;
+
+		string hallName = null;
+		int hallTypeId = -1;
+
+		if (selectedEventType == "stationar" && selectedHallTypeId > 0)
+		{
+			hallTypeId = selectedHallTypeId;
+			hallName = hallTypes.FirstOrDefault(h => h.Id == selectedHallTypeId)?.Name;
+		}
+
+		var request = new ConflictCheckRequest
             {
-                _selectedHallTypeId = value;
-                InvokeAsync(async () => await CheckConflicts());
-            }
-        }
-    }
-    private string selectedPerformanceType = "";
-
-    public string error = "";
-
-    //Проверка на наличие конфликтов
-    private List<Warning> employeeConflicts = new();
-
-    private async Task CheckConflicts()
-    {
-        if (startDateTime == null || endDateTime == null)
-            return;
-
-        string hallName = null;
-        int hallTypeId = -1;
-
-        if (selectedEventType == "stationar" && selectedHallTypeId > 0)
-        {
-            hallTypeId = selectedHallTypeId;
-            hallName = hallTypes.FirstOrDefault(h => h.Value == selectedHallTypeId)?.Name;
-        }
-
-        var request = new ConflictCheckRequest
-            {
-                StartTime = startDateTime,
-                EndTime = endDateTime,
+                StartTime = startDateTime.Value,
+                EndTime = endDateTime.Value,
                 Type = selectedEventType,
                 HallTypeId = hallTypeId,
                 HallTypeName = hallName,
@@ -380,352 +382,346 @@
                 ExcludeEventId = Model.EventId > 0 ? Model.EventId : null
             };
 
-        var response = await _conflictChecker.CheckConflictsAsync(request);
-        employeeConflicts = response.Warnings;
-        StateHasChanged();
-    }
+		var response = await _conflictChecker.CheckConflictsAsync(request);
+		employeeConflicts = response.Warnings;
+		StateHasChanged();
+	}
 
-    // Конфликты у сотрудников
-    private bool HasEmployeeConflict(int employeeId)
-    {
-        return employeeConflicts.Any(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
-    }
+	// Конфликты у сотрудников
+	private bool HasEmployeeConflict(int employeeId)
+	{
+		return employeeConflicts.Any(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
+	}
 
-    private string GetEmployeeConflictMessage(int employeeId)
-    {
-        var conflict = employeeConflicts.FirstOrDefault(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
-        return conflict?.Message ?? "";
-    }
+	private string GetEmployeeConflictMessage(int employeeId)
+	{
+		var conflict = employeeConflicts.FirstOrDefault(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employeeId);
+		return conflict?.Message ?? "";
+	}
 
-    // Конфликты у сотрудников общее отображение для спектакля
-    private bool HasPlayConflict(int playIndex)
-    {
-        if (Model?.PlayEvents == null) return false;
-        if (playIndex < 0 || playIndex >= Model.PlayEvents.Count) return false;
+	// Конфликты у сотрудников общее отображение для спектакля
+	private bool HasPlayConflict(int playIndex)
+	{
+		if (Model?.PlayEvents == null) return false;
+		if (playIndex < 0 || playIndex >= Model.PlayEvents.Count) return false;
 
-        var playEvent = Model.PlayEvents[playIndex];
-        if (playEvent?.SelectedEmployees == null) return false;
-        if (employeeConflicts == null) return false;
+		var playEvent = Model.PlayEvents[playIndex];
+		if (playEvent?.SelectedEmployees == null) return false;
+		if (employeeConflicts == null) return false;
 
-        return playEvent.SelectedEmployees.Any(employee =>
-            employeeConflicts.Any(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employee.EmployeeId));
-    }
+		return playEvent.SelectedEmployees.Any(employee =>
+			employeeConflicts.Any(c => c.Type == ConflictType.EmployeeConflict && c.EmployeeId == employee.EmployeeId));
+	}
 
-    private List<int> GetSelectedEmployeeIds()
-    {
-        var employeeIds = new List<int>();
+	private List<int> GetSelectedEmployeeIds()
+	{
+		var employeeIds = new List<int>();
 
-        // Добавляем только что выбранных сотрудников
-        foreach (var selection in tempSelections)
-        {
-            if (selection.EmployeeId > 0 && !employeeIds.Contains(selection.EmployeeId))
-            {
-                employeeIds.Add(selection.EmployeeId);
-            }
-        }
+		// Добавляем только что выбранных сотрудников
+		foreach (var selection in tempSelections)
+		{
+			if (selection.EmployeeId > 0 && !employeeIds.Contains(selection.EmployeeId))
+			{
+				employeeIds.Add(selection.EmployeeId);
+			}
+		}
 
-        // Загрузка остальных добавленных сотрудников
-        if (Model?.PlayEvents != null)
-        {
-            foreach (var playEvent in Model.PlayEvents)
-            {
-                // Текущий выбранный спектакль пропущен
-                if (currentPlayEventIndex >= 0 &&
-                    Model.PlayEvents.IndexOf(playEvent) == currentPlayEventIndex)
-                {
-                    continue;
-                }
+		// Загрузка остальных добавленных сотрудников
+		if (Model?.PlayEvents != null)
+		{
+			foreach (var playEvent in Model.PlayEvents)
+			{
+				// Текущий выбранный спектакль пропущен
+				if (currentPlayEventIndex >= 0 &&
+					Model.PlayEvents.IndexOf(playEvent) == currentPlayEventIndex)
+				{
+					continue;
+				}
 
-                if (playEvent.SelectedEmployees != null)
-                {
-                    foreach (var employee in playEvent.SelectedEmployees)
-                    {
-                        if (employee.EmployeeId > 0 && !employeeIds.Contains(employee.EmployeeId))
-                        {
-                            employeeIds.Add(employee.EmployeeId);
-                        }
-                    }
-                }
-            }
-        }
+				if (playEvent.SelectedEmployees != null)
+				{
+					foreach (var employee in playEvent.SelectedEmployees)
+					{
+						if (employee.EmployeeId > 0 && !employeeIds.Contains(employee.EmployeeId))
+						{
+							employeeIds.Add(employee.EmployeeId);
+						}
+					}
+				}
+			}
+		}
 
-        return employeeIds;
-    }
+		return employeeIds;
+	}
 
-    protected override async Task OnParametersSetAsync()
-    {
-        if (Visible)
-        {
-            await LoadInitialData();
-            await LoadUserData();
-            AddPlayEvent();
+	protected override async Task OnParametersSetAsync()
+	{
+		if (Visible)
+		{
+			await LoadInitialData();
+			await LoadUserData();
+			AddPlayEvent();
 
-            // Устанавливаем даты из параметра
-            startDateTime = EventDate;
-            endDateTime = EventDate.AddHours(23);
-        }
-    }
+			// Устанавливаем даты из параметра
+			startDateTime = EventDate;
+			endDateTime = EventDate.AddHours(23);
+		}
+	}
 
-    private async Task LoadInitialData()
-    {
-        availablePlays = await playService.GetPlaysAsync();
-        institutions = await institutionService.SearchInstitutionsAsync(null);
+	private async Task LoadInitialData()
+	{
+		availablePlays = await playService.GetPlaysAsync();
+		institutions = await institutionService.SearchInstitutionsAsync(null);
 
-        var hallTypesData = await eventService.GetAllStationarTypesAsync();
-        hallTypes = hallTypesData.Select(h => new SelectItem<int>
-            {
-                Value = h.Id,
-                Name = h.Name
-            }).ToList();
-    }
+		hallTypes = await hallTypeService.GetHallTypesAsync();
+	}
 
-    private void AddPlayEvent()
-    {
-        Model.PlayEvents.Add(new PlayEventDto());
-        StateHasChanged();
-    }
+	private void AddPlayEvent()
+	{
+		Model.PlayEvents.Add(new PlayEventDto());
+		StateHasChanged();
+	}
 
-    private void RemovePlayEvent(int index)
-    {
-        Model.PlayEvents.RemoveAt(index);
-        StateHasChanged();
-    }
+	private void RemovePlayEvent(int index)
+	{
+		Model.PlayEvents.RemoveAt(index);
+		StateHasChanged();
+	}
 
-    private void OnFinishFailed(EditContext editContext)
-    {
-        Console.WriteLine($"Failed");
-    }
+	private void OnFinishFailed(EditContext editContext)
+	{
+		Console.WriteLine($"Failed");
+	}
 
-    private async Task HandleOk()
-    {
-        if (FormRef != null)
-        {
-            FormRef.Submit();
-        }
-    }
+	private async Task HandleOk()
+	{
+		if (FormRef != null)
+		{
+			FormRef.Submit();
+		}
+	}
 
-    private async Task OnFinish(EditContext editContext)
-    {
-        if (Submitting) return;
+	private async Task OnFinish(EditContext editContext)
+	{
+		if (Submitting) return;
 
-        // ❗ ВАЛИДАЦИЯ ДАТ
-        if (startDateTime > endDateTime)
-        {
-            error = "Дата начала не может быть позже даты окончания";
-            StateHasChanged();
-            return;
-        }
+		if (startDateTime > endDateTime)
+		{
+			error = "Дата начала не может быть позже даты окончания";
+			StateHasChanged();
+			return;
+		}
 
-        StateHasChanged();
+		StateHasChanged();
 
-        try
-        {
-            Submitting = true;
+		try
+		{
+			Submitting = true;
 
-            Model.StartTime = startDateTime;
-            Model.EndTime = endDateTime;
-            Model.Type = selectedEventType;
+			Model.StartTime = startDateTime.Value;
+			Model.EndTime = endDateTime.Value;
+			Model.Type = selectedEventType;
 
-            if (selectedEventType == "stationar")
-            {
-                if (Model.Stationar == null)
-                    Model.Stationar = new StationarDto();
+			if (selectedEventType == "stationar")
+			{
+				if (Model.Stationar == null)
+					Model.Stationar = new StationarDto();
 
-                Model.Stationar.HallTypeId = selectedHallTypeId;
-                Model.Stationar.Type = selectedPerformanceType;
-            }
-            else if (selectedEventType == "visit")
-            {
-                if (selectedInstitutionId.HasValue && selectedInstitutionId.Value > 0)
-                {
-                    var selectedInstitution = institutions.FirstOrDefault(i => i.InstitutionId == selectedInstitutionId.Value);
-                    if (selectedInstitution != null)
-                    {
-                        Model.Institution = selectedInstitution;
-                    }
-                }
-                else
-                {
-                    error = "Выберите учреждение";
-                    return;
-                }
-            }
+				Model.Stationar.HallTypeId = selectedHallTypeId;
+				Model.Stationar.Type = selectedPerformanceType;
+			}
+			else if (selectedEventType == "visit")
+			{
+				if (selectedInstitutionId.HasValue && selectedInstitutionId.Value > 0)
+				{
+					var selectedInstitution = institutions.FirstOrDefault(i => i.InstitutionId == selectedInstitutionId.Value);
+					if (selectedInstitution != null)
+					{
+						Model.Institution = selectedInstitution;
+					}
+				}
+				else
+				{
+					error = "Выберите учреждение";
+					return;
+				}
+			}
 
-            var formResult = await eventService.CreateEventAsync(Model);
+			var formResult = await eventService.CreateEventAsync(Model);
 
-            if (formResult.Succeeded)
-            {
-                messageService.Success("Мероприятие успешно создано!");
-            }
-            else
-            {
-                error = formResult.Errors[0];
-                return;
-            }
+			if (formResult.Succeeded)
+			{
+				messageService.Success("Мероприятие успешно создано!");
+			}
+			else
+			{
+				error = formResult.Errors[0];
+				return;
+			}
 
-            Visible = false;
-            await VisibleChanged.InvokeAsync(false);
-            await OnSuccess.InvokeAsync();
-            ResetForm();
-        }
-        catch (Exception ex)
-        {
-            error = ex.Message;
-        }
-        finally
-        {
-            Submitting = false;
-            StateHasChanged();
-        }
-    }
+			Visible = false;
+			await VisibleChanged.InvokeAsync(false);
+			await OnSuccess.InvokeAsync();
+			ResetForm();
+		}
+		catch (Exception ex)
+		{
+			error = ex.Message;
+		}
+		finally
+		{
+			Submitting = false;
+			StateHasChanged();
+		}
+	}
 
-    private async Task HandleCancel()
-    {
-        Visible = false;
-        await VisibleChanged.InvokeAsync(false);
-        ResetForm();
-    }
+	private async Task HandleCancel()
+	{
+		Visible = false;
+		await VisibleChanged.InvokeAsync(false);
+		ResetForm();
+	}
 
-    private void ResetForm()
-    {
-        Model = new EventPostModel();
-        selectedEventType = "stationar";
-        selectedHallTypeId = 0;
-        selectedPerformanceType = "";
-        error = "";
-        selectedInstitutionId = null;
-        startDateTime = DateTime.Now;
-        endDateTime = DateTime.Now.AddHours(23);
-        FormRef?.Reset();
-        StateHasChanged();
-    }
+	private void ResetForm()
+	{
+		Model = new EventPostModel();
+		selectedEventType = "stationar";
+		selectedHallTypeId = 0;
+		selectedPerformanceType = "";
+		error = "";
+		selectedInstitutionId = null;
+		startDateTime = DateTime.Now;
+		endDateTime = DateTime.Now.AddHours(23);
+		FormRef?.Reset();
+		StateHasChanged();
+	}
 
-    //ВТОРОЕ МОДАЛЬНОЕ ОКНО
+	//ВТОРОЕ МОДАЛЬНОЕ ОКНО
 
-    private bool rolesModalVisible = false;
-    private Form<EmployeeRoleCreateDto> EmployeeRolesFormRef { get; set; }
-    private EmployeeRoleCreateDto EmployeeRolesModel { get; set; } = new();
+	private bool rolesModalVisible = false;
+	private Form<EmployeeRoleCreateDto> EmployeeRolesFormRef { get; set; }
+	private EmployeeRoleCreateDto EmployeeRolesModel { get; set; } = new();
 
-    // Данные для ролей
-    private PlayDto play = new();
-    private List<EmployeeDto> actors = new();
-    private List<EmployeeDto> technics = new();
+	// Данные для ролей
+	private PlayDto play = new();
+	private List<EmployeeDto> actors = new();
+	private List<EmployeeDto> technics = new();
 
-    private List<EmployeeRoleSelectDto> tempSelections = new();
+	private List<EmployeeRoleSelectDto> tempSelections = new();
 
-    private int currentPlayEventIndex = -1;
-    private int currentPlayId = 0;
-    private string currentPlayName = "";
+	private int currentPlayEventIndex = -1;
+	private int currentPlayId = 0;
+	private string currentPlayName = "";
 
-    // Переменные для подгрузки сотрудников из состава
-    private List<CastDto> currentPlayCasts = new();
-    private int selectedCastId;
-    private CastWithRolesDto selectedCast = new();
+	// Переменные для подгрузки сотрудников из состава
+	private List<CastDto> currentPlayCasts = new();
+	private int selectedCastId;
+	private CastWithRolesDto selectedCast = new();
 
-    private void OpenRolesModal(int index)
-    {
-        currentPlayEventIndex = index;
-        currentPlayId = Model.PlayEvents[currentPlayEventIndex].PlayId;
+	private void OpenRolesModal(int index)
+	{
+		currentPlayEventIndex = index;
+		currentPlayId = Model.PlayEvents[currentPlayEventIndex].PlayId;
 
-        var selectedPlay = availablePlays.FirstOrDefault(p => p.PlayId == currentPlayId);
-        currentPlayName = selectedPlay?.Name ?? "Не выбран";
+		var selectedPlay = availablePlays.FirstOrDefault(p => p.PlayId == currentPlayId);
+		currentPlayName = selectedPlay?.Name ?? "Не выбран";
 
-        selectedCastId = Model.PlayEvents[currentPlayEventIndex].CastId;
-        LoadPlayData(currentPlayId);
+		selectedCastId = Model.PlayEvents[currentPlayEventIndex].CastId;
+		LoadPlayData(currentPlayId);
 
-        rolesModalVisible = true;
-        StateHasChanged();
-    }
+		rolesModalVisible = true;
+		StateHasChanged();
+	}
 
-    private async void LoadPlayData(int playId)
-    {
-        if (playId > 0)
-        {
-            play = await playService.GetPlayAsync(playId);
-            actors = await employeeService.GetActorsAsync();
-            technics = await employeeService.GetTechnicsAsync();
+	private async void LoadPlayData(int playId)
+	{
+		if (playId > 0)
+		{
+			play = await playService.GetPlayAsync(playId);
+			actors = await employeeService.GetActorsAsync();
+			technics = await employeeService.GetTechnicsAsync();
 
-            currentPlayCasts = await playService.GetCastsAsync(playId);
+			currentPlayCasts = await playService.GetCastsAsync(playId);
 
-            LoadSavedRolesIntoTempAssignments();
+			LoadSavedRolesIntoTempAssignments();
 
-            StateHasChanged();
-        }
-    }
+			StateHasChanged();
+		}
+	}
 
-    private async Task LoadSavedRolesIntoTempAssignments()
-    {
-        tempSelections.Clear();
+	private async Task LoadSavedRolesIntoTempAssignments()
+	{
+		tempSelections.Clear();
 
-        if (currentPlayEventIndex >= 0)
-        {
-            var playEvent = Model.PlayEvents[currentPlayEventIndex];
+		if (currentPlayEventIndex >= 0)
+		{
+			var playEvent = Model.PlayEvents[currentPlayEventIndex];
 
-            if (playEvent.SelectedEmployees != null && playEvent.SelectedEmployees.Any())
-            {
-                foreach (var role in playEvent.SelectedEmployees)
-                {
-                    tempSelections.Add(new EmployeeRoleSelectDto
+			if (playEvent.SelectedEmployees != null && playEvent.SelectedEmployees.Any())
+			{
+				foreach (var role in playEvent.SelectedEmployees)
+				{
+					tempSelections.Add(new EmployeeRoleSelectDto
                         {
                             EmployeeId = role.EmployeeId,
                             RoleInPlayId = role.RoleInPlayId,
                             RoleName = GetRoleName(role.RoleInPlayId),
                             EmployeeFullName = GetEmployeeFullName(role.EmployeeId)
                         });
-                }
-            }
-        }
-        await CheckConflicts();
-    }
+				}
+			}
+		}
+		await CheckConflicts();
+	}
 
-    private async Task OnSelectedItemChangedHandler()
-    {
-        if (selectedCastId <= 0)
-        {
-            await CheckConflicts();
-            StateHasChanged();
-            return;
-        }
+	private async Task OnSelectedItemChangedHandler()
+	{
+		if (selectedCastId <= 0)
+		{
+			await CheckConflicts();
+			StateHasChanged();
+			return;
+		}
 
-        selectedCast = await playService.GetCastAsync(selectedCastId);
-        tempSelections.Clear();
+		selectedCast = await playService.GetCastAsync(selectedCastId);
+		tempSelections.Clear();
 
-        if (selectedCast == null || selectedCast.Roles == null)
-        {
-            await CheckConflicts();
-            StateHasChanged();
-            return;
-        }
+		if (selectedCast == null || selectedCast.Roles == null)
+		{
+			await CheckConflicts();
+			StateHasChanged();
+			return;
+		}
 
-        foreach (var role in selectedCast.Roles)
-        {
-            if (role?.Employees == null) continue;
+		foreach (var role in selectedCast.Roles)
+		{
+			if (role?.Employees == null) continue;
 
-            foreach (var employee in role.Employees)
-            {
-                if (employee == null) continue;
+			foreach (var employee in role.Employees)
+			{
+				if (employee == null) continue;
 
-                tempSelections.Add(new EmployeeRoleSelectDto
+				tempSelections.Add(new EmployeeRoleSelectDto
                     {
                         EmployeeId = employee.EmployeeId,
                         RoleInPlayId = role.RoleInPlayId,
                         RoleName = GetRoleName(role.RoleInPlayId),
                         EmployeeFullName = $"{employee.Surname} {employee.Name}"
                     });
-            }
-        }
+			}
+		}
 
-        await CheckConflicts();
-        StateHasChanged();
-    }
+		await CheckConflicts();
+		StateHasChanged();
+	}
 
-    private void SaveRoles()
-    {
-        if (currentPlayEventIndex >= 0)
-        {
-            var playEvent = Model.PlayEvents[currentPlayEventIndex];
+	private void SaveRoles()
+	{
+		if (currentPlayEventIndex >= 0)
+		{
+			var playEvent = Model.PlayEvents[currentPlayEventIndex];
 
-            playEvent.SelectedEmployees = tempSelections.Select(a => new EmployeeRoleSelectDto
+			playEvent.SelectedEmployees = tempSelections.Select(a => new EmployeeRoleSelectDto
                 {
                     EmployeeId = a.EmployeeId,
                     RoleInPlayId = a.RoleInPlayId,
@@ -733,119 +729,140 @@
                     EmployeeFullName = a.EmployeeFullName
                 }).ToList();
 
-            playEvent.CastId = selectedCastId;
-        }
+			playEvent.CastId = selectedCastId;
+		}
 
-        rolesModalVisible = false;
-        StateHasChanged();
+		rolesModalVisible = false;
+		StateHasChanged();
 
-        messageService.Success("Роли сохранены");
-        ResetRolesModalState();
-    }
+		messageService.Success("Роли сохранены");
+		ResetRolesModalState();
+	}
 
-    private void CancelRoles()
-    {
-        rolesModalVisible = false;
-        StateHasChanged();
-        ResetRolesModalState();
-    }
+	private void CancelRoles()
+	{
+		rolesModalVisible = false;
+		StateHasChanged();
+		ResetRolesModalState();
+	}
 
-    private void ResetRolesModalState()
-    {
-        selectedCastId = 0;
-        selectedCast = new CastWithRolesDto();
-        tempSelections.Clear();
-        currentPlayEventIndex = -1;
-        currentPlayId = 0;
-        currentPlayName = "";
-        play = new PlayDto();
-        actors = new List<EmployeeDto>();
-        technics = new List<EmployeeDto>();
-        currentPlayCasts = new List<CastDto>();
-        StateHasChanged();
-    }
+	private void ResetRolesModalState()
+	{
+		selectedCastId = 0;
+		selectedCast = new CastWithRolesDto();
+		tempSelections.Clear();
+		currentPlayEventIndex = -1;
+		currentPlayId = 0;
+		currentPlayName = "";
+		play = new PlayDto();
+		actors = new List<EmployeeDto>();
+		technics = new List<EmployeeDto>();
+		currentPlayCasts = new List<CastDto>();
+		StateHasChanged();
+	}
 
-    //Для заполнения сотрудников и ролей
-    private string GetEmployeeFullName(int employeeId)
-    {
-        var employee = actors.FirstOrDefault(a => a.EmployeeId == employeeId) ??
-                       technics.FirstOrDefault(t => t.EmployeeId == employeeId);
-        return employee != null ? $"{employee.Surname} {employee.Name}" : "";
-    }
+	//Для заполнения сотрудников и ролей
+	private string GetEmployeeFullName(int employeeId)
+	{
+		var employee = actors.FirstOrDefault(a => a.EmployeeId == employeeId) ??
+								technics.FirstOrDefault(t => t.EmployeeId == employeeId);
+		return employee != null ? $"{employee.Surname} {employee.Name}" : "";
+	}
 
-    private string GetRoleName(int roleId)
-    {
-        return play.RoleDtos.FirstOrDefault(r => r.RoleInPlayId == roleId)?.Name ?? "";
-    }
+	private string GetRoleName(int roleId)
+	{
+		return play.RoleDtos.FirstOrDefault(r => r.RoleInPlayId == roleId)?.Name ?? "";
+	}
 
-    // Вспомогательные методы для назначения сотрудников на роли
+	// Вспомогательные методы для назначения сотрудников на роли
 
-    private int GetTempAssignmentsCount(int roleId)
-    {
-        return tempSelections.Count(a => a.RoleInPlayId == roleId);
-    }
+	private int GetTempAssignmentsCount(int roleId)
+	{
+		return tempSelections.Count(a => a.RoleInPlayId == roleId);
+	}
 
-    private int GetTempAssignmentEmployeeId(int roleId, int index)
-    {
-        var assignments = tempSelections.Where(a => a.RoleInPlayId == roleId).ToList();
-        if (index >= 0 && index < assignments.Count)
-            return assignments[index].EmployeeId;
-        return 0;
-    }
+	private int GetTempAssignmentEmployeeId(int roleId, int index)
+	{
+		var assignments = tempSelections.Where(a => a.RoleInPlayId == roleId).ToList();
+		if (index >= 0 && index < assignments.Count)
+			return assignments[index].EmployeeId;
+		return 0;
+	}
 
-    private async Task SetTempAssignmentEmployeeId(int roleId, int index, int value)
-    {
-        var assignments = tempSelections.Where(a => a.RoleInPlayId == roleId).ToList();
-        if (index >= 0 && index < assignments.Count)
-        {
-            assignments[index].EmployeeId = value;
-            assignments[index].EmployeeFullName = GetEmployeeFullName(value);
+	private async Task SetTempAssignmentEmployeeId(int roleId, int index, int value)
+	{
+		var assignments = tempSelections.Where(a => a.RoleInPlayId == roleId).ToList();
+		if (index >= 0 && index < assignments.Count)
+		{
+			assignments[index].EmployeeId = value;
+			assignments[index].EmployeeFullName = GetEmployeeFullName(value);
 
-            await CheckConflicts();
-        }
-        StateHasChanged();
-    }
+			await CheckConflicts();
+		}
+		StateHasChanged();
+	}
 
-    private async Task AddTempAssignment(int roleId)
-    {
-        tempSelections.Add(new EmployeeRoleSelectDto
+	private async Task AddTempAssignment(int roleId)
+	{
+		tempSelections.Add(new EmployeeRoleSelectDto
             {
                 EmployeeId = 0,
                 RoleInPlayId = roleId,
                 RoleName = GetRoleName(roleId),
                 EmployeeFullName = ""
             });
-        await CheckConflicts();
-        StateHasChanged();
-    }
+		await CheckConflicts();
+		StateHasChanged();
+	}
 
-    private async Task RemoveTempAssignment(int roleId, int index)
-    {
-        var assignments = tempSelections.Where(a => a.RoleInPlayId == roleId).ToList();
-        if (index >= 0 && index < assignments.Count)
-        {
-            var toRemove = assignments[index];
-            tempSelections.Remove(toRemove);
-        }
-        await CheckConflicts();
-        StateHasChanged();
-    }
+	private async Task RemoveTempAssignment(int roleId, int index)
+	{
+		var assignments = tempSelections.Where(a => a.RoleInPlayId == roleId).ToList();
+		if (index >= 0 && index < assignments.Count)
+		{
+			var toRemove = assignments[index];
+			tempSelections.Remove(toRemove);
+		}
+		await CheckConflicts();
+		StateHasChanged();
+	}
 
-    //Управление доступом
-    private bool isDisabled { get; set; } = false;
-    private async Task LoadUserData()
-    {
-        var authStateProvider = (CustomAuthStateProvider)provider;
-        userRole = await authStateProvider.GetCurrentUserRoleAsync();
+	//Управление доступом
+	private bool isDisabled { get; set; } = false;
+	private async Task LoadUserData()
+	{
+		var authStateProvider = (CustomAuthStateProvider)provider;
+		userRole = await authStateProvider.GetCurrentUserRoleAsync();
 
-        if (userRole == "TourAdmin")
-            selectedEventType = "tour";
-        else if (userRole == "VisitAdmin")
-            selectedEventType = "visit";
-        else
-            selectedEventType = "stationar";
+		if (userRole == "TourAdmin")
+			selectedEventType = "tour";
+		else if (userRole == "VisitAdmin")
+			selectedEventType = "visit";
+		else
+			selectedEventType = "stationar";
 
-        isDisabled = userRole != "MainAdmin" && userRole != "SystemAdmin";
-        StateHasChanged();
-    }
+		isDisabled = userRole != "MainAdmin" && userRole != "SystemAdmin";
+		StateHasChanged();
+	}
+	private async Task HallTypeDelete()
+	{
+		await hallTypeService.DeleteHallTypeAsync(selectedHallTypeId);
+		selectedHallTypeId = 0;
+		await LoadInitialData();
+	}
+
+	private async Task SaveHallType(string name)
+	{
+		if (string.IsNullOrWhiteSpace(name)) return;
+
+		if (selectedHallTypeId == 0)
+		{
+			await hallTypeService.AddHallTypeAsync(name);
+		}
+		else
+		{
+			await hallTypeService.UpdateHallTypeAsync(selectedHallTypeId, name);
+		}
+		await LoadInitialData();
+	}
 }

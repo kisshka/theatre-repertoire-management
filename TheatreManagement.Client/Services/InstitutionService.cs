@@ -1,7 +1,6 @@
 ﻿using System.Net.Http.Json;
-using TheatreManagement.Shared.DTOs;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Client.Services
 {
@@ -27,8 +26,8 @@ namespace TheatreManagement.Client.Services
         public async Task<PagedResult<InstitutionDto>> GetInstitutionsPagedAsync(int page = 1, int pageSize = 10, string? searchText = null)
         {
             return await _httpClient.GetFromJsonAsync<PagedResult<InstitutionDto>>(
-                $"api/institutions?page={page}&pageSize={pageSize}&searchText={searchText}");
-        }
+                 $"api/institutions?page={page}&pageSize={pageSize}&searchText={searchText}");
+        }       
 
         public async Task<InstitutionDto> GetInstitutionAsync(int id)
         {
@@ -46,9 +45,9 @@ namespace TheatreManagement.Client.Services
             return await _httpClient.GetFromJsonAsync<InstitutionDto>($"api/institutions/by-name?name={name}");
         }
 
-        public async Task<List<InstitutionTypeDto>> GetAllInstitutionTypesAsync()
+        public async Task<List<Guide>> GetAllInstitutionTypesAsync()
         {
-            return await _httpClient.GetFromJsonAsync<List<InstitutionTypeDto>>("api/institutions/institution-types");
+            return await _httpClient.GetFromJsonAsync<List<Guide>>("api/institutions/institution-types");
         }
     }
 }

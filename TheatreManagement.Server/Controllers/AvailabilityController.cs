@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TheatreManagement.Server.Services;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Availability;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Server.Controllers
 {

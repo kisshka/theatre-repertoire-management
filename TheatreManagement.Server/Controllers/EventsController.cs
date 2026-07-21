@@ -1,6 +1,5 @@
 ﻿using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,11 +7,11 @@ using System.Globalization;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
 using TheatreManagement.Server.Mappings;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.ConflictChecker;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Employees;
 using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -28,21 +27,6 @@ namespace TheatreManagement.Server.Controllers
         {
             _userManager = userManager;
             _context = context;
-        }
-
-        [HttpGet("hall-types")]
-        public async Task<ActionResult<List<HallTypeDto>>> GetHallTypes()
-        {
-            var hallTypes = await _context.HallTypes
-                .OrderBy(h => h.Name)
-                .Select(h => new HallTypeDto
-                {
-                    Id = h.HallTypeId,
-                    Name = h.Name
-                })
-                .ToListAsync();
-
-            return Ok(hallTypes);
         }
 
         [HttpPost]

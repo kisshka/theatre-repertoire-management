@@ -55,27 +55,5 @@ namespace TheatreManagement.Shared.DTOs.Events
                 return $"г.{Town} ул.{Street} дом {House}";
             }
         }
-        //public string CommentView
-        //{
-        //    get
-        //    {
-        //        if (!string.IsNullOrWhiteSpace(Comment) && Comment.Length > 50)
-        //        {
-        //            return Comment.Substring(0, 50) + "...";
-        //        }
-        //        return Comment ?? string.Empty;
-        //    }
-        //}
-    }
-
-    public class HallTypeDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-    }
-    public class InstitutionTypeDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
     }
 }

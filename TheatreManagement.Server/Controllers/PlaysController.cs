@@ -1,18 +1,13 @@
 ﻿using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
 using TheatreManagement.Server.Mappings;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -318,12 +313,14 @@ namespace TheatreManagement.Server.Controllers
             return Ok();
         }
 
+        // Типы сцен
+
         [HttpGet("scene-types")]
-        public async Task<ActionResult<List<SceneTypeDto>>> GetSceneTypes()
+        public async Task<ActionResult<List<Guide>>> GetSceneTypes()
         {
             var sceneTypes = await _context.SceneTypes
                 .OrderBy(st => st.Name)
-                .Select(st => new SceneTypeDto
+                .Select(st => new Guide
                 {
                     Id = st.SceneTypeId,
                     Name = st.Name
@@ -332,5 +329,6 @@ namespace TheatreManagement.Server.Controllers
 
             return Ok(sceneTypes);
         }
+
     }
 }

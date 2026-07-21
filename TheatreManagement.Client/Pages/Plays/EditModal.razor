@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using TheatreManagement.Client.Helpers.SelectItems
 @using TheatreManagement.Shared.DTOs
+@using TheatreManagement.Shared.Helpers
 
 <Modal Visible="@Visible"
        OkButtonProps="@(new ButtonProps { Disabled = Submitting })"
@@ -23,13 +24,12 @@
             <Input @bind-Value="@context.Duration" />
         </FormItem>
         <FormItem Label="Тип сцены" Required>
-            <Select Mode="SelectMode.Default"
-                    DataSource="@sceneTypes"
-                    @bind-Value="@selectedSceneTypeId"
-                    LabelName="Name"
-                    ValueName="Id"
-                    Placeholder="Выберите тип сцены">
-            </Select>
+            <SelectWithAddingItems @bind-SelectedId="selectedSceneTypeId"
+                                   DataSource="@sceneTypes"
+                                   OnDelete="OnSceneDelete"
+                                   Placeholder="Выберите тип сцены"
+                                   FieldLabel="Тип сцены"
+                                   OnSave="SaveSceneType" />
         </FormItem>
         <FormItem Label="Введите возрастной рейтинг">
             <Input @bind-Value="@context.AgeCategory" />
@@ -110,6 +110,7 @@
     [Parameter] public int PlayId { get; set; }
 
     [Inject] private PlayService playService { get; set; }
+    [Inject] private SceneTypeService sceneTypeService { get; set; }
 
     private Form<PlayDto> FormRef { get; set; }
     private PlayDto Model { get; set; } = new();
@@ -128,13 +129,37 @@
     };
 
     // Для типа сцены
-    private List<SceneTypeDto> sceneTypes = new();
+    private List<Guide> sceneTypes = new();
     private string error = "";
+
+    private async Task SaveSceneType(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return;
+
+        if (selectedSceneTypeId == 0)
+        {
+            await sceneTypeService.AddSceneTypeAsync(name);
+        }
+        else
+        {
+            await sceneTypeService.UpdateSceneTypeAsync(selectedSceneTypeId, name);
+        }
+        await LoadSceneTypes();
+    }
+
+    private async Task OnSceneDelete()
+    {
+        await sceneTypeService.DeleteSceneTypeAsync(selectedSceneTypeId);
+        selectedSceneTypeId = 0;
+        await LoadSceneTypes();
+    }
 
     protected override async Task OnParametersSetAsync()
     {
         if (Visible)
         {
+            selectedSceneTypeId = 0;
+            selectedStatus = true;
             await LoadSceneTypes();
             await LoadData();
         }
@@ -144,11 +169,11 @@
     {
         try
         {
-            sceneTypes = await playService.GetAllSceneTypeAsync();
+            sceneTypes = await sceneTypeService.GetSceneTypesAsync();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка загрузки типов сцен: {ex.Message}");
+            Console.WriteLine(ex.Message);
         }
     }
 

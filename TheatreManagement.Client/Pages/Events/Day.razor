@@ -155,17 +155,16 @@
 @if(!events.Any())
 {
     <div class="empty-container">
-        <Icon Type="@IconType.Outline.Inbox" />
-        <div>Нет мероприятий</div>
+        <Empty Description="@("Отсутствуют мероприятия на этот день")"/>
     </div>
 }
 
-
-<Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
-    <Icon Type="@IconType.Outline.Plus" />
-    Добавить
-</Button>
-
+<div class="details-container">
+    <Button Type="ButtonType.Primary" OnClick="@(() => addModalVisible = true)">
+        <Icon Type="@IconType.Outline.Plus" />
+        Добавить
+    </Button>
+</div>
 <AddModal @bind-Visible="addModalVisible"
           OnSuccess="OnModalSuccess"
           EventDate="@Date" />

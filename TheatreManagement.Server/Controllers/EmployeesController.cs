@@ -8,10 +8,10 @@ using System.Globalization;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
 using TheatreManagement.Server.Mappings;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Employees;
 using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Shared.Helpers;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace TheatreManagement.Server.Controllers

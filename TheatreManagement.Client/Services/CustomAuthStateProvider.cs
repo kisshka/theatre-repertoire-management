@@ -7,8 +7,8 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json.Nodes;
 using TheatreManagement.Client.Helpers;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Users;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Client.Services
 {

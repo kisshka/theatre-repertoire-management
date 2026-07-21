@@ -1,8 +1,8 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Availability;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Server.Services
 {

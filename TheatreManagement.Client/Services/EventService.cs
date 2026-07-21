@@ -1,10 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using TheatreManagement.Client.Helpers;
-using TheatreManagement.Shared;
-using TheatreManagement.Shared.ConflictChecker;
-using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Client.Services
 {
@@ -102,9 +99,9 @@ namespace TheatreManagement.Client.Services
         }
 
 
-        public async Task<List<HallTypeDto>> GetAllStationarTypesAsync()
+        public async Task<List<Guide>> GetAllStationarTypesAsync()
         {
-           return await _httpClient.GetFromJsonAsync<List<HallTypeDto>>($"api/events/hall-types");
+           return await _httpClient.GetFromJsonAsync<List<Guide>>($"api/events/hall-types");
         }
 
         public async Task<PagedResult<EventGetModel>> GetEventsPagedAsync(

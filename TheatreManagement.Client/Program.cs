@@ -29,6 +29,11 @@ builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<StatementService>();
 builder.Services.AddScoped<EventConflictCheckerService>();
 
+// Сервисы для справочников 
+builder.Services.AddScoped<SceneTypeService>();
+builder.Services.AddScoped<HallTypeService>();
+builder.Services.AddScoped<InstitutionTypeService>();
+
 // Аутентификация
 builder.Services.AddScoped<AuthHandler>();
 

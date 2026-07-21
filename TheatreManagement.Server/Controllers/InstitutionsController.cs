@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using TheatreManagement.Domain.Data;
 using TheatreManagement.Domain.Entities;
 using TheatreManagement.Server.Mappings;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs;
 using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Server.Controllers
 {
@@ -193,11 +193,11 @@ namespace TheatreManagement.Server.Controllers
 
         // Новый метод для получения всех типов учреждений
         [HttpGet("institution-types")]
-        public async Task<ActionResult<List<InstitutionTypeDto>>> GetInstitutionTypes()
+        public async Task<ActionResult<List<Guide>>> GetInstitutionTypes()
         {
             var institutionTypes = await _context.InstitutionTypes
                 .OrderBy(it => it.Name)
-                .Select(it => new InstitutionTypeDto
+                .Select(it => new Guide
                 {
                     Id = it.InstitutionTypeId,
                     Name = it.Name

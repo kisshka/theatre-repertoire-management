@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Json;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Availability;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Client.Services
 {

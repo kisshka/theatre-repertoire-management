@@ -34,9 +34,5 @@ namespace TheatreManagement.Shared.DTOs
 
         public string UserFullName { get; set; } = "";
     }
-    public class SceneTypeDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-    }
+
 }

@@ -1,8 +1,8 @@
 ﻿using AntDesign;
 using System.Net.Http.Json;
-using TheatreManagement.Shared;
 using TheatreManagement.Shared.DTOs.Employees;
 using TheatreManagement.Shared.DTOs.Events;
+using TheatreManagement.Shared.Helpers;
 
 namespace TheatreManagement.Client.Services
 {
