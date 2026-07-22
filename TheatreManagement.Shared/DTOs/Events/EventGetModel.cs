@@ -82,6 +82,21 @@ namespace TheatreManagement.Shared.DTOs.Events
             public List<int> EmployeeRoles { get; set; } = new();
 
             public DateTime? DeletionTime { get; set; }
+
+
+        public string GetDisplayText()
+        {
+            var text = $"{StartTime:HH:mm} ";
+            text += string.Join(", ", Plays.Select(p => p.Name));
+
+            if (HasConflict)
+                text += "!!!";
+
+            if (!string.IsNullOrEmpty(CancellationReason))
+                text += $" (ОТМЕНА: {CancellationReason})";
+
+            return text;
+        }
     }
 
     public class PlayWithRolesDto
@@ -90,4 +105,5 @@ namespace TheatreManagement.Shared.DTOs.Events
         public string PlayName { get; set; }
         public List<RoleGroupDto> RoleGroups { get; set; } = new();
     }
+
 }

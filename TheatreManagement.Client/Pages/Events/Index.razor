@@ -2,6 +2,7 @@
 @page "/"
 @using System.Globalization
 @using AntDesign
+@using TheatreManagement.Client.Helpers.ClientModels
 @using TheatreManagement.Shared.DTOs.Events
 
 
@@ -17,22 +18,52 @@
     }
     else {
     <EventsHeader CurrentDate="@currentDate"
-                             CurrentDateChanged="@(async (date) => await OnDatePickerChanged(date))"
+                      CurrentDateChanged="@(async (date) => CurrentDateChangedTable(date))"
                              OnPreviousMonth="PreviousMonth"
                              OnNextMonth="NextMonth"
                              OnChangeMode="ChangeMode"
                              IsCalendarMode="@_isCalendarMode"
                              OnCreateReport="() => _createReportModalVisible = true"/>
 
-                             // Табличка
-@*         <Table DataSource="@data" Bordered=@true Title="@title" Footer="@footer" HidePagination="@true">
-            <PropertyColumn Property="c=>c.Name">
-                <a>@context.Name</a>
-            </PropertyColumn>
-            <PropertyColumn Property="c=>c.Money" Style="text-align: right"></PropertyColumn>
-            <PropertyColumn Property="c=>c.Address"></PropertyColumn>
-        </Table> *@
+        <Table TItem="EventTableRow"
+               DataSource="@_tableData"
+               Bordered="true"
+               HidePagination="true"
+               Class="events-table">
 
+            <!-- Колонка с названиями мест -->
+            <PropertyColumn TItem="EventTableRow"
+                            TProp="string"
+                            Property="c => c.Location"
+                            Title="Место"
+                            Width="150px"
+                            Fixed="ColumnFixPlacement.Left" />
+
+            <!-- Динамические колонки для каждого дня -->
+            @foreach (var day in _daysInMonth)
+            {
+                var dayIndex = day.Day;
+                var dayOfWeek = day.ToString("ddd", CultureInfo.GetCultureInfo("ru-RU"));
+
+                <PropertyColumn TItem="EventTableRow"
+                                TProp="string"
+                                Title="@($"{dayIndex} {dayOfWeek}")">
+                    <Template>
+                        @{
+                            var row = (EventTableRow)context;
+                            var cellContent = row.EventsByDate.GetValueOrDefault(day, "");
+                            if (!string.IsNullOrEmpty(cellContent))
+                            {
+                                <div>
+                                    @cellContent
+                                </div>
+                            }
+                        }
+                    </Template>
+                </PropertyColumn>
+            }
+
+        </Table>
     }
 </div>
 
@@ -42,6 +73,8 @@ OnSuccess="OnModalSuccess"/>
 @code {
     [Inject] private NavigationManager navManager { get; set; }
     [Inject] private EventService eventService { get; set; }
+    [Inject] private HallTypeService hallTypeService { get; set; }
+
     private DateTime currentDate = DateTime.Now;
     private List<EventGetModel> allEvents = new();
 
@@ -49,9 +82,16 @@ OnSuccess="OnModalSuccess"/>
     private bool _createReportModalVisible = false;
     private bool _isCalendarMode = true;
 
-    private void ChangeMode()
+    private async Task ChangeMode()
     {
         _isCalendarMode = !_isCalendarMode;
+
+        if (!_isCalendarMode)
+        {
+            _daysInMonth = GetDaysInMonth(currentDate);
+            _tableData = await GetTableData(currentDate);
+        }
+
         StateHasChanged();
     }
 
@@ -107,25 +147,18 @@ OnSuccess="OnModalSuccess"/>
         }
     }
 
-private string GetEventClassByType(string eventType, bool isCanceled)
-{
-    if (isCanceled) return "event-canceled";
-
-    return eventType switch
+    private string GetEventClassByType(string eventType, bool isCanceled)
     {
-        "stationar" => "event-stationar",
-        "tour" => "event-tour",
-        "visit" => "event-visit",
-        _ => "event-default"
-    };
-}
+        if (isCanceled) return "event-canceled";
 
-    private async Task OnValueChanged(DateTime newDate)
-    {
-        currentDate = newDate;
-        await LoadEventsForMonth(currentDate);
+        return eventType switch
+        {
+            "stationar" => "event-stationar",
+            "tour" => "event-tour",
+            "visit" => "event-visit",
+            _ => "event-default"
+        };
     }
-
 
     private DayData GetDayData(DateTime date)
     {
@@ -166,7 +199,8 @@ private string GetEventClassByType(string eventType, bool isCanceled)
                          OnNextMonth="NextMonth"
                          OnChangeMode="ChangeMode"
                          IsCalendarMode="@_isCalendarMode"
-                         OnCreateReport="() => _createReportModalVisible = true"/>;
+                         OnCreateReport="() => _createReportModalVisible = true"/>
+     ;
     }
 
     private void OnDateSelect(DateTime date)
@@ -182,10 +216,19 @@ private string GetEventClassByType(string eventType, bool isCanceled)
         StateHasChanged();
     }
 
+    // Для общей шапки
     private async Task NextMonth()
     {
         currentDate = currentDate.AddMonths(1);
         await LoadEventsForMonth(currentDate);
+
+        if (!_isCalendarMode)
+        {
+            _tableData = await GetTableData(currentDate);
+            _daysInMonth = GetDaysInMonth(currentDate);
+            StateHasChanged();
+        }
+
         StateHasChanged(); 
     }
 
@@ -193,6 +236,14 @@ private string GetEventClassByType(string eventType, bool isCanceled)
     {
         currentDate = currentDate.AddMonths(-1);
         await LoadEventsForMonth(currentDate);
+
+        if (!_isCalendarMode)
+        {
+            _tableData = await GetTableData(currentDate);
+            _daysInMonth = GetDaysInMonth(currentDate);
+            StateHasChanged();
+        }
+
         StateHasChanged();
     }
 
@@ -223,6 +274,101 @@ private string GetEventClassByType(string eventType, bool isCanceled)
             <p> ...еще @(dayData.EventsCount - 3)</p>
         }
         </div>
-    </Template>;}
+    </Template>
+    ;}
+
+
+    // ДЛЯ ТАБЛИЧНОГО ОТОБРАЖЕНИЯ
+
+    private async Task<List<EventTableRow>> GetTableData(DateTime date)
+    {
+        var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
+        var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
+        // Все дни месяца
+        var daysInMonth = Enumerable.Range(0, (lastDayOfMonth - firstDayOfMonth).Days + 1)
+            .Select(offset => firstDayOfMonth.AddDays(offset))
+            .ToList();
+
+        // Группируем события по местам
+        var locations = await GetLocations();
+
+        var tableData = new List<EventTableRow>();
+
+        foreach (var location in locations)
+        {
+            var row = new EventTableRow
+            {
+                Location = location,
+                EventsByDate = new Dictionary<DateTime, string>()
+            };
+
+            foreach (var day in daysInMonth)
+            {
+                var eventsOnDay = allEvents
+                    .Where(e => e.StartTime.HasValue && e.StartTime.Value.Date == day.Date)
+                    // .Where(e => e.GetLocations().Contains(location))
+                    .ToList();
+
+                if (eventsOnDay.Any())
+                {
+                    row.EventsByDate[day] = string.Join(", ", eventsOnDay.Select(e => e.GetDisplayText()));
+                }
+                else
+                {
+                    row.EventsByDate[day] = "";
+                }
+            }
+
+            tableData.Add(row);
+        }
+
+        return tableData;
+    }
+
+    public async Task<List<string>> GetLocations()
+    {
+        var locations = new List<string>();
+
+
+        var stationarLocations = await hallTypeService.GetHallTypesAsync(); 
+        foreach (var statLoc in stationarLocations)
+        {
+            locations.Add(statLoc.Name);
+        }
+
+        locations.Add($"Гастроли");
+        locations.Add($"Выезда");
+
+        return locations;
+    }
+
+    private List<EventTableRow> _tableData = new();
+    private List<DateTime> _daysInMonth = new();
+
+    private List<DateTime> GetDaysInMonth(DateTime date)
+    {
+        var firstDayOfMonth = new DateTime(currentDate.Year, currentDate.Month, 1);
+        var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+        return Enumerable.Range(0, (lastDayOfMonth - firstDayOfMonth).Days + 1)
+            .Select(offset => firstDayOfMonth.AddDays(offset))
+            .ToList();
+    }
+
+    private async Task CurrentDateChangedTable(DateTime date)
+    {
+        currentDate = date;
+        Console.WriteLine(currentDate);
+        _tableData = await GetTableData(currentDate);
+        _daysInMonth = GetDaysInMonth(currentDate);
+        StateHasChanged();
+    }
+
+    private async Task OnValueChanged(DateTime newDate)
+    {
+        currentDate = newDate;
+        _daysInMonth = GetDaysInMonth(newDate);
+        // await LoadEventsForMonth(currentDate);
+    }
 
 }
