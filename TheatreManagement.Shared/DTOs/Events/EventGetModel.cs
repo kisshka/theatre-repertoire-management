@@ -8,10 +8,31 @@ namespace TheatreManagement.Shared.DTOs.Events
 {
     public class EventGetModel
     {
-            public int EventId { get; set; }
-            public DateTime? StartTime { get; set; }
-            public DateTime? EndTime { get; set; }
+        public int EventId { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
+        public string? Type { get; set; }
+        public DateTime LastEditTime { get; set; }
+        public string? CancellationReason { get; set; }
 
+        //Конфликты
+        public List<string> Warnings { get; set; } = new();
+        public bool HasConflict { get; set; }
+
+        // Навигационные свойства
+        public StationarDto? Stationar { get; set; }
+        public TourDto? Tour { get; set; }
+        public InstitutionDto? Institution { get; set; }
+
+        public string UserFullName { get; set; } = "";
+
+        // Связи
+        public List<PlayDto>? Plays { get; set; }
+
+        public List<PlayWithRolesDto>? PlaysWithRoles { get; set; } = new();
+        public List<int> EmployeeRoles { get; set; } = new();
+
+        public DateTime? DeletionTime { get; set; }
 
 
         // Для отображения правильного времени для многодневных мероприятий
@@ -59,29 +80,6 @@ namespace TheatreManagement.Shared.DTOs.Events
             }
 
         }
-
-        public string? Type { get; set; }
-            public DateTime LastEditTime { get; set; }
-            public string? CancellationReason { get; set; }
-
-            //Конфликты
-            public List<string> Warnings { get; set; } = new();
-            public bool HasConflict { get; set; }
-
-            // Навигационные свойства
-            public StationarDto? Stationar { get; set; }
-            public TourDto? Tour { get; set; }
-            public InstitutionDto? Institution { get; set; }
-
-            public string UserFullName { get; set; } = "";
-
-            // Связи
-            public List<PlayDto>? Plays { get; set; }
-
-            public List<PlayWithRolesDto>? PlaysWithRoles { get; set; } = new();
-            public List<int> EmployeeRoles { get; set; } = new();
-
-            public DateTime? DeletionTime { get; set; }
 
 
         public string GetDisplayText()

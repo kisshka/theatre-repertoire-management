@@ -46,9 +46,12 @@
                 var dayOfWeek = day.ToString("ddd", CultureInfo.GetCultureInfo("ru-RU"));
 
                 <PropertyColumn TItem="EventTableRow"
-                                TProp="string"
-                                Title="@($"{dayIndex} {dayOfWeek}")">
-                    <Template>
+                                TProp="string">
+                    <TitleTemplate>
+                            <div>@dayIndex</div>
+                            <div style="font-size: 12px; color: #888;">@dayOfWeek</div>
+                    </TitleTemplate>
+                    <ChildContent>
                         @{
                             var row = (EventTableRow)context;
                             var cellContent = row.EventsByDate.GetValueOrDefault(day, "");
@@ -59,7 +62,7 @@
                                 </div>
                             }
                         }
-                    </Template>
+                    </ChildContent>
                 </PropertyColumn>
             }
 
@@ -100,25 +103,12 @@ OnSuccess="OnModalSuccess"/>
         StateHasChanged();
     }
 
-    class DayData
-    {
-        public bool HasConflict = false;
-        public int EventsCount;
-        public List<EventData> Events = new();
-    }
-
-    class EventData
-    {
-        public string TimePeriod;
-        public string EventType;
-        public string Content;
-        public string CancellationReason;
-    }
-
     protected override async Task OnInitializedAsync()
     {
         await LoadEventsForMonth(currentDate);
     }
+
+    // Для календаря
 
     private async Task LoadEventsForMonth(DateTime date)
     {
@@ -145,19 +135,6 @@ OnSuccess="OnModalSuccess"/>
             isLoading = false;
             StateHasChanged();
         }
-    }
-
-    private string GetEventClassByType(string eventType, bool isCanceled)
-    {
-        if (isCanceled) return "event-canceled";
-
-        return eventType switch
-        {
-            "stationar" => "event-stationar",
-            "tour" => "event-tour",
-            "visit" => "event-visit",
-            _ => "event-default"
-        };
     }
 
     private DayData GetDayData(DateTime date)
@@ -216,37 +193,6 @@ OnSuccess="OnModalSuccess"/>
         StateHasChanged();
     }
 
-    // Для общей шапки
-    private async Task NextMonth()
-    {
-        currentDate = currentDate.AddMonths(1);
-        await LoadEventsForMonth(currentDate);
-
-        if (!_isCalendarMode)
-        {
-            _tableData = await GetTableData(currentDate);
-            _daysInMonth = GetDaysInMonth(currentDate);
-            StateHasChanged();
-        }
-
-        StateHasChanged(); 
-    }
-
-    private async Task PreviousMonth()
-    {
-        currentDate = currentDate.AddMonths(-1);
-        await LoadEventsForMonth(currentDate);
-
-        if (!_isCalendarMode)
-        {
-            _tableData = await GetTableData(currentDate);
-            _daysInMonth = GetDaysInMonth(currentDate);
-            StateHasChanged();
-        }
-
-        StateHasChanged();
-    }
-
     private RenderFragment DateCellRender(DateTime value) {
         var dayData = GetDayData(value);
         return @<Template>
@@ -285,7 +231,6 @@ OnSuccess="OnModalSuccess"/>
         var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
         var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
 
-        // Все дни месяца
         var daysInMonth = Enumerable.Range(0, (lastDayOfMonth - firstDayOfMonth).Days + 1)
             .Select(offset => firstDayOfMonth.AddDays(offset))
             .ToList();
@@ -299,7 +244,8 @@ OnSuccess="OnModalSuccess"/>
         {
             var row = new EventTableRow
             {
-                Location = location,
+                LocationId = location.Id,
+                Location = location.Name,
                 EventsByDate = new Dictionary<DateTime, string>()
             };
 
@@ -307,8 +253,9 @@ OnSuccess="OnModalSuccess"/>
             {
                 var eventsOnDay = allEvents
                     .Where(e => e.StartTime.HasValue && e.StartTime.Value.Date == day.Date)
-                    // .Where(e => e.GetLocations().Contains(location))
+                    .Where(e => GetEventLocation(e).Id == location.Id)
                     .ToList();
+
 
                 if (eventsOnDay.Any())
                 {
@@ -326,21 +273,30 @@ OnSuccess="OnModalSuccess"/>
         return tableData;
     }
 
-    public async Task<List<string>> GetLocations()
+    private int tourLocation = -1;
+    private int visitLocation = -2;
+
+    private async Task<List<(int Id, string Name)>> GetLocations()
     {
-        var locations = new List<string>();
+        var locations = new List<(int Id, string Name)>();
 
+        var hallTypes = await hallTypeService.GetHallTypesAsync();
+        locations.AddRange(hallTypes.Select(h => (Id: h.Id, Name: h.Name)));
 
-        var stationarLocations = await hallTypeService.GetHallTypesAsync(); 
-        foreach (var statLoc in stationarLocations)
-        {
-            locations.Add(statLoc.Name);
-        }
-
-        locations.Add($"Гастроли");
-        locations.Add($"Выезда");
+        locations.Add((tourLocation, "Гастроли"));
+        locations.Add((visitLocation, "Выезда"));
 
         return locations;
+    }
+
+    private (int Id, string Name) GetEventLocation(EventGetModel ev)
+    {
+        return ev.Type switch
+        {
+            "stationar" => (ev.Stationar.HallTypeId, ev.Stationar?.HallTypeName! ),
+            "tour" => (tourLocation, "Гастроли"),
+            "visit" => (visitLocation, "Выезда")
+        };
     }
 
     private List<EventTableRow> _tableData = new();
@@ -371,4 +327,49 @@ OnSuccess="OnModalSuccess"/>
         // await LoadEventsForMonth(currentDate);
     }
 
+
+    // ОБЩЕЕ
+    private string GetEventClassByType(string eventType, bool isCanceled)
+    {
+        if (isCanceled) return "event-canceled";
+
+        return eventType switch
+        {
+            "stationar" => "event-stationar",
+            "tour" => "event-tour",
+            "visit" => "event-visit",
+            _ => "event-default"
+        };
+    }
+
+    // Для общей шапки
+    private async Task NextMonth()
+    {
+        currentDate = currentDate.AddMonths(1);
+        await LoadEventsForMonth(currentDate);
+
+        if (!_isCalendarMode)
+        {
+            _tableData = await GetTableData(currentDate);
+            _daysInMonth = GetDaysInMonth(currentDate);
+            StateHasChanged();
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task PreviousMonth()
+    {
+        currentDate = currentDate.AddMonths(-1);
+        await LoadEventsForMonth(currentDate);
+
+        if (!_isCalendarMode)
+        {
+            _tableData = await GetTableData(currentDate);
+            _daysInMonth = GetDaysInMonth(currentDate);
+            StateHasChanged();
+        }
+
+        StateHasChanged();
+    }
 }
